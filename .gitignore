@@ -1,0 +1,11 @@
+
+*.db
+*.cpython-312.pyc
+*png
+*exe
+lo.txt
+ignore/*
+logs/*
+toolbox/Everythingsearch/Everything.ini
+main_window2-*
+*.ini
