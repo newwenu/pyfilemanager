@@ -1,3 +1,4 @@
+新手文件……-cn
 ### 0en
 ## Attention
 Please add a folder "media",when you are try to run code.
