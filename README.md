@@ -17,6 +17,8 @@ Put the png picture file you need in.
 #### desktop_bg.png </for main_window2/>
 #### background2.png </for main />
 
+
+#### other
 #### archive.png
 #### code.png
 #### document.png
