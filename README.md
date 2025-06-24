@@ -14,7 +14,7 @@ Put the png picture file you need in.
 
 ## png name / 图片名称
 #### necessary ones
-#### desktop_bg.png </for main_window2/>
+#### background.png </for main_window2/>
 #### background2.png </for main />
 
 
