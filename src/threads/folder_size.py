@@ -13,7 +13,7 @@ class FolderSizeThread(QThread):
         super().__init__()
         self.path = path
         self._is_running = True  # 退出标志
-        self._terminate_requested = False  # 新增强制终止标记
+        self._terminate_requested = False  # 强制终止标记
 
     def run(self):
         total_size = self.calculate_folder_size(self.path)
@@ -86,7 +86,7 @@ class FolderSizeManager(QObject):
         self.size_updated.emit(item, size)  # 触发 UI 更新信号
         # 写入数据库（优化异常处理）
         try:
-            # 新增：获取最后修改时间时添加异常捕获
+            # ：获取最后修改时间时添加异常捕获
             try:
                 last_modified = os.path.getmtime(path)
                 if last_modified <= 0:

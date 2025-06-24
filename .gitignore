@@ -5,7 +5,7 @@
 *exe
 lo.txt
 ignore/*
-logs/*
+app.log*
 toolbox/Everythingsearch/Everything.ini
 main_window2-*
 *.ini

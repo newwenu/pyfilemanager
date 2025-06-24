@@ -5,19 +5,18 @@ from PySide6.QtGui import *
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 try:
-    from .threads.folder_size import FolderSizeManager
-    from .utils.keyboard_registry import register_app_shortcuts
-    from .widgets.file_list_updater import FileListUpdater
-    from .widgets.ui_setup import setup_ui 
-    from .handlers.event_handlers import setup_event_bindings
-    from .image_manager.icon_manager import create_icon_set
-    from .image_manager.background_manager import BackgroundManager
-    from .Fileoperater.file_manager2 import FileManager2
-    from .Fileoperater.file_manager3 import FileManager3
-    from .utils.keyboard_handler import KeyboardHandler
-    from .handlers.drag_drop_handler import DragDropHandler  # 新增导入
-    from .utils.logging_config import init_logging, get_logger
-    
+    from src.threads.folder_size import FolderSizeManager
+    from src.utils.keyboard_registry import register_app_shortcuts
+    from src.widgets.file_list_updater import FileListUpdater
+    from src.widgets.ui_setup import setup_ui 
+    from src.handlers.event_handlers import setup_event_bindings
+    from src.image_manager.icon_manager import create_icon_set
+    from src.image_manager.background_manager import BackgroundManager
+    from src.Fileoperater.file_manager2 import FileManager2
+    from src.Fileoperater.file_manager3 import FileManager3
+    from src.utils.keyboard_handler import KeyboardHandler
+    from src.handlers.drag_drop_handler import DragDropHandler  # 导入
+    from src.utils.logging_config import init_logging, get_logger
 except ImportError as e:
     from threads.folder_size import FolderSizeManager
     from utils.keyboard_registry import register_app_shortcuts
@@ -29,13 +28,13 @@ except ImportError as e:
     from Fileoperater.file_manager2 import FileManager2
     from Fileoperater.file_manager3 import FileManager3
     from utils.keyboard_handler import KeyboardHandler
-    from dbload.database_manager import DatabaseManager
-    from handlers.drag_drop_handler import DragDropHandler  # 新增导入
+    from dbload_manager.database_manager import DatabaseManager
+    from handlers.drag_drop_handler import DragDropHandler  # 导入
     from utils.config_manager import ConfigManager
     # 原配置读取逻辑替换为：
-    config_manager = ConfigManager()
+    config_manager = ConfigManager("userdata/config/setting1.json")
     config = config_manager.config  # 或通过 config_manager.get() 获取具体值
-    from utils.logging_config import init_logging, get_logger  # 新增导入
+    from utils.logging_config import init_logging, get_logger  # 导入
 
 
 class FileManager(QMainWindow):
@@ -44,15 +43,15 @@ class FileManager(QMainWindow):
         self.folder_threads = {}  # 用于存储每个文件夹的线程
         self.image_path = image_path
         self.current_path = os.path.expanduser('X:\\')
-        self.show_hidden = False  # 新增：控制是否显示隐藏文件
-        self.show_all_sizes = False # 新增：显示所有大小
-        self.config_manager = config_manager  # 新增：配置管理器
+        self.show_hidden = False  # ：控制是否显示隐藏文件
+        self.show_all_sizes = False # ：显示所有大小
+        self.config_manager = config_manager  # ：配置管理器
         # 初始化日志（通过配置管理器传递参数）
         init_logging(self.config_manager)
         self.icons, self.icon_paths = create_icon_set()  # 使用独立图标管理函数
-        self.folder_size_index = {}  # 新增：索引库（路径: 大小）
-        # 新增：初始化 SQLite 数据库
-        db_path = "dbload\\folder_size.db"  # 数据库文件路径（可从 config 配置）
+        self.folder_size_index = {}  # ：索引库（路径: 大小）
+        # ：初始化 SQLite 数据库
+        db_path = "userdata\\db\\folder_size.db"  # 数据库文件路径（可从 config 配置）
         self.db=DatabaseManager(db_path)
         # 初始化文件列表更新器（仅传递 self）
         self.file_list_updater = FileListUpdater(self)
@@ -68,16 +67,16 @@ class FileManager(QMainWindow):
         # 初始化文件管理器
         self.file_manager = FileManager2()
         self.file_manager3 = FileManager3(self)
-        # 新增：初始化 HomeHandler（模块化处理 home 导航）
+        # ：初始化 HomeHandler（模块化处理 home 导航）
         from handlers.home_handler import HomeHandler
         self.home_handler = HomeHandler(self)
         # 将导航方法绑定到主窗口（可选，方便快捷键调用）
         self.navigate_home = self.home_handler.navigate_home
         
-        # 新增：提前初始化搜索处理器（确保 register_app_shortcuts 能访问到）
+        # ：提前初始化搜索处理器（确保 register_app_shortcuts 能访问到）
         from handlers.search_handler import SearchHandler
         self.search_handler = SearchHandler(self, self.file_list_updater)
-        # 新增：初始化文件操作处理器（确保 file_op_handler 属性存在）
+        # ：初始化文件操作处理器（确保 file_op_handler 属性存在）
         from handlers.file_operation import FileOperationHandler
         self.file_op_handler = FileOperationHandler(self)
         # 注册应用级快捷键（此时 search_handler 已初始化）
@@ -90,10 +89,10 @@ class FileManager(QMainWindow):
         
         # 确保文件列表对象名称设置
         self.file_list.setObjectName("file_list")
-        # 新增：启用文件列表的触摸事件接收（确保能响应单指滑动）
+        # ：启用文件列表的触摸事件接收（确保能响应单指滑动）
         self.file_list.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents, True)
         # print(f"[Debug] 文件列表触摸支持已启用: {self.file_list.testAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents)}")  # 调试确认
-        # 初始化拖放处理器（新增）
+        # 初始化拖放处理器（）
         self.drag_drop_handler = DragDropHandler(self.file_list, self)
         
 
@@ -103,7 +102,7 @@ class FileManager(QMainWindow):
         if self.bg_label:
             self.bg_manager.on_window_resized(self.size())
         
-        # 新增：调整悬浮按钮位置（保持右下角）
+        # ：调整悬浮按钮位置（保持右下角）
         if hasattr(self, 'settings_btn'):
             margin = 15  # 按钮与窗口边缘的边距
             btn_width = self.settings_btn.width()
@@ -125,7 +124,7 @@ class FileManager(QMainWindow):
         if self.current_path == '此电脑':
             return
         self.file_list_updater.update_filelist()
-    # 新增：处理文件夹大小更新的槽函数
+    # ：处理文件夹大小更新的槽函数
     def update_folder_size(self, item: QTreeWidgetItem, size: str):
         """更新文件列表项的大小显示"""
         if item is not None:

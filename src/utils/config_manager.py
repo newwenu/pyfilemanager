@@ -1,9 +1,9 @@
-# 新增：独立配置管理模块
+# ：独立配置管理模块
 import json
 import os
 
 class ConfigManager:
-    def __init__(self, config_path="config/setting1.json"):
+    def __init__(self, config_path):
         self.config_path = config_path
         self.config = self._load_config()
 

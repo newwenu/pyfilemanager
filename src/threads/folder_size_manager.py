@@ -1,8 +1,5 @@
 from PySide6.QtCore import QObject, Signal, Slot
-try:
-    from folder_size import FolderSizeThread 
-except:
-    from .folder_size import FolderSizeThread  
+from .folder_size import FolderSizeThread  
 
 from PySide6.QtWidgets import QTreeWidgetItem
 class FolderSizeManager(QObject):

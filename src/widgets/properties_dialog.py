@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton
-from PySide6.QtCore import Qt, QThread, Signal  # 新增线程相关导入
+from PySide6.QtCore import Qt, QThread, Signal  # 线程相关导入
 from datetime import datetime
 import win32api
 import win32con
@@ -7,7 +7,7 @@ import os
 from utils.file_utils import format_size
 from threads.folder_size import FolderSizeThread
 
-# 新增：异步计算文件夹大小的线程类
+# ：异步计算文件夹大小的线程类
 class SizeCalculationThread(QThread):
     # 改为传递格式化后的字符串
     size_calculated = Signal(str)  # 关键修改

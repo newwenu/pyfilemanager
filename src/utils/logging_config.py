@@ -1,7 +1,7 @@
 import logging
 import os
 from typing import Optional
-from logging.handlers import TimedRotatingFileHandler  # 新增导入
+from logging.handlers import TimedRotatingFileHandler  # 导入
 
 from utils.config_manager import ConfigManager
 
@@ -16,7 +16,7 @@ def init_logging(config_manager: Optional["ConfigManager"] = None):
     log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"
     
-    # 新增：从配置获取日志轮换策略（默认每天轮换，保留7天）
+    # ：从配置获取日志轮换策略（默认每天轮换，保留7天）
     rotate_when = config_manager.get("log_rotate_when", "midnight")  # 轮换时间点（midnight=每天0点）
     rotate_interval = config_manager.get("log_rotate_interval", 1)  # 轮换间隔（天）
     backup_count = config_manager.get("log_backup_count", 7)  # 保留最近7天的日志
