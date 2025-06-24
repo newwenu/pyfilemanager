@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from handlers.event_handlers import on_tree_select  # 新增导入
+from handlers.event_handlers import on_tree_select  # 导入
 
 def register_app_shortcuts(keyboard_handler, main_window):
     """通过主窗口实例集中注册快捷键（更易扩展）"""
@@ -13,7 +13,7 @@ def register_app_shortcuts(keyboard_handler, main_window):
         (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F5),
         main_window.update_filelist
     )
-    # 新增：注册Ctrl+F搜索快捷键（调用搜索处理器的显示方法）
+    # ：注册Ctrl+F搜索快捷键（调用搜索处理器的显示方法）
     keyboard_handler.register_shortcut(
         (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_F),
         main_window.search_handler._show_search_input  # 通过主窗口访问搜索处理器
@@ -25,7 +25,7 @@ def register_app_shortcuts(keyboard_handler, main_window):
         target_widget=main_window.file_list  # 替换为具体部件实例（文件列表）
     )
 
-    # 新增：导航树Enter键进入选中项（关键修改）
+    # ：导航树Enter键进入选中项（关键修改）
     def on_nav_tree_enter():
         current_item = main_window.nav_tree.currentItem()
         if current_item:  # 防御性检查（避免空指针）
@@ -37,7 +37,7 @@ def register_app_shortcuts(keyboard_handler, main_window):
         on_nav_tree_enter,  # 使用具名函数
         target_widget=main_window.nav_tree  # 替换为具体部件实例（导航树）
     )
-    # 新增无鼠标操作快捷键
+    # 无鼠标操作快捷键
     # 1. 新建文件夹（Ctrl+N）
     keyboard_handler.register_shortcut(
         (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_N),
@@ -116,7 +116,7 @@ def register_app_shortcuts(keyboard_handler, main_window):
         description="地址栏"  # 描述
 
     )
-    # 新增：注册 Ctrl+H 导航到 home 文件夹
+    # ：注册 Ctrl+H 导航到 home 文件夹
     keyboard_handler.register_shortcut(
         (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_H),
         main_window.navigate_home,  # 调用导航方法

@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt, QObject, QEvent,QPoint
 from PySide6.QtWidgets import QLineEdit
 from PySide6.QtGui import QKeyEvent
-from widgets.shortcut_tip import ShortcutTipWidget  # 导入新增的提示控件
+from widgets.shortcut_tip import ShortcutTipWidget  # 导入的提示控件
 
 class KeyboardHandler(QObject):
     def __init__(self, parent=None):
@@ -13,7 +13,7 @@ class KeyboardHandler(QObject):
 
     def register_shortcut(self, key_combination, callback, target_widget=None,target_p=None, is_focus=False, description=""):
         """
-        扩展注册方法，新增参数：
+        扩展注册方法，参数：
         - target_widget: 快捷键关联的目标部件（如导航树、文件列表）
         - description: 快捷键描述（如"导航树"）
         """
@@ -27,7 +27,7 @@ class KeyboardHandler(QObject):
         })
 
     def handle_event(self, obj, event):
-        """处理键盘事件（新增Alt键状态跟踪）"""
+        """处理键盘事件（Alt键状态跟踪）"""
         if event.type() == QKeyEvent.Type.KeyPress:
             # 检测Alt键按下
             if event.key() == Qt.Key.Key_Alt:
@@ -62,7 +62,7 @@ class KeyboardHandler(QObject):
             return  # Alt键未按下，无需显示
 
         main_window = self.parent()
-        # 新增：记录全局快捷键提示的垂直偏移量（初始为0）
+        # ：记录全局快捷键提示的垂直偏移量（初始为0）
         global_tip_offset = 0
         for cb in self.callbacks:
             if cb["is_focus"] and cb["description"]:
@@ -103,5 +103,5 @@ class KeyboardHandler(QObject):
             return True
         # 关键修改：仅拦截处理过的事件，其他事件传递给默认处理
         if event.type() == QEvent.TouchUpdate:
-            print("[KeyboardHandler] 拦截了 TouchUpdate 事件")  # 新增调试日志
+            print("[KeyboardHandler] 拦截了 TouchUpdate 事件")  # 调试日志
         return super().eventFilter(obj, event)

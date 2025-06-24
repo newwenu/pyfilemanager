@@ -1,7 +1,7 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QMessageBox, QMenu  # 新增 QMenu 导入（用于右键菜单）
+from PySide6.QtWidgets import QMessageBox, QMenu  #  QMenu 导入（用于右键菜单）
 import os
-from widgets.properties_dialog import FilePropertiesDialog  # 新增属性对话框导入（用于右键菜单的属性操作）
+from widgets.properties_dialog import FilePropertiesDialog  # 属性对话框导入（用于右键菜单的属性操作）
 from widgets.drive_list_manager import DriveListManager
 
 def setup_event_bindings(main_window, config):
@@ -20,11 +20,11 @@ def setup_event_bindings(main_window, config):
     # 地址栏回车事件
     main_window.address_bar.returnPressed.connect(lambda: on_address_change(main_window))
     # 文件列表双击事件
-    # 新增：绑定驱动器列表的双击事件到 on_item_double_click
+    # ：绑定驱动器列表的双击事件到 on_item_double_click
     main_window.drive_list.itemDoubleClicked.connect(
         lambda item, column: on_item_double_click(main_window, item, column)
     )
-    # 新增：绑定文件列表的双击事件到 on_item_double_click
+    # ：绑定文件列表的双击事件到 on_item_double_click
     main_window.file_list.itemDoubleClicked.connect(
         lambda item, column: on_item_double_click(main_window, item, column)
     )
@@ -105,7 +105,7 @@ def on_item_double_click(main_window, item, column):
         drive_path = item.data(0, Qt.UserRole)
         # print(f"双击驱动器: {drive_path}")
         main_window.current_path = drive_path
-        # 新增：切换到主文件列表（与 on_tree_select 逻辑一致）
+        # ：切换到主文件列表（与 on_tree_select 逻辑一致）
         main_window.right_stack.setCurrentWidget(main_window.file_list)
         main_window.update_filelist()
         main_window.address_bar.setText(drive_path)

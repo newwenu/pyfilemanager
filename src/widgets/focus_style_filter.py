@@ -9,7 +9,7 @@ class FocusStyleFilter(QObject):
         if event.type() == QEvent.Type.FocusIn:
             main_window = obj.window()
             if main_window.keyboard_handler.is_shortcut_focus:
-                # 应用高亮样式（继承初始样式+新增边框）
+                # 应用高亮样式（继承初始样式+边框）
                 obj.setStyleSheet(f"""
                     {self.initial_style}
                     QTreeWidget {{

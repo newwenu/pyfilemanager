@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtGui import (QPainter, QPainterPath, QColor, QPalette,
-                           QRadialGradient, QGradient)  # 新增渐变导入
+                           QRadialGradient, QGradient)  # 渐变导入
 from PySide6.QtCore import Qt, QEvent, QTimer, QPointF
 
 class AntiAliasRoundedButton(QPushButton):
@@ -102,7 +102,7 @@ class AntiAliasRoundedButton(QPushButton):
 
         painter.fillPath(path, base_bg)  # 现在path一定是QPainterPath对象
 
-        # 关键新增：绘制露珠高光（径向渐变）
+        # 关键：绘制露珠高光（径向渐变）
         if self._hovered:
             # 高光位置随波浪偏移量轻微浮动
             highlight_center = QPointF(

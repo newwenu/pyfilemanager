@@ -3,16 +3,16 @@ from PySide6.QtWidgets import QTreeWidgetItem, QTreeWidget
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QColor
 from utils.file_utils import get_file_type, format_size, should_show
-from dbload.database_manager import DatabaseManager
+from dbload_manager.database_manager import DatabaseManager
 import win32api
 import win32con
-from threads.file_list_loader import FileListLoaderManager  # 新增导入
+from threads.file_list_loader import FileListLoaderManager  # 导入
 
 class FileListUpdater:
     def __init__(self, fm):  # 仅传递主窗口实例
         self.fm = fm  # 持有主窗口引用
         self.folder_threads = {}  # 实例变量：在FileListUpdater内部维护线程字典
-        # 新增：初始化异步加载管理器
+        # ：初始化异步加载管理器
         self.file_list_loader = FileListLoaderManager(self.fm)
         self.file_list_loader.list_loaded.connect(self._update_filelist_from_thread)
         # 可选：连接进度信号（用于显示加载提示）
@@ -72,7 +72,7 @@ class FileListUpdater:
         try:
             # file_count, folder_count = self._process_directory_entries()  # 处理目录条目
             # self._update_status_bar(file_count, folder_count)  # 更新状态栏
-            # 新增：启动异步加载线程
+            # ：启动异步加载线程
             self.file_list_loader.start_load(self.current_path, self.show_hidden)
             
         except Exception as e:
@@ -99,13 +99,13 @@ class FileListUpdater:
         if path in self.folder_threads:  # 避免重复启动
             return
         thread = self.folder_size_manager.start_calculate(path, item)
-        if thread is not None:  # 新增：检查线程是否有效
+        if thread is not None:  # ：检查线程是否有效
             self.folder_threads[path] = thread  # 仅存储有效线程
     
     # def cleanup_threads(self):
     #     """供主窗口调用的线程清理接口"""
     #     for path, thread in list(self.folder_threads.items()):
-    #         if thread is not None:  # 新增：跳过无效线程
+    #         if thread is not None:  # ：跳过无效线程
     #             thread.stop()
     #             thread.wait()
     #             thread.deleteLater()
@@ -222,7 +222,7 @@ class FileListUpdater:
                 match_count += 1
             else:
                 item.setHidden(True)
-        return match_count  # 新增：返回匹配的文件数量
+        return match_count  # ：返回匹配的文件数量
 
     def clear_filter(self):
         """清除过滤，显示所有文件"""

@@ -1,11 +1,7 @@
-from PySide6.QtWidgets import QLineEdit, QHBoxLayout, QWidget, QPushButton, QDialog, QFormLayout, QComboBox, QLabel, QDateTimeEdit, QSpinBox # 新增导入
-from PySide6.QtCore import Qt,QDateTime
-from PySide6.QtGui import QAction
-import sys
+from PySide6.QtWidgets import QLineEdit, QHBoxLayout, QWidget, QPushButton, QDialog # 导入
 import os
 from time import sleep
 
-import subprocess
 from ctypes import windll
 from PySide6.QtCore import QProcess, QTimer
 from PySide6.QtWidgets import QVBoxLayout, QWidget
@@ -17,7 +13,7 @@ class SearchHandler:
         self.file_list_updater = file_list_updater
         self.search_input = None
         self.enter_pressed = False  # 标记是否通过回车触发搜索
-        self.is_visible = False  # 新增：记录当前是否可见
+        self.is_visible = False  # ：记录当前是否可见
         self._init_ui()
 
     def _show_search_input(self):
@@ -26,10 +22,10 @@ class SearchHandler:
             # 再次按下时隐藏并清除过滤
             self._hide_toolbar()
             self.search_input.setVisible(False)
-            self.file_list_updater.clear_filter()  # 新增：清除文件过滤
+            self.file_list_updater.clear_filter()  # ：清除文件过滤
             self.is_visible = False
             self.enter_pressed = False  # 重置标记
-            self.main_window.update_filelist()  # 新增：更新文件列表
+            self.main_window.update_filelist()  # ：更新文件列表
         else:
             # 首次按下时显示
             self.main_window.toolbar.setVisible(True)
@@ -55,7 +51,7 @@ class SearchHandler:
         self.search_input.returnPressed.connect(self._on_search)
         layout.addWidget(self.search_input)
         
-        # 新增：高级搜索按钮
+        # ：高级搜索按钮
         self.advanced_btn = QPushButton("高级搜索")
         self.advanced_btn.clicked.connect(self._open_advanced_search)  # 绑定点击事件
         layout.addWidget(self.advanced_btn)  # 添加到工具栏
@@ -69,7 +65,7 @@ class SearchHandler:
         keyword = self.search_input.text().strip()
         match_count = self.file_list_updater.filter_files(keyword)  # 获取匹配数量
         
-        # 新增：无结果时显示提示
+        # ：无结果时显示提示
         if match_count == 0:
             self.main_window.statusBar().showMessage("未找到匹配文件", 3000)  # 状态栏显示3秒
 
@@ -78,7 +74,7 @@ class SearchHandler:
         dialog = AdvancedSearchDialog(self.main_window)
         dialog.exec()
 
-# 新增：高级搜索对话框类
+# ：高级搜索对话框类
 class AdvancedSearchDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)

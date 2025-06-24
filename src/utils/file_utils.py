@@ -6,24 +6,49 @@ from PySide6.QtGui import QImage, QPainter, QFont, QColor, QPixmap, QIcon
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QRect
 
-def get_file_type(filename):
-    """优化后的文件类型判断"""
-    ext = os.path.splitext(filename)[1].lower()
-    
-    # 使用字典映射扩展名到文件类型
-    type_map = {
+# ：导入配置管理器
+from .config_manager import ConfigManager
+
+# 初始化配置管理器（使用默认路径或自定义路径）
+config_manager = ConfigManager("userdata\\file-icon_type\\file-icon_type.json")
+
+# 从配置中加载文件类型映射（默认使用原硬编码值）
+# 注意：JSON 中的列表会被转为 Python 列表，此处转换为元组保持与原逻辑一致
+type_map = {k: tuple(v) for k, v in config_manager.get(
+    "file_type_mapping",
+    {
         'text': ('.txt', '.md', '.rtf', '.odt'),
-        'document': ('.doc', '.docx'),  
+        'document': ('.doc', '.docx',),  
         'spreadsheet': ('.xls', '.xlsx'), 
         'image': ('.jpg', '.png', '.gif', '.jpeg', '.bmp', '.webp', '.svg'),
         'video': ('.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'),
         'music': ('.mp3', '.wav', '.flac', '.aac', '.ogg'),
-        'pdf': ('.pdf'),
+        'pdf': ('.pdf',),
         'archive': ('.zip', '.rar', '.7z', '.tar', '.gz'),
         'exe': ('.exe', '.msi', '.bat', '.cmd'),
         'shortcut': ('.lnk',),
         'code': ('.py', '.js', '.html', '.css', '.json', '.xml','.cpp','.c')
     }
+).items()}
+
+def get_file_type(filename):
+    """优化后的文件类型判断"""
+    ext = os.path.splitext(filename)[1].lower()
+    
+    # # 使用字典映射扩展名到文件类型
+    # type_map = {
+    #     'text': ('.txt', '.md', '.rtf', '.odt'),
+    #     'document': ('.doc', '.docx'),  
+    #     'spreadsheet': ('.xls', '.xlsx'), 
+    #     'image': ('.jpg', '.png', '.gif', '.jpeg', '.bmp', '.webp', '.svg'),
+    #     'video': ('.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'),
+    #     'music': ('.mp3', '.wav', '.flac', '.aac', '.ogg'),
+    #     'pdf': ('.pdf',),
+    #     'archive': ('.zip', '.rar', '.7z', '.tar', '.gz'),
+    #     'exe': ('.exe', '.msi', '.bat', '.cmd'),
+    #     'shortcut': ('.lnk',),
+    #     'code': ('.py', '.js', '.html', '.css', '.json', '.xml','.cpp','.c')
+    # }
     
     for file_type, exts in type_map.items():
         if ext in exts:
@@ -78,7 +103,7 @@ def get_icon_char(file_type):
         'music': '🎵',
         'pdf': '📑',
         'archive': '📦',
-        'exe': '⚙️',
+        'exe': '🚀',
         'code': '🛠️',
         'hardware': '💾',
         'document': '📄',
@@ -86,6 +111,7 @@ def get_icon_char(file_type):
         'font': '🔤',
         'database': '🗄️', 
         'shortcut': '🔗',
+        'config': '⚙️',
         'default': '📄'
     }
     return char_map.get(file_type, '?')

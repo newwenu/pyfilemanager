@@ -1,0 +1,16 @@
+{
+  "file_type_mapping": {
+    "text": [".txt", ".md", ".rtf", ".odt"],
+    "document": [".doc", ".docx"],
+    "spreadsheet": [".xls", ".xlsx"],
+    "image": [".jpg", ".png", ".gif", ".jpeg", ".bmp", ".webp", ".svg"],
+    "video": [".mp4", ".avi", ".mov", ".mkv", ".flv", ".wmv"],
+    "music": [".mp3", ".wav", ".flac", ".aac", ".ogg"],
+    "pdf": [".pdf"],
+    "archive": [".zip", ".rar", ".7z", ".tar", ".gz"],
+    "exe": [".exe", ".msi", ".bat", ".cmd"],
+    "shortcut": [".lnk"],
+    "config": [".ini", ".cfg", ".conf"],
+    "code": [".py", ".js", ".html", ".css", ".json", ".xml", ".cpp", ".c"]
+  }
+}
