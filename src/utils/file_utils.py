@@ -1,8 +1,11 @@
 import os
-import win32api
-import win32con
-from datetime import datetime
-from PySide6.QtGui import QImage, QPainter, QFont, QColor, QPixmap, QIcon
+import sys  # 新增：用于判断操作系统
+# 原有的 win32api/win32con 导入保留，但增加条件判断
+if sys.platform == "win32":
+    import win32api
+    import win32con
+
+from PySide6.QtGui import QImage, QPainter, QFont, QPixmap, QIcon
 from PySide6.QtCore import Qt
 from PySide6.QtCore import QRect
 
@@ -88,8 +91,13 @@ def should_show(entry, show_hidden):
     if show_hidden:
         return True
     try:
-        is_hidden = win32api.GetFileAttributes(entry.path) & win32con.FILE_ATTRIBUTE_HIDDEN
-        return not (entry.name.startswith('.') or is_hidden)
+        if sys.platform == "win32":
+            # Windows：使用 win32api 检测隐藏属性
+            is_hidden = win32api.GetFileAttributes(entry.path) & win32con.FILE_ATTRIBUTE_HIDDEN
+        else:
+            # Unix-like（macOS/Linux）：检测文件名是否以 . 开头
+            is_hidden = entry.name.startswith('.')
+        return not (entry.name.startswith('.') or is_hidden)  # 保留原逻辑中的 . 开头判断（兼容所有平台）
     except:
         return False
 

@@ -1,9 +1,8 @@
 from PySide6.QtWidgets import QTreeWidgetItem, QProgressBar
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QFont
-import win32api
+import sys
 from utils.file_utils import format_size  # 确保路径正确
-
 class DriveListManager:
     @classmethod
     def update_drive_list(cls, file_list, config, icons, status_bar, current_path):
@@ -12,7 +11,22 @@ class DriveListManager:
         file_list.setUniformRowHeights(False)  # 保持行高独立
         
         # 1. 基础配置读取
-        drives = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
+        # drives = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
+        if sys.platform == "win32":
+            import win32api
+            # Windows：使用 win32api 获取逻辑驱动器
+            drives = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
+        else:
+            # Unix-like（macOS/Linux）：获取常见挂载点目录
+            mount_points = []
+            if sys.platform == "darwin":  # macOS
+                mount_points = [os.path.join("/Volumes", d) for d in os.listdir("/Volumes") if not d.startswith(".")]
+            else:  # Linux
+                for base in ["/mnt", "/media"]:
+                    if os.path.exists(base):
+                        mount_points.extend([os.path.join(base, d) for d in os.listdir(base)])
+            drives = list(set(mount_points))  # 去重
+
         file_list.setHeaderLabels(["名称", "空间使用情况"])
         
         # 2. 样式配置（从config读取）
@@ -28,15 +42,25 @@ class DriveListManager:
         # 4. 遍历磁盘创建条目
         for drive in drives:
             # 磁盘信息获取（保持原有逻辑）
-            drive_letter = drive.strip('\\')
             try:
+                if sys.platform == "win32":
+                    # Windows：使用 win32api 获取卷标和空间
+                    free_bytes, total_bytes = win32api.GetDiskFreeSpaceEx(drive)[:2]
+                    vol_info = win32api.GetVolumeInformation(drive)
+                    display_name = f"{vol_info[0]} ({drive.strip('\\')})" if vol_info[0] else f"本地磁盘 ({drive.strip('\\')})"
+                else:
+                    # Unix-like：使用 shutil 跨平台获取空间，目录名作为卷标
+                    total_bytes, used_bytes, free_bytes = shutil.disk_usage(drive)
+                    display_name = os.path.basename(drive.rstrip('/'))  # 目录名作为显示名称
+                
+                drive_letter = drive.strip('\\')
                 free_bytes, total_bytes = win32api.GetDiskFreeSpaceEx(drive)[:2]
                 used_bytes = total_bytes - free_bytes
                 percent_used = (used_bytes / total_bytes * 100) if total_bytes > 0 else 0
                 total_str = format_size(total_bytes)
                 used_str = format_size(used_bytes)
-                vol_info = win32api.GetVolumeInformation(drive)
-                display_name = f"{vol_info[0]} ({drive_letter})" if vol_info[0] else f"本地磁盘 ({drive_letter})"
+                # vol_info = win32api.GetVolumeInformation(drive)
+                # display_name = f"{vol_info[0]} ({drive_letter})" if vol_info[0] else f"本地磁盘 ({drive_letter})"
             except:
                 display_name = f"未知驱动器 ({drive.strip('\\')})"
                 used_str = total_str = "容量未知"

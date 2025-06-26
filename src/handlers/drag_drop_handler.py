@@ -30,27 +30,26 @@ class DragDropHandler(QObject):
         # print(f"[DragDropHandler] 事件过滤器拦截事件类型: {event.type().name}")
         # if obj != self.file_list:
         #     print(f"[DragDropHandler] 接收到事件类型: {event.type().name}")
-        if obj == self.file_list:
-            if event.type() == QEvent.TouchBegin:
-                self._handle_touch_begin(event)
-                print("检测到触摸开始事件")
-            elif event.type() == QEvent.TouchUpdate:
-                self._handle_touch_update(event)
-            # 其他事件传递给默认处理
+        # if obj == self.file_list:
+        #     if event.type() == QEvent.TouchBegin:
+        #         self._handle_touch_begin(event)
+        #     elif event.type() == QEvent.TouchUpdate:
+        #         self._handle_touch_update(event)
+        #     # 其他事件传递给默认处理
         return super().eventFilter(obj, event)
     def _handle_touch_update(self, event):
         """处理触摸移动事件（原custom_touch_event的TouchUpdate逻辑）"""
-        print("[TouchEvent] 类型: TouchUpdate")  # 调试日志
+        # print("[TouchEvent] 类型: TouchUpdate")  # 调试日志
         touch_point = event.touchPoints()[0]
         current_pos = touch_point.pos().toPoint()
-        print(f"[TouchUpdate] 当前位置: {current_pos}, 已移动时间: {(time.time() - self.drag_start_time):.2f}秒")
+        # print(f"[TouchUpdate] 当前位置: {current_pos}, 已移动时间: {(time.time() - self.drag_start_time):.2f}秒")
 
         should_trigger = self._should_trigger_touch_drag(event)
-        print(f"[TouchUpdate] 是否触发拖放: {should_trigger}")
+        # print(f"[TouchUpdate] 是否触发拖放: {should_trigger}")
 
         if should_trigger:
             self._handle_touch_drag(event)
-            print("[TouchUpdate] 触发拖放，事件被拦截")
+            # print("[TouchUpdate] 触发拖放，事件被拦截")
             return  # 拦截事件（不传递给默认处理）
     def custom_mouse_press_event(self, event):
         """仅处理鼠标按下事件（QMouseEvent）"""
@@ -76,20 +75,20 @@ class DragDropHandler(QObject):
             # 调试：打印触摸移动信息
             touch_point = event.touchPoints()[0]
             current_pos = touch_point.pos().toPoint()
-            print(f"[TouchUpdate] 当前位置: {current_pos}, 已移动时间: {(time.time() - self.drag_start_time):.2f}秒")  # 调试日志
+            # print(f"[TouchUpdate] 当前位置: {current_pos}, 已移动时间: {(time.time() - self.drag_start_time):.2f}秒")  # 调试日志
 
             # 检查是否满足拖放条件（调试：打印判断结果）
             should_trigger = self._should_trigger_touch_drag(event)
-            print(f"[TouchUpdate] 是否触发拖放: {should_trigger}")  # 调试日志
+            # print(f"[TouchUpdate] 是否触发拖放: {should_trigger}")  # 调试日志
 
             if should_trigger:
                 self._handle_touch_drag(event)
-                print("[TouchUpdate] 触发拖放，事件被拦截")  # 调试日志
+                # print("[TouchUpdate] 触发拖放，事件被拦截")  # 调试日志
                 return  # 触发拖放后不再传递事件
         # 传递所有触摸事件给默认处理（包括TouchUpdate触发滚动）
         result = super(type(self.file_list), self.file_list).event(event)  # 显式获取事件处理结果
         # 调试：打印事件传递结果
-        print(f"[TouchEvent] 事件传递结果: {result}")  # 调试日志
+        # print(f"[TouchEvent] 事件传递结果: {result}")  # 调试日志
         return result
 
     def _should_trigger_touch_drag(self, event):
@@ -99,7 +98,7 @@ class DragDropHandler(QObject):
         time_elapsed = time.time() - self.drag_start_time
 
         # 调试：打印当前阈值和计算值
-        print(f"[TouchDragCheck] 移动距离: {move_distance}px（阈值: {QApplication.startDragDistance()*2}px）, 已耗时: {time_elapsed:.2f}秒（阈值: 0.5秒）")  # 调试日志
+        # print(f"[TouchDragCheck] 移动距离: {move_distance}px（阈值: {QApplication.startDragDistance()*2}px）, 已耗时: {time_elapsed:.2f}秒（阈值: 0.5秒）")  # 调试日志
 
         return (move_distance >= QApplication.startDragDistance() * 2 and
                 time_elapsed > 0.5 and
@@ -111,7 +110,7 @@ class DragDropHandler(QObject):
             self._handle_mouse_drag(event)
         else:
             # 关键修复：未满足拖放条件时，触发默认滚动逻辑
-            print("触摸滑动事件")
+            # print("触摸滑动事件")
             super(self.file_list.__class__, self.file_list).mouseMoveEvent(event)
 
     def _handle_mouse_drag(self, event):
@@ -164,7 +163,7 @@ class DragDropHandler(QObject):
     def _handle_touch_begin(self, event):
         """处理触摸开始事件（记录起始位置和时间）"""
         # 调试：打印触摸开始事件
-        print("[TouchEvent] 类型: TouchBegin")
+        # print("[TouchEvent] 类型: TouchBegin")
         # 记录触摸起始位置和时间（与原 custom_touch_event 的 TouchBegin 逻辑一致）
         touch_point = event.touchPoints()[0]
         self.drag_start_pos = touch_point.pos().toPoint()

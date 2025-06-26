@@ -88,6 +88,9 @@ class FileListUpdater:
 
     def _clean_old_threads(self):
         """清理未完成的文件夹大小计算线程（操作内部字典）"""
+        # 新增：停止并清理文件列表加载线程
+        if hasattr(self.file_list_loader, 'stop'):  # 假设 FileListLoaderManager 有 stop 方法
+            self.file_list_loader.stop_all()
         for path, thread in list(self.folder_threads.items()):
             thread.stop()
             thread.wait()
@@ -112,29 +115,29 @@ class FileListUpdater:
     #         del self.folder_threads[path]  # 无论是否有效都删除记录
     #     self.folder_threads.clear()
 
-    def _process_directory_entries(self):
-        """处理目录扫描及条目创建"""
-        file_count = folder_count = 0
-        with os.scandir(self.current_path) as entries:
-            for entry in entries:
-                if not should_show(entry, self.show_hidden):
-                    continue
+    # def _process_directory_entries(self):
+    #     """处理目录扫描及条目创建"""
+    #     file_count = folder_count = 0
+    #     with os.scandir(self.current_path) as entries:
+    #         for entry in entries:
+    #             if not should_show(entry, self.show_hidden):
+    #                 continue
                 
-                # 统计文件/文件夹数量
-                if entry.is_dir():
-                    folder_count += 1
-                else:
-                    file_count += 1
+    #             # 统计文件/文件夹数量
+    #             if entry.is_dir():
+    #                 folder_count += 1
+    #             else:
+    #                 file_count += 1
 
-                # 创建列表项并设置基础属性
-                item = self._create_list_item(entry)
-                self._apply_hidden_style(item, entry)  # 处理隐藏文件样式
+    #             # 创建列表项并设置基础属性
+    #             item = self._create_list_item(entry)
+    #             self._apply_hidden_style(item, entry)  # 处理隐藏文件样式
                 
-                # 处理文件夹大小异步计算
-                if entry.is_dir() and self.show_all_sizes:
-                    self._handle_folder_size_calculation(entry, item)
+    #             # 处理文件夹大小异步计算
+    #             if entry.is_dir() and self.show_all_sizes:
+    #                 self._handle_folder_size_calculation(entry, item)
         
-        return file_count, folder_count
+    #     return file_count, folder_count
 
     def _create_list_item(self, entry):
         """创建文件/文件夹列表项"""
@@ -147,16 +150,16 @@ class FileListUpdater:
         item.setIcon(0, self.icons.get(file_type, self.icons['default']))
         item.setToolTip(0, entry.name)
         return item
-    def _apply_hidden_style(self, item, entry):
-        """应用隐藏文件灰色显示样式"""
-        try:
-            is_hidden = win32api.GetFileAttributes(entry.path) & win32con.FILE_ATTRIBUTE_HIDDEN
-            if is_hidden:
-                # print("隐藏文件")
-                item.setForeground(0, QColor(Qt.GlobalColor.gray))
+    # def _apply_hidden_style(self, item, entry):
+    #     """应用隐藏文件灰色显示样式"""
+    #     try:
+    #         is_hidden = win32api.GetFileAttributes(entry.path) & win32con.FILE_ATTRIBUTE_HIDDEN
+    #         if is_hidden:
+    #             # print("隐藏文件")
+    #             item.setForeground(0, QColor(Qt.GlobalColor.gray))
 
-        except Exception:
-            pass
+    #     except Exception:
+    #         pass
     def _apply_hidden_style2(self, item, entry):
         """应用隐藏文件灰色显示样式"""
         try:
@@ -185,24 +188,24 @@ class FileListUpdater:
                 item.setText(1, cached_size)
         else:
             self.start_folder_size_thread(folder_path, item)
-    def _handle_folder_size_calculation(self, entry, item):
-        """处理文件夹大小异步计算及缓存"""
-        folder_path = entry.path
-        db_result = self.db.get_cached_size(folder_path)
+    # def _handle_folder_size_calculation(self, entry, item):
+    #     """处理文件夹大小异步计算及缓存"""
+    #     folder_path = entry.path
+    #     db_result = self.db.get_cached_size(folder_path)
 
-        if db_result:
-            cached_size, db_last_modified = db_result
-            try:
-                current_last_modified = os.path.getmtime(folder_path)
-            except Exception:
-                current_last_modified = 0
+    #     if db_result:
+    #         cached_size, db_last_modified = db_result
+    #         try:
+    #             current_last_modified = os.path.getmtime(folder_path)
+    #         except Exception:
+    #             current_last_modified = 0
             
-            if current_last_modified != db_last_modified:
-                self.start_folder_size_thread(folder_path, item)
-            else:
-                item.setText(1, cached_size)
-        else:
-            self.start_folder_size_thread(folder_path, item)
+    #         if current_last_modified != db_last_modified:
+    #             self.start_folder_size_thread(folder_path, item)
+    #         else:
+    #             item.setText(1, cached_size)
+    #     else:
+    #         self.start_folder_size_thread(folder_path, item)
 
     def _update_status_bar(self, file_count, folder_count):
         """更新状态栏信息（需依赖主窗口的 status_bar，可通过回调传递）"""
