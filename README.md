@@ -32,19 +32,8 @@ Put the png picture file you need in.
 #### video.png
 
 ## 依赖python库
-pyside6
-sqlite3
-os
-sys
-send2trash
-shutil
-time
-pathlib
-json
-win32api
-win32con
-win32gui
-logging
+requirements.txt
+
 
 ## 其他
 

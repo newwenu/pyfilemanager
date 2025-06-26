@@ -1,7 +1,3 @@
-import win32api
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QTreeWidgetItem, QProgressBar
-from PySide6.QtCore import Qt,QSize
 from widgets.drive_list_manager import DriveListManager
 try:
     from file_utils import format_size

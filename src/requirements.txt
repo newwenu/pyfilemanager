@@ -1,0 +1,6 @@
+# 跨平台核心依赖（所有系统都需要）
+PySide6>=6.6.0          # 图形界面框架（跨平台）
+send2trash>=1.8.2       # 文件删除到回收站（跨平台）
+
+# Windows 特定依赖（仅在 Windows 系统安装）
+pywin32>=306; sys_platform == "win32"  # Windows API 支持（仅 Windows 需要）

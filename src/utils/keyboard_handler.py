@@ -102,6 +102,6 @@ class KeyboardHandler(QObject):
         if self.handle_event(obj, event):
             return True
         # 关键修改：仅拦截处理过的事件，其他事件传递给默认处理
-        if event.type() == QEvent.TouchUpdate:
-            print("[KeyboardHandler] 拦截了 TouchUpdate 事件")  # 调试日志
+        # if event.type() == QEvent.TouchUpdate:
+        #     print("[KeyboardHandler] 拦截了 TouchUpdate 事件")  # 调试日志
         return super().eventFilter(obj, event)

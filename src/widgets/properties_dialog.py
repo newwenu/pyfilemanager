@@ -1,8 +1,6 @@
 from PySide6.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt, QThread, Signal  # 线程相关导入
 from datetime import datetime
-import win32api
-import win32con
 import os
 from utils.file_utils import format_size
 from threads.folder_size import FolderSizeThread
