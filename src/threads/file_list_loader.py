@@ -22,7 +22,7 @@ class FileListLoaderThread(QThread):
                         return
                     if not should_show(entry, self.show_hidden):  # 复用现有过滤逻辑
                         continue
-                    # 收集文件元数据（与 file_list_updater 逻辑一致）
+                    # 收集文件元数据（新增“类型”字段）
                     file_info = {
                         "name": entry.name,
                         "path": entry.path,

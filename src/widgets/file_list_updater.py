@@ -7,7 +7,8 @@ from dbload_manager.database_manager import DatabaseManager
 import win32api
 import win32con
 from threads.file_list_loader import FileListLoaderManager  # 导入
-
+from handlers.header_sort_handler import HeaderSortHandler  # 新增导入
+from utils.sort_utils import sort_file_list  # 新增：导入排序工具
 class FileListUpdater:
     def __init__(self, fm):  # 仅传递主窗口实例
         self.fm = fm  # 持有主窗口引用
@@ -17,7 +18,13 @@ class FileListUpdater:
         self.file_list_loader.list_loaded.connect(self._update_filelist_from_thread)
         # 可选：连接进度信号（用于显示加载提示）
         # self.file_list_loader.progress_updated.connect(self._update_progress)
-
+        # 新增：初始化排序处理器并连接表头事件
+        self.header_handler = HeaderSortHandler(self)
+        # self.fm.file_list.header().sectionClicked.connect(self.header_handler.on_header_clicked)
+        # self.fm.file_list.header().sectionDoubleClicked.connect(self.header_handler.on_header_double_clicked)
+        # 新增：缓存文件列表数据（用于排序）
+        self.file_list_data = []  
+        self.show_mtime = self.fm.config_manager.config.get("show_mtime", False)
 
     @property
     def file_list(self) -> QTreeWidget:
@@ -64,6 +71,7 @@ class FileListUpdater:
         """更新文件列表（核心功能）"""
         self.file_list.clear()
         self._setup_header_layout()  # 设置列布局
+        self.file_list_loader.stop_all()  # 关键修改：终止所有未完成的扫描线程
         self._clean_old_threads()    # 清理旧线程
         # 启动异步加载（传递当前路径和显示隐藏文件的配置）
         # self.file_list_loader.start_load(self.current_path, self.show_hidden)
@@ -82,9 +90,17 @@ class FileListUpdater:
     def _setup_header_layout(self):
         """设置文件列表列布局"""
         if not self.current_path == '此电脑':
-            self.file_list.setHeaderLabels(["名称", "大小"])
+            # self.file_list.setHeaderLabels(["名称", "大小"])
+            headers = ["名称", "大小"]
+            # ：根据配置添加时间列
+            if self.show_mtime:
+                headers.append("修改时间")
+                
+            self.file_list.setHeaderLabels(headers)
             self.file_list.setColumnWidth(0, 400)
             self.file_list.setColumnWidth(1, 100)
+            if self.show_mtime:
+                self.file_list.setColumnWidth(2, 150)
 
     def _clean_old_threads(self):
         """清理未完成的文件夹大小计算线程（操作内部字典）"""
@@ -139,17 +155,17 @@ class FileListUpdater:
         
     #     return file_count, folder_count
 
-    def _create_list_item(self, entry):
-        """创建文件/文件夹列表项"""
-        file_type = 'folder' if entry.is_dir() else get_file_type(entry.name)
-        size = '<文件夹>' if (entry.is_dir() and not self.show_all_sizes) else format_size(entry.stat().st_size)
-        if entry.is_dir() and self.show_all_sizes:
-            size = "计算中"  # 异步计算时显示占位符
+    # def _create_list_item(self, entry):
+    #     """创建文件/文件夹列表项"""
+    #     file_type = 'folder' if entry.is_dir() else get_file_type(entry.name)
+    #     size = '<文件夹>' if (entry.is_dir() and not self.show_all_sizes) else format_size(entry.stat().st_size)
+    #     if entry.is_dir() and self.show_all_sizes:
+    #         size = "计算中"  # 异步计算时显示占位符
         
-        item = QTreeWidgetItem(self.file_list, [entry.name, size])
-        item.setIcon(0, self.icons.get(file_type, self.icons['default']))
-        item.setToolTip(0, entry.name)
-        return item
+    #     item = QTreeWidgetItem(self.file_list, [entry.name, size])
+    #     item.setIcon(0, self.icons.get(file_type, self.icons['default']))
+    #     item.setToolTip(0, entry.name)
+    #     return item
     # def _apply_hidden_style(self, item, entry):
     #     """应用隐藏文件灰色显示样式"""
     #     try:
@@ -235,9 +251,22 @@ class FileListUpdater:
 
     def _update_filelist_from_thread(self, file_list: list):
         """异步扫描完成后更新文件列表"""
+        self.file_list_data = file_list  # 缓存数据
+        # 初始按默认方式排序（名称升序）
+        sorted_file_list = sort_file_list(
+            file_list,
+            sort_key="name",  # 按名称排序（可选"size"/"mtime"）
+            reverse=False
+        )
+        # sorted_file_list = sort_file_list(
+        # file_list, 
+        # sort_key="name",  # 按名称排序（可选"size"/"mtime"）
+        # reverse=False     # 升序（True为降序）
+        # )
+        # print(f"[Debug] 更新文件列表，包含 {len(self.sorted_file_list)} 项")
         self.file_list.clear()  # 清除临时提示
         file_count = folder_count = 0
-        for info in file_list:
+        for info in sorted_file_list:
             # 统计文件/文件夹数量（与原有逻辑一致）
             if info["is_dir"]:
                 folder_count += 1
@@ -255,6 +284,16 @@ class FileListUpdater:
             self.file_list.set_empty_hint("当前目录为空")
         else:
             self.file_list.set_empty_hint("")
+    def _update_filelist_from_sorted(self,filelist2:list):
+        if filelist2:
+            # self._setup_header_layout()
+            self.file_list.clear()
+            for info in filelist2:
+                # 创建列表项（复用 _create_list_item 逻辑）
+                item = self._create_list_item_from_info(info)
+                self._apply_hidden_style2(item, info["path"])  # 隐藏文件样式
+                # 关键新增：清空旧列表项（避免重复显示）
+                self.file_list.addTopLevelItem(item)
 
     def _create_list_item_from_info(self, info: dict):
         """适配异步扫描结果的列表项创建（复用原有逻辑）"""
@@ -265,4 +304,10 @@ class FileListUpdater:
         item = QTreeWidgetItem(self.file_list, [info["name"], size])
         item.setIcon(0, self.icons.get(file_type, self.icons['default']))
         item.setToolTip(0, info["name"])
+        if self.show_mtime:
+            import datetime
+            if info["mtime"]:
+                # 格式化时间戳为可读格式（如 "2024-06-01 12:34"）
+                mtime_str = datetime.datetime.fromtimestamp(info["mtime"]).strftime("%Y-%m-%d %H:%M")
+                item.setText(2, mtime_str)  # 设置第三列内容
         return item

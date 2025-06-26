@@ -10,7 +10,7 @@ from widgets.navigation_tree import init_navigation_tree
 # from PySide6.QtCore import QGraphicsEffect
 from widgets.focus_style_filter import FocusStyleFilter, install_focus_style_filter  # 导入
 from PySide6.QtWidgets import QGraphicsBlurEffect ,QGraphicsDropShadowEffect,QGraphicsEffect   # ：模糊效果组件
-from PySide6.QtGui import *
+from PySide6.QtGui import QPalette  # ：调色板用于设置按钮文字颜色
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtGui import QPainter, QPainterPath, QColor
 from PySide6.QtCore import Qt
@@ -23,6 +23,7 @@ def setup_ui(main_window, config):
     setup_top_widget(main_window, config)
     setup_status_bar(main_window)
     setup_splitter(main_window, config)
+    main_window.file_list.header().setSectionsClickable(True)  # 启用表头部分的单击事件
 
 def setup_window(main_window, config):
     """设置窗口基础属性"""
@@ -111,10 +112,12 @@ def setup_splitter(main_window, config):
     splitter.addWidget(right_stack)
     # 右侧文件列表（半透明背景）
     from widgets.custom_tree_widget import FileListWidget
-    main_window.file_list = FileListWidget()
+    # 主文件列表初始化（关键修改）
+    main_window.file_list = FileListWidget()  # 自定义的文件列表控件
+    main_window.file_list.setHeaderLabels(["名称", "大小"])  
     main_window.file_list.setObjectName("file_list")  # 添加对象名称标识
-    main_window.file_list.setHeaderLabels(["名称", "大小"])
-
+    # main_window.file_list.setHeaderLabels(["名称", "大小"])
+    # main_window.file_list.setColumnHidden(2, True)  # 隐藏“修改时间”列
     header = main_window.file_list.header()
     header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
     header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
@@ -172,7 +175,7 @@ def setup_splitter(main_window, config):
     # 初始化导航树（传递导航树实例和主窗口的图标集合）
     init_navigation_tree(main_window.nav_tree, main_window.icons)  # 修正：传递图标参数
     # 触发首次文件列表更新（使用主窗口已初始化的 file_list_updater）
-    main_window.update_filelist()  # 关键修改：调用主窗口的更新方法
+    # main_window.update_filelist()  # 关键修改：调用主窗口的更新方法
 
 
     # 安装文件列表焦点过滤器（调用统一函数）
