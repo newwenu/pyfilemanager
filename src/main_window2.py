@@ -9,7 +9,7 @@ try:
     from src.utils.keyboard_registry import register_app_shortcuts
     from src.widgets.file_list_updater import FileListUpdater
     from src.widgets.ui_setup import setup_ui 
-    from src.handlers.event_handlers import setup_event_bindings
+    from src.handlers.m_event_handlers import setup_event_bindings
     from src.image_manager.icon_manager import create_icon_set
     from src.image_manager.background_manager import BackgroundManager
     from src.Fileoperater.file_manager2 import FileManager2
@@ -22,7 +22,7 @@ except ImportError as e:
     from utils.keyboard_registry import register_app_shortcuts
     from widgets.file_list_updater import FileListUpdater
     from widgets.ui_setup import setup_ui 
-    from handlers.event_handlers import setup_event_bindings
+    from handlers.m_event_handlers import setup_event_bindings
     from image_manager.icon_manager import create_icon_set
     from image_manager.background_manager import BackgroundManager
     from Fileoperater.file_manager2 import FileManager2
@@ -53,13 +53,14 @@ class FileManager(QMainWindow):
         # ：初始化 SQLite 数据库
         db_path = "userdata\\db\\folder_size.db"  # 数据库文件路径（可从 config 配置）
         self.db=DatabaseManager(db_path)
-        # 初始化文件列表更新器（仅传递 self）
-        self.file_list_updater = FileListUpdater(self)
+        
         # 初始化键盘处理器
         self.keyboard_handler = KeyboardHandler(self)
         setup_ui(self, config)  # UI 初始化（内部创建 toolbar）
         setup_event_bindings(self,config)  # 事件绑定
-
+        # 初始化文件列表更新器
+        self.file_list_updater = FileListUpdater(self)
+        self.update_filelist()  # 初始加载文件列表
         self.bg_manager = BackgroundManager(self.bg_label, self.image_path)
         self.bg_manager.load_background()
         self.folder_size_manager = FolderSizeManager(self)
@@ -117,6 +118,9 @@ class FileManager(QMainWindow):
         """窗口关闭时清理所有未完成的线程"""
         self.folder_size_manager.stop_all_threads()
         self.db.close()
+        # 新增：终止文件列表加载线程
+        if hasattr(self.file_list_updater, 'file_list_loader'):
+            self.file_list_updater.file_list_loader.stop_all()
         super().closeEvent(event)
 
     def update_filelist(self):

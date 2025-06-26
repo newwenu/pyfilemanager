@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from handlers.event_handlers import on_tree_select  # 导入
+from handlers.m_event_handlers import on_tree_select  # 导入
 
 def register_app_shortcuts(keyboard_handler, main_window):
     """通过主窗口实例集中注册快捷键（更易扩展）"""
@@ -115,6 +115,18 @@ def register_app_shortcuts(keyboard_handler, main_window):
         is_focus=True,
         description="地址栏"  # 描述
 
+    )
+        # 新增：注册 Alt+X 切换修改时间列显隐
+    keyboard_handler.register_shortcut(
+        (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_X),  # 组合键：Alt+X
+        lambda: (
+            # 切换 FileListUpdater 中的 show_mtime 状态
+            setattr(main_window.file_list_updater, "show_mtime", not main_window.file_list_updater.show_mtime),
+            # 触发文件列表刷新（更新表头和内容）
+            main_window.file_list_updater.update_filelist()
+        ),
+        target_widget=None,  # 全局触发（不限制焦点部件）
+        description="切换修改时间列显隐"  # 可选：提示文本
     )
     # ：注册 Ctrl+H 导航到 home 文件夹
     keyboard_handler.register_shortcut(
