@@ -38,6 +38,7 @@ except ImportError as e:
 class FileManager(QMainWindow):
     def __init__(self, image_path, config_manager: ConfigManager):  # 依赖注入
         super().__init__()
+        self.last_updated_path = None  # ：上次更新的路径
         self.folder_threads = {}  # 用于存储每个文件夹的线程
         self.image_path = image_path
         self.current_path = os.path.expanduser('X:\\')
@@ -46,7 +47,8 @@ class FileManager(QMainWindow):
         self.config_manager = config_manager  # ：配置管理器
         # 初始化日志（通过配置管理器传递参数）
         init_logging(self.config_manager)
-        self.icons, self.icon_paths = create_icon_set()  # 使用独立图标管理函数
+        self.icons, self.icon_paths = create_icon_set("media",self.config_manager.get("file_list_icon_size")*2)  # 使用独立图标管理函数
+        self.drive_icons,self.icon_paths = create_icon_set("media",self.config_manager.get("drive_icon_size")*2)
         self.folder_size_index = {}  # ：索引库（路径: 大小）
         # ：初始化 SQLite 数据库
         db_path = "userdata\\db\\folder_size.db"  # 数据库文件路径（可从 config 配置）

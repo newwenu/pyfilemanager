@@ -40,17 +40,21 @@ def on_tree_select(main_window, item,config):
         DriveListManager.update_drive_list(
             file_list=main_window.drive_list,
             config=config,
-            icons=main_window.icons,
+            icons=main_window.drive_icons,
             status_bar=main_window.status_bar,
             current_path=main_window.current_path
         )
         # show_drives_in_filelist(main_window,config)  # 已通过导入补充该函数
         main_window.address_bar.setText("此电脑")
+        main_window.last_updated_path = '此电脑'
     else:
         main_window.current_path = path
-         # 切换回主文件列表并更新
-        main_window.right_stack.setCurrentWidget(main_window.file_list)
-        main_window.update_filelist()
+        if main_window.current_path != main_window.last_updated_path:
+            
+            # 切换回主文件列表并更新
+            main_window.right_stack.setCurrentWidget(main_window.file_list)
+            main_window.update_filelist()
+            main_window.last_updated_path = path
     main_window.address_bar.setText(main_window.current_path)
 
 def show_context_menu(main_window, pos):
@@ -124,6 +128,7 @@ def on_item_double_click(main_window, item, column):
         main_window.current_path = path
         main_window.address_bar.setText(path)
         main_window.update_filelist()
+        main_window.last_updated_path = path
     else:
         try:
             os.startfile(path)

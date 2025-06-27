@@ -19,6 +19,7 @@ from src.utils.logging_config import init_logging, get_logger
 class FileManager(QMainWindow):
     def __init__(self, image_path, config_manager):  # 依赖注入
         super().__init__()
+        self.last_updated_path = None  # ：上次更新的路径
         self.folder_threads = {}  # 用于存储每个文件夹的线程
         self.image_path = image_path
         self.current_path = os.path.expanduser('X:\\')
@@ -29,6 +30,7 @@ class FileManager(QMainWindow):
         # 初始化日志（通过配置管理器传递参数）
         init_logging(self.config_manager)
         self.icons, self.icon_paths = create_icon_set()  # 使用独立图标管理函数
+        self.drive_icons =self.icons
         self.folder_size_index = {}  # ：索引库（路径: 大小）
         # ：初始化 SQLite 数据库
         db_path = "userdata\\db\\folder_size.db"  # 数据库文件路径（可从 config 配置）

@@ -25,6 +25,7 @@ class FileListUpdater:
         # 新增：缓存文件列表数据（用于排序）
         self.file_list_data = []  
         self.show_mtime = self.fm.config_manager.config.get("show_mtime", False)
+        self.last_updated_path = None  # 新增：记录最后一次更新的路径
 
     @property
     def file_list(self) -> QTreeWidget:
@@ -69,10 +70,12 @@ class FileListUpdater:
 
     def update_filelist(self):
         """更新文件列表（核心功能）"""
+        self.file_list_loader.stop_all()  # 触发管理器清理
+        self._clean_old_threads()
         self.file_list.clear()
         self._setup_header_layout()  # 设置列布局
-        self.file_list_loader.stop_all()  # 关键修改：终止所有未完成的扫描线程
-        self._clean_old_threads()    # 清理旧线程
+        # self.file_list_loader.stop_all()  # 关键修改：终止所有未完成的扫描线程
+        # self._clean_old_threads()    # 清理旧线程
         # 启动异步加载（传递当前路径和显示隐藏文件的配置）
         # self.file_list_loader.start_load(self.current_path, self.show_hidden)
         # 可选：显示加载中的提示（如“加载中...”）
@@ -82,7 +85,7 @@ class FileListUpdater:
             # self._update_status_bar(file_count, folder_count)  # 更新状态栏
             # ：启动异步加载线程
             self.file_list_loader.start_load(self.current_path, self.show_hidden)
-            
+            self.last_updated_path = self.current_path
         except Exception as e:
             # 错误提示需依赖主窗口，可通过回调传递
             print(f"文件列表更新失败: {str(e)}")
@@ -104,9 +107,6 @@ class FileListUpdater:
 
     def _clean_old_threads(self):
         """清理未完成的文件夹大小计算线程（操作内部字典）"""
-        # 新增：停止并清理文件列表加载线程
-        if hasattr(self.file_list_loader, 'stop'):  # 假设 FileListLoaderManager 有 stop 方法
-            self.file_list_loader.stop_all()
         for path, thread in list(self.folder_threads.items()):
             thread.stop()
             thread.wait()

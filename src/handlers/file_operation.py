@@ -27,6 +27,7 @@ class FileOperationHandler:
             self.main_window.current_path = file_path
             self.main_window.address_bar.setText(file_path)
             self.main_window.update_filelist()
+            self.main_window.last_updated_path = file_path
         else:
             # 文件：用系统默认程序打开
             os.startfile(file_path)
