@@ -1,6 +1,6 @@
 from pathlib import Path
 from PySide6.QtGui import QIcon
-from utils.file_utils import get_icon_char, create_char_icon  # 假设工具函数已存在
+from utils.file_utils import get_icon_char, create_char_icon
 
 def create_icon_set(icon_dir: str = "media") -> tuple[dict, dict]:
     """创建图标集合，自动处理缺失图标回退到字符图标"""

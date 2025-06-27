@@ -1,21 +1,15 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QSplitter, QHBoxLayout,
                                QLineEdit, QPushButton, QCheckBox, QTreeWidget, QHeaderView,
-                               QAbstractItemView, QStatusBar,QStackedWidget)  # QStatusBar导入
+                               QAbstractItemView, QStatusBar,QStackedWidget,QPushButton,QGraphicsBlurEffect) 
 
-from PySide6.QtGui import QFont,QColor  # ：导入QFont用于字体设置
+from PySide6.QtGui import QFont,QColor ,QPalette # ：导入QFont用于字体设置
 from PySide6.QtCore import Qt, QSize
 from utils.file_utils import create_char_icon
 from widgets.navigation_tree import init_navigation_tree
-# from widgets.file_list_updater import FileListUpdater
-# from PySide6.QtCore import QGraphicsEffect
-from widgets.focus_style_filter import FocusStyleFilter, install_focus_style_filter  # 导入
-from PySide6.QtWidgets import QGraphicsBlurEffect ,QGraphicsDropShadowEffect,QGraphicsEffect   # ：模糊效果组件
-from PySide6.QtGui import QPalette  # ：调色板用于设置按钮文字颜色
-from PySide6.QtWidgets import QPushButton
-from PySide6.QtGui import QPainter, QPainterPath, QColor
-from PySide6.QtCore import Qt
+from widgets.focus_style_filter import install_focus_style_filter  # 导入
 from widgets.rounded_button import AntiAliasRoundedButton  # ：导入自定义按钮类
 
+from widgets.custom_tree_widget import FileListWidget
 def setup_ui(main_window, config):
     """主窗口 UI 初始化入口函数"""
     setup_window(main_window, config)
@@ -111,7 +105,6 @@ def setup_splitter(main_window, config):
     right_stack = QStackedWidget()
     splitter.addWidget(right_stack)
     # 右侧文件列表（半透明背景）
-    from widgets.custom_tree_widget import FileListWidget
     # 主文件列表初始化（关键修改）
     main_window.file_list = FileListWidget()  # 自定义的文件列表控件
     main_window.file_list.setHeaderLabels(["名称", "大小"])  

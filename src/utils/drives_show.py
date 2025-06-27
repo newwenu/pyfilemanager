@@ -1,8 +1,5 @@
 from widgets.drive_list_manager import DriveListManager
-try:
-    from file_utils import format_size
-except:
-    from utils.file_utils import format_size
+
 def show_drives_in_filelist(self, config):
     """驱动器列表入口函数（仅负责调用管理类）"""
     DriveListManager.update_drive_list(

@@ -2,7 +2,6 @@ import send2trash
 import os
 from PySide6.QtWidgets import QMessageBox
 from PySide6.QtWidgets import QInputDialog
-from PySide6.QtCore import Qt
 class FileManager2:
     def __init__(self):
         pass

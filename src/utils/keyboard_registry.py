@@ -1,6 +1,6 @@
 from PySide6.QtCore import Qt
 from handlers.m_event_handlers import on_tree_select  # 导入
-
+from PySide6.QtWidgets import QMessageBox
 def register_app_shortcuts(keyboard_handler, main_window):
     """通过主窗口实例集中注册快捷键（更易扩展）"""
     # 注册Alt+Left返回上级目录（直接访问主窗口方法）
@@ -68,7 +68,7 @@ def register_app_shortcuts(keyboard_handler, main_window):
         (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_V),
         main_window.file_manager3.paste_files
     )
-    from PySide6.QtWidgets import QMessageBox
+
     # 7. 删除（Del）
     keyboard_handler.register_shortcut(
         (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_Delete),

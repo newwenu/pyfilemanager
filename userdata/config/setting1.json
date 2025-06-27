@@ -1,0 +1,19 @@
+{
+    "window_title": "文件管理器",
+    "initial_size": [900, 600],  
+    "file_list_bg_alpha": 100,
+    "nav_tree_bg_alpha": 100,
+    "background_image": "src/media/background2.png",
+    "background_alpha": 150,
+    "font_size": 15,
+    "font_family": "Microsoft YaHei",
+    "nav_tree_icon_size": 60,
+    "file_list_icon_size": 40,
+    "drive_icon_size": 60,
+    "file_list_font_size": 14,
+    "nav_tree_font_size": 15,
+    "Drive_font_size": 13,
+    "show_hidden_files": false,
+    "show_all_sizes": false,
+    "statusbar_visible": true
+}

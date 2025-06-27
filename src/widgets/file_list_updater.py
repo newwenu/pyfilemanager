@@ -1,8 +1,8 @@
 import os
 from PySide6.QtWidgets import QTreeWidgetItem, QTreeWidget
-from PySide6.QtCore import Qt, QSize
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from utils.file_utils import get_file_type, format_size, should_show
+from utils.file_utils import get_file_type, format_size
 from dbload_manager.database_manager import DatabaseManager
 import win32api
 import win32con
