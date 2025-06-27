@@ -2,41 +2,22 @@ import sys
 import os
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem
-try:
-    from src.threads.folder_size import FolderSizeManager
-    from src.utils.keyboard_registry import register_app_shortcuts
-    from src.widgets.file_list_updater import FileListUpdater
-    from src.widgets.ui_setup import setup_ui 
-    from src.handlers.m_event_handlers import setup_event_bindings
-    from src.image_manager.icon_manager import create_icon_set
-    from src.image_manager.background_manager import BackgroundManager
-    from src.Fileoperater.file_manager2 import FileManager2
-    from src.Fileoperater.file_manager3 import FileManager3
-    from src.utils.keyboard_handler import KeyboardHandler
-    from src.handlers.drag_drop_handler import DragDropHandler  # 导入
-    from src.utils.logging_config import init_logging, get_logger
-except ImportError as e:
-    from threads.folder_size import FolderSizeManager
-    from utils.keyboard_registry import register_app_shortcuts
-    from widgets.file_list_updater import FileListUpdater
-    from widgets.ui_setup import setup_ui 
-    from handlers.m_event_handlers import setup_event_bindings
-    from image_manager.icon_manager import create_icon_set
-    from image_manager.background_manager import BackgroundManager
-    from Fileoperater.file_manager2 import FileManager2
-    from Fileoperater.file_manager3 import FileManager3
-    from utils.keyboard_handler import KeyboardHandler
-    from dbload_manager.database_manager import DatabaseManager
-    from handlers.drag_drop_handler import DragDropHandler  # 导入
-    from utils.config_manager import ConfigManager
-    # 原配置读取逻辑替换为：
-    config_manager = ConfigManager("userdata/config/setting1.json")
-    config = config_manager.config  # 或通过 config_manager.get() 获取具体值
-    from utils.logging_config import init_logging, get_logger  # 导入
-
+from src.threads.folder_size import FolderSizeManager
+from src.utils.keyboard_registry import register_app_shortcuts
+from src.widgets.file_list_updater import FileListUpdater
+from src.widgets.ui_setup import setup_ui 
+from src.handlers.m_event_handlers import setup_event_bindings
+from src.image_manager.icon_manager import create_icon_set
+from src.image_manager.background_manager import BackgroundManager
+from src.Fileoperater.file_manager2 import FileManager2
+from src.Fileoperater.file_manager3 import FileManager3
+from src.utils.keyboard_handler import KeyboardHandler
+from src.dbload_manager.database_manager import DatabaseManager
+from src.handlers.drag_drop_handler import DragDropHandler  # 导入
+from src.utils.logging_config import init_logging, get_logger
 
 class FileManager(QMainWindow):
-    def __init__(self, image_path, config_manager: ConfigManager):  # 依赖注入
+    def __init__(self, image_path, config_manager):  # 依赖注入
         super().__init__()
         self.folder_threads = {}  # 用于存储每个文件夹的线程
         self.image_path = image_path
@@ -44,6 +25,7 @@ class FileManager(QMainWindow):
         self.show_hidden = False  # ：控制是否显示隐藏文件
         self.show_all_sizes = False # ：显示所有大小
         self.config_manager = config_manager  # ：配置管理器
+        config = self.config_manager.config  # ：获取配置
         # 初始化日志（通过配置管理器传递参数）
         init_logging(self.config_manager)
         self.icons, self.icon_paths = create_icon_set()  # 使用独立图标管理函数
@@ -141,9 +123,9 @@ class FileManager(QMainWindow):
             self.current_path = parent_path
             self.address_bar.setText(self.current_path)
             self.update_filelist()
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    # 创建主窗口
-    window = FileManager("media/background2.png", config_manager)
-    window.show()
-    sys.exit(app.exec())
+# if __name__ == '__main__':
+#     app = QApplication(sys.argv)
+#     # 创建主窗口
+#     window = FileManager("media/background2.png", config_manager)
+#     window.show()
+#     sys.exit(app.exec())

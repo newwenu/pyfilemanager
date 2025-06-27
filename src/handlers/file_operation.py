@@ -1,7 +1,5 @@
 from PySide6.QtWidgets import QTreeWidgetItem
 import os
-from PySide6.QtCore import Qt
-from utils.keyboard_handler import KeyboardHandler
 
 class FileOperationHandler:
     """独立处理打开操作的模块（解耦UI与业务逻辑）"""

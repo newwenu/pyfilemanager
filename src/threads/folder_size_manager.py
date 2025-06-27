@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Signal
 from .folder_size import FolderSizeThread  
 
 from PySide6.QtWidgets import QTreeWidgetItem

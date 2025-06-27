@@ -1,5 +1,4 @@
 import os
-from PySide6.QtWidgets import QMessageBox
 
 class HomeHandler:
     def __init__(self, main_window):
