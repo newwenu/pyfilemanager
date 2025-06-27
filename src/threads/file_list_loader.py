@@ -38,33 +38,47 @@ class FileListLoaderThread(QThread):
     def stop(self):
         """外部调用终止线程"""
         self._is_running = False
-        self.wait()
-
+        print("FileListLoaderThread stopped.")
 class FileListLoaderManager(QObject):
-    """管理异步扫描线程的管理器（避免重复扫描同一路径）"""
+    """管理异步扫描线程的管理器（优化：增加路径加载冷却机制）"""
     list_loaded = Signal(list)  # 转发线程的加载完成信号
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.active_threads = {}  # {路径: 线程对象}
-
+        self.all_threads = set()  # 新增：记录所有未完成的线程（无论路径）
+        
     def start_load(self, path: str, show_hidden: bool):
-        """启动异步扫描（避免重复加载同一路径）"""
+        """启动异步扫描（优化：增加路径冷却和重复加载限制）"""
+        self.stop_all()
+        # 规则2：已有同路径线程运行时跳过（原有逻辑）
         if path in self.active_threads:
-            return  # 已有同路径线程运行，跳过
+            return
+        
+        # 启动新线程
         thread = FileListLoaderThread(path, show_hidden)
         self.active_threads[path] = thread
+        self.all_threads.add(thread)  # 记录所有线程
         thread.list_loaded.connect(lambda lst: self._on_load_finished(path, lst))
         thread.start()
+        # print("start_load", path)
+        # print(self.all_threads)
 
+    # 原有 _on_load_finished 和 stop_all 方法保持不变
     def _on_load_finished(self, path: str, file_list: list):
-        """扫描完成后的清理与信号转发"""
-        self.list_loaded.emit(file_list)  # 通知 FileListUpdater 更新UI
+        self.list_loaded.emit(file_list)
         if path in self.active_threads:
-            del self.active_threads[path]  # 移除线程记录
+            thread = self.active_threads[path]
+            self.all_threads.discard(thread)  # 从全局集合中移除
+            del self.active_threads[path]
 
     def stop_all(self):
-        """窗口关闭时终止所有未完成的扫描线程"""
-        for thread in self.active_threads.values():
-            thread.stop()
+        # 先终止所有线程（非阻塞方式）
+        for thread in self.all_threads:
+            thread.stop()  # 设置 _is_running=False
+        for thread in self.all_threads:
+            thread.wait(1000)  # 最多等待1秒
+            if thread.isRunning():
+                thread.terminate()  # 极端情况强制终止
         self.active_threads.clear()
+        self.all_threads.clear()

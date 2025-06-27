@@ -9,3 +9,4 @@ app.log*
 toolbox/Everythingsearch/Everything.ini
 main_window2-*
 *.ini
+*copy.py

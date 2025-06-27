@@ -166,7 +166,7 @@ def setup_splitter(main_window, config):
     main_window.main_layout.addWidget(splitter)
     splitter.setSizes([int(main_window.width() * 0.35), int(main_window.width() * 0.65)])
     # 初始化导航树（传递导航树实例和主窗口的图标集合）
-    init_navigation_tree(main_window.nav_tree, main_window.icons)  # 修正：传递图标参数
+    init_navigation_tree(main_window.nav_tree, main_window.drive_icons)  # 传递图标参数
     # 触发首次文件列表更新（使用主窗口已初始化的 file_list_updater）
     # main_window.update_filelist()  # 关键修改：调用主窗口的更新方法
 

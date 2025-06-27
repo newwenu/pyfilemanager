@@ -15,9 +15,8 @@ from .config_manager import ConfigManager
 # 初始化配置管理器（使用默认路径或自定义路径）
 config_manager = ConfigManager("userdata\\file-icon_type\\file-icon_type.json")
 
-# 从配置中加载文件类型映射（默认使用原硬编码值）
-# 注意：JSON 中的列表会被转为 Python 列表，此处转换为元组保持与原逻辑一致
-type_map = {k: tuple(v) for k, v in config_manager.get(
+# 从配置中加载文件类型映射（优化：构建扩展名反向字典）
+_original_type_map = {k: tuple(v) for k, v in config_manager.get(
     "file_type_mapping",
     {
         'text': ('.txt', '.md', '.rtf', '.odt'),
@@ -34,29 +33,16 @@ type_map = {k: tuple(v) for k, v in config_manager.get(
     }
 ).items()}
 
+# 构建扩展名到类型的反向字典（优化核心）
+EXT_TO_TYPE = {}
+for file_type, exts in _original_type_map.items():
+    for ext in exts:
+        EXT_TO_TYPE[ext.lower()] = file_type  # 统一小写处理扩展名
+
 def get_file_type(filename):
-    """优化后的文件类型判断"""
+    """优化后的文件类型判断（O(1)时间复杂度）"""
     ext = os.path.splitext(filename)[1].lower()
-    
-    # # 使用字典映射扩展名到文件类型
-    # type_map = {
-    #     'text': ('.txt', '.md', '.rtf', '.odt'),
-    #     'document': ('.doc', '.docx'),  
-    #     'spreadsheet': ('.xls', '.xlsx'), 
-    #     'image': ('.jpg', '.png', '.gif', '.jpeg', '.bmp', '.webp', '.svg'),
-    #     'video': ('.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'),
-    #     'music': ('.mp3', '.wav', '.flac', '.aac', '.ogg'),
-    #     'pdf': ('.pdf',),
-    #     'archive': ('.zip', '.rar', '.7z', '.tar', '.gz'),
-    #     'exe': ('.exe', '.msi', '.bat', '.cmd'),
-    #     'shortcut': ('.lnk',),
-    #     'code': ('.py', '.js', '.html', '.css', '.json', '.xml','.cpp','.c')
-    # }
-    
-    for file_type, exts in type_map.items():
-        if ext in exts:
-            return file_type
-    return 'default'
+    return EXT_TO_TYPE.get(ext, 'default')  # 直接通过字典查找
 
 def format_size(size):
     """格式化文件大小"""
