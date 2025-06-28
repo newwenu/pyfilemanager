@@ -26,7 +26,7 @@ class HeaderSortHandler:
         # print(f"点击了第{logical_index}列")
         # 校验列是否在映射中（避免无效列）
         if logical_index not in self.column_to_key:
-            print("无效的排序列")
+            # print("无效的排序列")
             return
         # print(f"当前列：{self.current_sort_column}，当前键：{self.current_sort_key}，当前方向：{self.current_reverse}")
         # 更新当前排序列和键

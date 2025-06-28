@@ -2,7 +2,8 @@ import os
 import sys  # 新增：用于判断操作系统
 from PySide6.QtWidgets import QTreeWidgetItem
 from PySide6.QtCore import Qt
-
+from utils.logging_config import get_logger
+logger = get_logger(__name__)
 # Windows 系统保留 win32api 导入，其他系统不导入
 if sys.platform == "win32":
     import win32api
@@ -41,7 +42,7 @@ def init_navigation_tree(nav_tree, icons):
                 drive_label = os.path.basename(drive.rstrip('/'))
             display_name = drive_label
         except Exception as e:
-            print(f"获取驱动器信息失败: {drive}, 错误: {str(e)}")
+            logger.error(f"获取驱动器信息失败: {drive}, 错误: {str(e)}")
             display_name = f"未知驱动器 ({os.path.basename(drive)})"
 
         # 创建树项（调整显示文本）

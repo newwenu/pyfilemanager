@@ -45,7 +45,7 @@ class FolderSizeThread(QThread):
                     file_path = os.path.join(root, file)
                     total_size += max(os.path.getsize(file_path), 0)  # 防御性编程（避免负数）
                 except PermissionError:
-                    print(f"无权限访问文件: {file_path}")
+                    logger.error(f"无权限访问文件: {file_path}")
                 except Exception as e:
                     logger.error(f"计算文件 {file_path} 大小时出错：{str(e)}")
                     pass
@@ -65,11 +65,9 @@ class FolderSizeManager(QObject):
         if path in self.threads:
             logger.debug(f"路径 {path} 已存在计算线程，跳过重复启动")  # 使用模块日志
             return  # 已存在同路径线程，跳过
-        if not os.path.isdir(path):
-            logger.error(f"路径 {path} 不是有效文件夹，无法启动计算")  # 使用模块日志
-            return  # 路径无效，不启动线程
         if not os.access(path, os.R_OK):
             logger.error(f"路径 {path} 无读取权限，无法启动计算")  # 使用模块日志
+            self.size_updated.emit(item, "无读取权限")
             return
         if not os.access(path, os.W_OK):
             logger.error(f"路径 {path} 无写入权限，无法启动计算")  # 使用模块日志

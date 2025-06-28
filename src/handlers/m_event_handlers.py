@@ -3,7 +3,8 @@ from PySide6.QtWidgets import QMessageBox, QMenu  #  QMenu 导入（用于右键
 import os
 from widgets.properties_dialog import FilePropertiesDialog  # 属性对话框导入（用于右键菜单的属性操作）
 from widgets.drive_list_manager import DriveListManager
-
+from utils.logging_config import get_logger
+logger = get_logger(__name__)
 def setup_event_bindings(main_window, config):
     """设置事件绑定（完整实现）"""
     # 导航树选择事件
@@ -18,7 +19,7 @@ def setup_event_bindings(main_window, config):
     # 显示所有大小复选框状态变化
     main_window.cb_show_sizes.stateChanged.connect(lambda state: toggle_show_all_sizes(main_window, state))
     # 地址栏回车事件
-    main_window.address_bar.returnPressed.connect(lambda: on_address_change(main_window))
+    main_window.address_bar.returnPressed.connect(lambda: on_address_change(main_window,config))
     # 文件列表双击事件
     # ：绑定驱动器列表的双击事件到 on_item_double_click
     main_window.drive_list.itemDoubleClicked.connect(
@@ -94,9 +95,18 @@ def toggle_show_all_sizes(main_window, state):
     main_window.show_all_sizes = state == Qt.CheckState.Checked.value
     main_window.update_filelist()
 
-def on_address_change(main_window):
+def on_address_change(main_window,config):
     """地址栏回车事件"""
+    if main_window.address_bar.text() == '此电脑':
+        # print(main_window.nav_tree.topLevelItem(0))
+        on_tree_select(main_window, main_window.nav_tree.topLevelItem(0), config)
+        return
     new_path = main_window.address_bar.text()
+    if main_window.address_bar.text().startswith('home'):
+        new_path = os.path.join(__file__,"..//..//home")
+        new_path = os.path.normpath(new_path)
+        # print(new_path)
+
     if os.path.exists(new_path):
         main_window.current_path = new_path
         main_window.update_filelist()
@@ -122,6 +132,7 @@ def on_item_double_click(main_window, item, column):
         return
     if not os.access(os.path.dirname(path), os.W_OK):
         show_error(main_window, "错误", "无写入权限")
+        main_window.status_bar.showMessage("无写入权限", 2000)
         return
 
     if os.path.isdir(path):
@@ -148,4 +159,5 @@ def handle_delete_file(main_window):
 def show_error(main_window, title, msg):
     """错误提示"""
     QMessageBox.critical(main_window, title, msg)
+    logger.error(f"{title}: {msg}")
     print(f"{title}: {msg}")
