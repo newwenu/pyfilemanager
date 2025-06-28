@@ -9,6 +9,8 @@ import win32con
 from threads.file_list_loader import FileListLoaderManager  # 导入
 from handlers.header_sort_handler import HeaderSortHandler  # 新增导入
 from utils.sort_utils import sort_file_list  # 新增：导入排序工具
+from utils.logging_config import get_logger
+logger = get_logger(__name__)
 class FileListUpdater:
     def __init__(self, fm):  # 仅传递主窗口实例
         self.fm = fm  # 持有主窗口引用
@@ -16,6 +18,7 @@ class FileListUpdater:
         # ：初始化异步加载管理器
         self.file_list_loader = FileListLoaderManager(self.fm)
         self.file_list_loader.list_loaded.connect(self._update_filelist_from_thread)
+        self.file_list_loader.error_occurred.connect(self._handle_scan_error)  # 新增错误处理
         # 可选：连接进度信号（用于显示加载提示）
         # self.file_list_loader.progress_updated.connect(self._update_progress)
         # 新增：初始化排序处理器并连接表头事件
@@ -26,7 +29,9 @@ class FileListUpdater:
         self.file_list_data = []  
         self.show_mtime = self.fm.config_manager.config.get("show_mtime", False)
         self.last_updated_path = None  # 新增：记录最后一次更新的路径
+        self.error_occurred = False
 
+        
     @property
     def file_list(self) -> QTreeWidget:
         """通过主窗口直接获取文件列表控件"""
@@ -70,7 +75,7 @@ class FileListUpdater:
 
     def update_filelist(self):
         """更新文件列表（核心功能）"""
-        self.file_list_loader.stop_all()  # 触发管理器清理
+        # self.file_list_loader.stop_all()  # 触发管理器清理
         self._clean_old_threads()
         self.file_list.clear()
         self._setup_header_layout()  # 设置列布局
@@ -86,9 +91,12 @@ class FileListUpdater:
             # ：启动异步加载线程
             self.file_list_loader.start_load(self.current_path, self.show_hidden)
             self.last_updated_path = self.current_path
+            self.error_occurred = False
         except Exception as e:
-            # 错误提示需依赖主窗口，可通过回调传递
-            print(f"文件列表更新失败: {str(e)}")
+            # 错误提示
+            # print(f"文件列表更新失败: {str(e)}")
+            logger.error(f"文件列表更新失败: {str(e)}")
+            self.fm.status_bar.showMessage(f"文件列表更新失败: {str(e)}", 5000)
 
     def _setup_header_layout(self):
         """设置文件列表列布局"""
@@ -179,7 +187,13 @@ class FileListUpdater:
     def _apply_hidden_style2(self, item, entry):
         """应用隐藏文件灰色显示样式"""
         try:
-            is_hidden = win32api.GetFileAttributes(entry) & win32con.FILE_ATTRIBUTE_HIDDEN
+            if sys.platform == "win32":
+                # Windows系统：使用文件属性判断
+                is_hidden = win32api.GetFileAttributes(entry) & win32con.FILE_ATTRIBUTE_HIDDEN
+            else:
+                # Unix-like系统（Linux/macOS）：检查文件名是否以.开头
+                is_hidden = os.path.basename(entry).startswith('.')
+            # is_hidden = win32api.GetFileAttributes(entry) & win32con.FILE_ATTRIBUTE_HIDDEN
             if is_hidden:
                 # print("隐藏文件")
                 item.setForeground(0, QColor(Qt.GlobalColor.gray))
@@ -225,6 +239,8 @@ class FileListUpdater:
 
     def _update_status_bar(self, file_count, folder_count):
         """更新状态栏信息（需依赖主窗口的 status_bar，可通过回调传递）"""
+        if self.error_occurred:
+            return
         total = file_count + folder_count
         status_text = f"{self.current_path} | 总数：{total} | 文件：{file_count} | 文件夹：{folder_count} | 选中：{len(self.file_list.selectedItems())}"
         # 触发状态栏更新回调（需主窗口实现）
@@ -311,3 +327,8 @@ class FileListUpdater:
                 mtime_str = datetime.datetime.fromtimestamp(info["mtime"]).strftime("%Y-%m-%d %H:%M")
                 item.setText(2, mtime_str)  # 设置第三列内容
         return item
+    def _handle_scan_error(self, error_msg):
+        # 显示错误提示 （通过status_bar）
+        # print(f"[Debug] 扫描错误：{error_msg}")
+        self.fm.status_bar.showMessage(f"当前目录扫描错误：{error_msg}")
+        self.error_occurred = True

@@ -2,7 +2,8 @@ import os
 from PySide6.QtGui import QImage, QPixmap, Qt
 from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QLabel
-
+from utils.logging_config import get_logger
+logger = get_logger(__name__)
 class BackgroundManager:
     def __init__(self, bg_label: QLabel, image_path: str):
         self.bg_label = bg_label  # 背景标签控件
@@ -14,7 +15,7 @@ class BackgroundManager:
     def load_background(self):
         """加载并初始化背景图片（优化版：含尺寸缓存）"""
         if not os.path.exists(self.image_path):
-            print(f"警告：背景图片路径不存在：{self.image_path}")
+            logger.warning(f"背景图片路径不存在：{self.image_path}")
             return
 
         try:
@@ -23,7 +24,8 @@ class BackgroundManager:
             # 初始调整大小（触发首次渲染）
             self._update_background_size(self.bg_label.parent().size())
         except Exception as e:
-            print(f"加载背景图片失败: {e}")
+            logger.error(f"加载背景图片失败: {e}")
+            # print(f"加载背景图片失败: {e}")
 
     def on_window_resized(self, new_size: QSize):
         """窗口大小变化时更新背景图片尺寸（优化版：仅尺寸变化时渲染）"""
