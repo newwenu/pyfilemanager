@@ -1,7 +1,6 @@
-import sys
 import os
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem
+from PySide6.QtWidgets import QMainWindow, QTreeWidgetItem
 from src.threads.folder_size import FolderSizeManager
 from src.utils.keyboard_registry import register_app_shortcuts
 from src.widgets.file_list_updater import FileListUpdater
@@ -14,7 +13,7 @@ from src.Fileoperater.file_manager3 import FileManager3
 from src.utils.keyboard_handler import KeyboardHandler
 from src.dbload_manager.database_manager import DatabaseManager
 from src.handlers.drag_drop_handler import DragDropHandler  # 导入
-from src.utils.logging_config import init_logging, get_logger
+from src.utils.logging_config import init_logging
 
 class FileManager(QMainWindow):
     def __init__(self, image_path, config_manager):  # 依赖注入

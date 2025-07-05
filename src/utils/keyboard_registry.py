@@ -54,19 +54,22 @@ def register_app_shortcuts(keyboard_handler, main_window):
     # 3. 复制（Ctrl+C）
     keyboard_handler.register_shortcut(
         (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_C),
-        lambda: main_window.file_manager3.copy_files(main_window.file_list.selectedItems())
+        lambda: main_window.file_manager3.copy_files(main_window.file_list.selectedItems()),
+        target_widget=main_window.file_list
     )
 
     # 4. 剪切（Ctrl+X）
     keyboard_handler.register_shortcut(
         (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_X),
-        lambda: main_window.file_manager3.cut_files(main_window.file_list.selectedItems())
+        lambda: main_window.file_manager3.cut_files(main_window.file_list.selectedItems()),
+        target_widget=main_window.file_list
     )
 
     # 5. 粘贴（Ctrl+V）
     keyboard_handler.register_shortcut(
         (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_V),
-        main_window.file_manager3.paste_files
+        main_window.file_manager3.paste_files,
+        target_widget=main_window.file_list
     )
 
     # 7. 删除（Del）
@@ -79,13 +82,14 @@ def register_app_shortcuts(keyboard_handler, main_window):
             selected_items=main_window.file_list.selectedItems(),
             update_callback=main_window.update_filelist,
             error_callback=lambda title, msg: QMessageBox.critical(main_window, title, msg)
-        )
+        ),
+        target_widget=main_window.file_list
     )
-
     # 6. 重命名（F2）
     keyboard_handler.register_shortcut(
         (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F2),
-        lambda: main_window.file_manager3.rename_item(main_window.file_list.currentItem())
+        lambda: main_window.file_manager3.rename_item(main_window.file_list.currentItem()),
+        target_widget=main_window.file_list
     )
     # Alt+N 聚焦导航树（传递导航树部件和描述）
     keyboard_handler.register_shortcut(

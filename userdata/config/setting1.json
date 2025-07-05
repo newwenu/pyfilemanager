@@ -3,7 +3,7 @@
     "initial_size": [900, 600],  
     "file_list_bg_alpha": 100,
     "nav_tree_bg_alpha": 100,
-    "background_image": "src/media/background2.png",
+    "background_image": "media/background2.png",
     "background_alpha": 150,
     "font_size": 15,
     "font_family": "Microsoft YaHei",
