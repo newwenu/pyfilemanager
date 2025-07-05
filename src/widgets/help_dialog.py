@@ -58,6 +58,9 @@ class ShortcutHelpDialog(QDialog):
 
         # 遍历快捷键数据，逐行添加内容
         for row, shortcut in enumerate(shortcuts or [], start=3):  # 从第3行开始
+            # 过滤掉Return键的热键
+            if shortcut["keys"][1] == Qt.Key.Key_Return:
+                continue  # 跳过当前快捷键条目
             # 功能说明标签
             desc = QLabel(shortcut["description"])
             desc.setStyleSheet("color: white;")
