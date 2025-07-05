@@ -9,11 +9,11 @@ Put the png picture file you need in.
 ### 0zh中文
 ## 注意
 有一些功能不能用，因为一些文件没有提交。
-#### 自定义图片，需要添加一个叫“media”文件夹，在src目录下
+#### 自定义图片，需要添加一个叫“media”文件夹，在src目录下（或者运行一遍main,这将自动创建）
  在里面放入你需要的png图片文件
 
 ## png name / 图片名称
-#### necessary ones
+#### 背景
 #### background2.png </for main_window2/>
 #### background.png </for main />
 
@@ -44,5 +44,3 @@ requirements.txt
 目前仅支持windows系统
 
 目前在win11上测试正常
-
-有一点问题，在快速切换文件列表时，会出现线程崩溃 --已解决
