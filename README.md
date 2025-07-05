@@ -2,7 +2,7 @@
 ### 0en英文
 ## Attention
 Some function can not work,because I didn't commit some files.
-Personalized picture, please add a folder named "media" at src,when you are try to run code.
+Personalized picture, please add a folder named "media" at src,or run main.pyw.
 Put the png picture file you need in.
 
 
