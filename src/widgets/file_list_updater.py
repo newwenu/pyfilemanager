@@ -103,9 +103,14 @@ class FileListUpdater:
             # self.file_list.setHeaderLabels(["名称", "大小"])
             headers = ["名称", "大小"]
             # ：根据配置添加时间列
-            if self.show_mtime:
+            # if self.show_mtime:
+            show_mtime = self.show_mtime  # 明确获取当前状态
+            if show_mtime:
                 headers.append("修改时间")
-                
+                # headers.append("修改时间")
+            # 关键修复：显式控制第三列（索引2）的可见性
+            self.file_list.setColumnHidden(2, not show_mtime)  # 隐藏条件：show_mtime为False时隐藏
+        
             self.file_list.setHeaderLabels(headers)
             self.file_list.setColumnWidth(0, 400)
             self.file_list.setColumnWidth(1, 100)

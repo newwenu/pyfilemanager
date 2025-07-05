@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QMessageBox
 
 # 新增：定义默认快捷键配置列表（数据接口）
 default_shortcuts = [
+    # 高频导航操作（用户最常用）
     {
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_Left),
         "callback": lambda main_window: main_window.navigate_parent_dir,
@@ -11,44 +12,28 @@ default_shortcuts = [
         "description": "返回上级目录"
     },
     {
-        "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F5),
-        "callback": lambda main_window: main_window.update_filelist,
+        "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_H),
+        "callback": lambda main_window: main_window.navigate_home,
         "target_widget": None,
-        "description": "刷新界面"
+        "is_focus": True,
+        "description": "导航到主页"
     },
-    {
-        "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_F),
-        "callback": lambda main_window: main_window.search_handler._show_search_input,
-        "target_widget": None,
-        "description": "显示搜索输入框"
-    },
+
+    # 文件核心操作（打开/复制/剪切/粘贴/删除）
     {
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_Return),
         "callback": lambda main_window: main_window.file_op_handler.open_selected_item,
-        "target_widget": lambda main_window: main_window.file_list,  # 延迟获取部件实例
+        "target_widget": lambda main_window: main_window.file_list,
         "description": "打开选中项（文件列表）"
     },
     {
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_Return),
-        "callback": lambda main_window: lambda: (  # 修正：返回可调用的lambda，而非立即执行
+        "callback": lambda main_window: lambda: (
             on_tree_select(main_window, main_window.nav_tree.currentItem(), main_window.config_manager.config) 
-            if main_window.nav_tree.currentItem()  # 新增：防御性检查（避免空指针）
-            else None
+            if main_window.nav_tree.currentItem() else None
         ),
-        "target_widget": lambda main_window: main_window.nav_tree,  # 延迟获取部件实例
+        "target_widget": lambda main_window: main_window.nav_tree,
         "description": "打开选中项（导航树）"
-    },
-    {
-        "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_N),
-        "callback": lambda main_window: main_window.btn_new_folder.click,
-        "target_widget": None,
-        "description": "新建文件夹"
-    },
-    {
-        "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_A),
-        "callback": lambda main_window: main_window.file_list.selectAll,
-        "target_widget": lambda main_window: main_window.file_list,
-        "description": "全选文件"
     },
     {
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_C),
@@ -86,6 +71,14 @@ default_shortcuts = [
         "target_widget": lambda main_window: main_window.file_list,
         "description": "删除选中文件"
     },
+
+    # 编辑辅助操作（全选/重命名/新建）
+    {
+        "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_A),
+        "callback": lambda main_window: main_window.file_list.selectAll,
+        "target_widget": lambda main_window: main_window.file_list,
+        "description": "全选文件"
+    },
     {
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F2),
         "callback": lambda main_window: (
@@ -93,6 +86,26 @@ default_shortcuts = [
         ),
         "target_widget": lambda main_window: main_window.file_list,
         "description": "重命名选中项"
+    },
+    {
+        "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_N),
+        "callback": lambda main_window: main_window.btn_new_folder.click,
+        "target_widget": None,
+        "description": "新建文件夹"
+    },
+
+    # 界面控制操作（刷新/搜索/聚焦/列显隐）
+    {
+        "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F5),
+        "callback": lambda main_window: main_window.update_filelist,
+        "target_widget": None,
+        "description": "刷新界面"
+    },
+    {
+        "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_F),
+        "callback": lambda main_window: main_window.search_handler._show_search_input,
+        "target_widget": None,
+        "description": "显示搜索输入框"
     },
     {
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_N),
@@ -129,18 +142,13 @@ default_shortcuts = [
         "target_widget": None,
         "description": "切换修改时间列显隐"
     },
+
+    # 辅助功能（帮助文档）
     {
-        "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_H),
-        "callback": lambda main_window: main_window.navigate_home,
+        "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F1),
+        "callback": lambda main_window: main_window.toggle_shortcut_help_dialog,
         "target_widget": None,
-        "is_focus": True,
-        "description": "导航到主页"
-    },
-    {
-        "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F1),  # F1键（无修饰符）
-        "callback": lambda main_window: main_window.toggle_shortcut_help_dialog,  # 绑定主窗口方法
-        "target_widget": None,  # 无特定目标部件
-        "description": "打开/关闭快捷键帮助对话框"  # 功能描述
+        "description": "打开/关闭快捷键帮助对话框"
     }
 ]
 

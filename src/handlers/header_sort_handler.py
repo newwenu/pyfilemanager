@@ -122,7 +122,8 @@ class HeaderSortHandler:
         if not hasattr(self, 'original_header_titles'):
             self.original_header_titles = [self.file_list_header.model().headerData(i, Qt.Horizontal) for i in range(self.file_list_header.count())]
 
-        if self.current_sort_column < len(self.original_header_titles):
+        if self.current_sort_column < len(self.column_to_key):
+            # print(f"当前排序列：{self.current_sort_column}, 原始标题：{self.original_header_titles}")
             original_title = self.original_header_titles[self.current_sort_column]
         else:
             original_title = "未知列"  # 兜底处理越界情况

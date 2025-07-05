@@ -53,6 +53,9 @@ class FileManager2:
         # 执行删除
         for item in selected_items:
             path = os.path.join(current_path, item.text(0))
+            # 关键修复：规范化路径（消除..等相对符号）
+            path = os.path.normpath(os.path.join(current_path, item.text(0)))  # 新增 normpath 处理
+            # print(f"准备删除: {path}")  # 调试输出
             try:
                 send2trash.send2trash(path)
             except Exception as e:
