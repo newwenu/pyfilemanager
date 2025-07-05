@@ -2,22 +2,10 @@ import sys
 import os
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem
-try:
-    from src.threads.folder_size import FolderSizeManager
-    from src.utils.keyboard_registry import register_app_shortcuts
-    from src.widgets.file_list_updater import FileListUpdater
-    from src.widgets.ui_setup import setup_ui 
-    from src.handlers.m_event_handlers import setup_event_bindings
-    from src.image_manager.icon_manager import create_icon_set
-    from src.image_manager.background_manager import BackgroundManager
-    from src.Fileoperater.file_manager2 import FileManager2
-    from src.Fileoperater.file_manager3 import FileManager3
-    from src.utils.keyboard_handler import KeyboardHandler
-    from src.handlers.drag_drop_handler import DragDropHandler  # 导入
-    from src.utils.logging_config import init_logging, get_logger
-except ImportError as e:
+if True:
+    #导入
     from threads.folder_size import FolderSizeManager
-    from utils.keyboard_registry import register_app_shortcuts
+    from utils.keyboard_registry2 import register_app_shortcuts,default_shortcuts
     from widgets.file_list_updater import FileListUpdater
     from widgets.ui_setup import setup_ui 
     from handlers.m_event_handlers import setup_event_bindings
@@ -29,10 +17,14 @@ except ImportError as e:
     from dbload_manager.database_manager import DatabaseManager
     from handlers.drag_drop_handler import DragDropHandler  # 导入
     from utils.config_manager import ConfigManager
-    # 原配置读取逻辑替换为：
+    from utils.logging_config import init_logging
+    from handlers.help_dialog_handler import HelpDialogHandler
+    from handlers.file_operation import FileOperationHandler
+    from handlers.search_handler import SearchHandler
+    # 配置读取逻辑为：
     config_manager = ConfigManager("userdata/config/setting1.json")
-    config = config_manager.config  # 或通过 config_manager.get() 获取具体值
-    from utils.logging_config import init_logging, get_logger  # 导入
+    config = config_manager.config
+
 
 
 class FileManager(QMainWindow):
@@ -74,12 +66,12 @@ class FileManager(QMainWindow):
         # 将导航方法绑定到主窗口（可选，方便快捷键调用）
         self.navigate_home = self.home_handler.navigate_home
         
-        # ：提前初始化搜索处理器（确保 register_app_shortcuts 能访问到）
-        from handlers.search_handler import SearchHandler
+        # ：提前初始化搜索处理器
         self.search_handler = SearchHandler(self, self.file_list_updater)
-        # ：初始化文件操作处理器（确保 file_op_handler 属性存在）
-        from handlers.file_operation import FileOperationHandler
+        # ：初始化文件操作处理器
         self.file_op_handler = FileOperationHandler(self)
+        # ：初始化帮助对话框处理器
+        self.help_dialog_handler = HelpDialogHandler(self)
         # 注册应用级快捷键（此时 search_handler 已初始化）
         register_app_shortcuts(self.keyboard_handler, self)
 
@@ -95,7 +87,8 @@ class FileManager(QMainWindow):
         # print(f"[Debug] 文件列表触摸支持已启用: {self.file_list.testAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents)}")  # 调试确认
         # 初始化拖放处理器（）
         self.drag_drop_handler = DragDropHandler(self.file_list, self)
-        
+        self.shortcut_help_dialog = None
+
 
 
     def resizeEvent(self, event):
@@ -143,6 +136,11 @@ class FileManager(QMainWindow):
             self.current_path = parent_path
             self.address_bar.setText(self.current_path)
             self.update_filelist()
+        
+    # 新增：切换快捷键帮助对话框的显示/隐藏
+    def toggle_shortcut_help_dialog(self):
+        self.help_dialog_handler.toggle_dialog()
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     # 创建主窗口

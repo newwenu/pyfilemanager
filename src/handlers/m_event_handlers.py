@@ -128,10 +128,10 @@ def on_item_double_click(main_window, item, column):
     path = os.path.normpath(os.path.join(main_window.current_path, filename))
 
     if not os.path.exists(path):
-        show_error(main_window, "错误", f"路径不存在: {path}")
+        # show_error(main_window, "错误", f"路径不存在: {path}")
         return
     if not os.access(os.path.dirname(path), os.W_OK):
-        show_error(main_window, "错误", "无写入权限")
+        # show_error(main_window, "错误", "无写入权限")
         main_window.status_bar.showMessage("无写入权限", 2000)
         return
 

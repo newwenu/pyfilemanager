@@ -15,8 +15,6 @@ class FileOperationHandler:
                 return
             item = selected_items[0]
 
-        # 从列表项中获取文件路径（假设路径存储在 UserRole 中）
-        # file_path = item.data(0, Qt.UserRole)
         filename = item.text(0)
         file_path = os.path.normpath(os.path.join(self.main_window.current_path, filename))
         if not file_path:

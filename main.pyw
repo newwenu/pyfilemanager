@@ -1,7 +1,7 @@
 import sys
 sys.path.append("src")
 from PySide6.QtWidgets import QApplication
-from src.main_window1 import FileManager
+from src.main_window2 import FileManager
 from src.utils.config_manager import ConfigManager  # 导入
 
 

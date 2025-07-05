@@ -1,11 +1,10 @@
 import os
+import sys
 from PySide6.QtWidgets import QTreeWidgetItem, QTreeWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from utils.file_utils import get_file_type, format_size
 from dbload_manager.database_manager import DatabaseManager
-import win32api
-import win32con
 from threads.file_list_loader import FileListLoaderManager  # 导入
 from handlers.header_sort_handler import HeaderSortHandler  # 新增导入
 from utils.sort_utils import sort_file_list  # 新增：导入排序工具
@@ -188,6 +187,8 @@ class FileListUpdater:
         """应用隐藏文件灰色显示样式"""
         try:
             if sys.platform == "win32":
+                import win32api
+                import win32con
                 # Windows系统：使用文件属性判断
                 is_hidden = win32api.GetFileAttributes(entry) & win32con.FILE_ATTRIBUTE_HIDDEN
             else:
@@ -301,6 +302,10 @@ class FileListUpdater:
         else:
             self.file_list.set_empty_hint("")
     def _update_filelist_from_sorted(self,filelist2:list):
+        """
+        从排序后的文件列表更新UI，用于过滤后的显示。
+        :param filelist2: 已排序的文件列表数据
+        """
         if filelist2:
             # self._setup_header_layout()
             self.file_list.clear()
@@ -308,6 +313,9 @@ class FileListUpdater:
                 # 创建列表项（复用 _create_list_item 逻辑）
                 item = self._create_list_item_from_info(info)
                 self._apply_hidden_style2(item, info["path"])  # 隐藏文件样式
+                # 新增：处理文件夹大小计算（与_update_filelist_from_thread逻辑一致）
+                if info["is_dir"] and self.show_all_sizes:
+                    self._handle_folder_size_calculation2(info["path"], item)
                 # 关键新增：清空旧列表项（避免重复显示）
                 self.file_list.addTopLevelItem(item)
 
