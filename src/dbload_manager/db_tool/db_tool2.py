@@ -64,8 +64,8 @@ def delete_single_record(db_path, target_path):
 
 def main():
     parser = argparse.ArgumentParser(description="文件夹大小数据库管理工具")
-    parser.add_argument("--db-path", default="userdata/db/folder_size.db", 
-                       help="数据库文件路径（默认：userdata/db/folder_size.db）")
+    parser.add_argument("--db-path", default="../userdata/db/folder_size.db", 
+                       help="数据库文件路径（默认：../userdata/db/folder_size.db）")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--list", action="store_true", help="列出所有缓存记录")
     group.add_argument("--clean", type=int, nargs="?", const=-1, 
