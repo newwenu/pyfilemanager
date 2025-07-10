@@ -21,9 +21,7 @@ if True:
     from handlers.help_dialog_handler import HelpDialogHandler
     from handlers.file_operation import FileOperationHandler
     from handlers.search_handler import SearchHandler
-    # 配置读取逻辑为：
-    config_manager = ConfigManager("userdata/config/setting1.json")
-    config = config_manager.config
+    
 
 
 
@@ -37,6 +35,7 @@ class FileManager(QMainWindow):
         self.show_hidden = False  # ：控制是否显示隐藏文件
         self.show_all_sizes = False # ：显示所有大小
         self.config_manager = config_manager  # ：配置管理器
+        config = config_manager.config
         # 初始化日志（通过配置管理器传递参数）
         init_logging(self.config_manager)
         self.icons, self.icon_paths = create_icon_set("media",self.config_manager.get("file_list_icon_size")*2)  # 使用独立图标管理函数
@@ -142,6 +141,8 @@ class FileManager(QMainWindow):
         self.help_dialog_handler.toggle_dialog()
 
 if __name__ == '__main__':
+    # 配置读取逻辑为：
+    config_manager = ConfigManager("userdata/config/setting1.json")
     app = QApplication(sys.argv)
     # 创建主窗口
     window = FileManager("media/background2.png", config_manager)
