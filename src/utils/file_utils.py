@@ -10,7 +10,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtCore import QRect
 
 # ：导入配置管理器
-from .config_manager import ConfigManager
+from config_manager.config_manager import ConfigManager
+
 
 # 初始化配置管理器（使用默认路径或自定义路径）
 config_manager = ConfigManager("userdata\\file-icon_type\\file-icon_type.json")
