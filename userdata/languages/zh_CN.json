@@ -1,5 +1,6 @@
 {
     "window_title": "极简文件管理器",
+    "folder": "文件夹",
     "address_bar_placeholder": "输入路径...",
     "btn_new_folder": "新建文件夹",
     "cb_hidden": "显示隐藏文件",
@@ -10,9 +11,22 @@
     "file_list_size": "大小",
     "drive_list_name": "名称",
     "drive_list_usage": "使用情况",
+    "default_drive_label": "本地磁盘",
+    "unknown_drive_format": "未知驱动器 ({drive})",
+    "unknown_capacity": "容量未知",
+    "drive_count_format": "{current_path} | 驱动器总数: {count}",
     "file_list_mtime": "修改时间",
     "calculating": "计算中...",
     "empty_dir_hint": "当前目录为空",
     "status_text": "{current_path} | 总计: {total} | 文件: {file_count} | 文件夹: {folder_count} | 已选: {selected_count}",
-    "scan_error": "目录扫描错误: {error_msg}"
+    "scan_error": "目录扫描错误: {error_msg}",
+    "this_pc": "此电脑",
+    "local_disk_format": "本地磁盘 ({drive_letter})",
+    "shortcut_dialog_title": "快捷键帮助",
+    "shortcut_header": "常用快捷键",
+    "shortcut_desc": "功能说明",
+    "shortcut_key": "快捷键",
+    "search_placeholder": "搜索文件...",
+    "search_no_results": "未找到结果",
+    "advanced_btn": "高级搜索"
 }

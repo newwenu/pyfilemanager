@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QScrollArea, QWidget, QGridLayout, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-
+from utils.keyboard_registry2 import shortcut_translations
 def qt_keys_to_string(keys):
     """将 Qt 键枚举元组转换为用户可读的字符串（如 (AltModifier, Key_Left) → "Alt+Left"）"""
     modifier, key = keys
@@ -16,9 +16,11 @@ def qt_keys_to_string(keys):
     return f"{modifier_str}+{key_str}" if modifier_str else key_str
 
 class ShortcutHelpDialog(QDialog):
-    def __init__(self, parent=None, shortcuts=None):
+    def __init__(self, parent=None, shortcuts=None, lang: str = "zh_CN"):  # 新增语言参数
         super().__init__(parent)
-        self.setWindowTitle("快捷键说明")
+        translation=parent.translation
+        # self.setWindowTitle("快捷键说明")
+        self.setWindowTitle(translation.get("shortcut_dialog_title", "快捷键说明"))
         # 修复：添加 Qt.WindowCloseButtonHint 显示关闭按钮
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.CustomizeWindowHint | Qt.WindowCloseButtonHint)
         self.setFixedSize(400, 500)  # 固定尺寸
@@ -35,7 +37,8 @@ class ShortcutHelpDialog(QDialog):
         grid_layout.setVerticalSpacing(10)    # 行间距
 
         # 添加表头（说明列和快捷键列）
-        title_label = QLabel("常用快捷键说明")
+        # title_label = QLabel("常用快捷键说明")
+        title_label = QLabel(translation.get("shortcut_header", "常用快捷键说明"))
         title_font = QFont()
         title_font.setPointSize(16)
         title_font.setBold(True)
@@ -49,8 +52,10 @@ class ShortcutHelpDialog(QDialog):
         grid_layout.addWidget(separator, 1, 0, 1, 2)
 
         # 添加列标题
-        desc_label = QLabel("功能说明")
-        key_label = QLabel("快捷键")
+        # desc_label = QLabel("功能说明")
+        # key_label = QLabel("快捷键")
+        desc_label = QLabel(translation.get("shortcut_desc", "功能说明"))
+        key_label = QLabel(translation.get("shortcut_key", "快捷键"))
         desc_label.setStyleSheet("color: white; font-weight: bold;")
         key_label.setStyleSheet("color: white; font-weight: bold;")
         grid_layout.addWidget(desc_label, 2, 0)
@@ -61,8 +66,14 @@ class ShortcutHelpDialog(QDialog):
             # 过滤掉Return键的热键
             if shortcut["keys"][1] == Qt.Key.Key_Return:
                 continue  # 跳过当前快捷键条目
+            # 根据语言选择描述
+            if lang == "en_US":
+                desc_text = shortcut_translations.get(shortcut["description"], shortcut["description"])
+            else:
+                desc_text = shortcut["description"]  # 默认使用中文
+            
             # 功能说明标签
-            desc = QLabel(shortcut["description"])
+            desc = QLabel(desc_text)  # 使用翻译后的描述
             desc.setStyleSheet("color: white;")
             desc.setWordWrap(True)  # 长文本换行
             

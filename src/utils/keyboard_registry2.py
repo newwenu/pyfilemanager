@@ -15,7 +15,6 @@ default_shortcuts = [
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_H),
         "callback": lambda main_window: main_window.navigate_home,
         "target_widget": None,
-        "is_focus": True,
         "description": "导航到主页"
     },
 
@@ -149,12 +148,44 @@ default_shortcuts = [
         "callback": lambda main_window: main_window.toggle_shortcut_help_dialog,
         "target_widget": None,
         "description": "打开/关闭快捷键帮助对话框"
+    },
+    {
+        "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_L),
+        "callback": lambda main_window: lambda: main_window.language_manager.set_language(
+            "en_US" if main_window.language_manager.lang == "zh_CN" else "zh_CN"
+        ),
+        "target_widget": None,
+        "description": "切换语言（重启生效）"
     }
 ]
 
-def register_app_shortcuts(keyboard_handler, main_window):
+# 新增：翻译映射字典（键为原中文描述，值为其他语言的翻译）
+shortcut_translations = {
+    "返回上级目录": "Go to parent directory",
+    "导航到主页": "Navigate to home",
+    "打开选中项（文件列表）": "Open selected item (file list)",
+    "打开选中项（导航树）": "Open selected item (navigation tree)",
+    "复制选中文件": "Copy selected files",
+    "剪切选中文件": "Cut selected files",
+    "粘贴文件": "Paste files",
+    "删除选中文件": "Delete selected files",
+    "全选文件": "Select all files",
+    "重命名选中项": "Rename selected item",
+    "新建文件夹": "New folder",
+    "刷新界面": "Refresh interface",
+    "显示搜索输入框": "Show search input",
+    "聚焦导航树": "Focus navigation tree",
+    "聚焦文件列表": "Focus file list",
+    "聚焦地址栏": "Focus address bar",
+    "切换修改时间列显隐": "Toggle modified time column",
+    "打开/关闭快捷键帮助对话框": "Open/close shortcut help dialog",
+    "切换语言（重启生效）": "Switch language (restart effective)"
+}
+
+def register_app_shortcuts(keyboard_handler, main_window):  # 新增语言参数
     """通过主窗口实例集中注册快捷键（更易扩展）"""
     # 遍历默认快捷键配置列表完成注册
+    lang=main_window.lang
     for shortcut in default_shortcuts:
         # 处理需要延迟获取的部件实例（如target_widget/target_p）
         target_widget = shortcut.get("target_widget")(main_window) if callable(shortcut.get("target_widget")) else shortcut.get("target_widget")
@@ -162,11 +193,17 @@ def register_app_shortcuts(keyboard_handler, main_window):
         # 处理回调函数（需要绑定main_window实例）
         callback = shortcut["callback"](main_window) if callable(shortcut["callback"]) else shortcut["callback"]
         
+        # 根据语言选择描述（中文直接使用原description，其他语言从映射获取）
+        if lang == "en_US":
+            description = shortcut_translations.get(shortcut["description"], shortcut["description"])
+        else:
+            description = shortcut["description"]  # 默认使用中文
+            
         keyboard_handler.register_shortcut(
             shortcut["keys"],
             callback,
             target_widget=target_widget,
             target_p=target_p,
             is_focus=shortcut.get("is_focus", False),
-            description=shortcut.get("description", "")
+            description=description  # 使用翻译后的描述
         )

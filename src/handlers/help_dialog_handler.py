@@ -12,7 +12,8 @@ class HelpDialogHandler:
             # 首次创建时传入父窗口和快捷键列表
             self.shortcut_help_dialog = ShortcutHelpDialog(
                 parent=self.main_window,
-                shortcuts=default_shortcuts
+                shortcuts=default_shortcuts,
+                lang=self.main_window.lang
             )
         # 切换可见性
         if self.shortcut_help_dialog.isVisible():

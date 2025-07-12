@@ -13,7 +13,7 @@ if True:
     from image_manager.background_manager import BackgroundManager
     from Fileoperater.file_manager2 import FileManager2
     from Fileoperater.file_manager3 import FileManager3
-    from utils.keyboard_handler import KeyboardHandler
+    from handlers.keyboard_handler import KeyboardHandler
     from dbload_manager.database_manager import DatabaseManager
     from handlers.drag_drop_handler import DragDropHandler  # 导入
     from config_manager.config_manager import ConfigManager
@@ -21,13 +21,16 @@ if True:
     from handlers.help_dialog_handler import HelpDialogHandler
     from handlers.file_operation import FileOperationHandler
     from handlers.search_handler import SearchHandler
-    
-
-
+    from handlers.home_handler import HomeHandler    
+    from language_manager.language_manager import LanguageManager
 
 class FileManager(QMainWindow):
     def __init__(self, image_path, config_manager: ConfigManager):  # 依赖注入
         super().__init__()
+        self.lang = config_manager.get("language","zh-CN")
+        # 初始化语言管理器（替代原语言逻辑）
+        self.language_manager = LanguageManager(self, config_manager)
+        
         self.last_updated_path = None  # ：上次更新的路径
         self.folder_threads = {}  # 用于存储每个文件夹的线程
         self.image_path = image_path
@@ -36,7 +39,7 @@ class FileManager(QMainWindow):
         self.show_all_sizes = False # ：显示所有大小
         self.config_manager = config_manager  # ：配置管理器
         config = config_manager.config
-        self.translation = config_manager.load_translation("en_US")  # 加载翻译文件
+        self.translation = config_manager.load_translation(self.lang)  # 加载翻译文件
         # 初始化日志（通过配置管理器传递参数）
         init_logging(self.config_manager)
         self.icons, self.icon_paths = create_icon_set("media",self.config_manager.get("file_list_icon_size")*2)  # 使用独立图标管理函数
@@ -48,7 +51,6 @@ class FileManager(QMainWindow):
         
         # 初始化键盘处理器
         self.keyboard_handler = KeyboardHandler(self)
-        translation = self.config_manager.load_translation("zh_CN")  # 加载翻译文件
         setup_ui(self, self.config_manager)  # UI 初始化（内部创建 toolbar）
         setup_event_bindings(self,config)  # 事件绑定
         # 初始化文件列表更新器
@@ -62,17 +64,18 @@ class FileManager(QMainWindow):
         self.file_manager = FileManager2()
         self.file_manager3 = FileManager3(self)
         # ：初始化 HomeHandler（模块化处理 home 导航）
-        from handlers.home_handler import HomeHandler
         self.home_handler = HomeHandler(self)
         # 将导航方法绑定到主窗口（可选，方便快捷键调用）
         self.navigate_home = self.home_handler.navigate_home
         
         # ：提前初始化搜索处理器
         self.search_handler = SearchHandler(self, self.file_list_updater)
+        # self.search_handler = None
         # ：初始化文件操作处理器
         self.file_op_handler = FileOperationHandler(self)
         # ：初始化帮助对话框处理器
         self.help_dialog_handler = HelpDialogHandler(self)
+        # self.help_dialog_handler = None
         # 注册应用级快捷键（此时 search_handler 已初始化）
         register_app_shortcuts(self.keyboard_handler, self)
 
@@ -88,8 +91,7 @@ class FileManager(QMainWindow):
         # print(f"[Debug] 文件列表触摸支持已启用: {self.file_list.testAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents)}")  # 调试确认
         # 初始化拖放处理器（）
         self.drag_drop_handler = DragDropHandler(self.file_list, self)
-        self.shortcut_help_dialog = None
-
+        # self.shortcut_help_dialog = None
 
 
     def resizeEvent(self, event):
@@ -140,7 +142,7 @@ class FileManager(QMainWindow):
         
     # 新增：切换快捷键帮助对话框的显示/隐藏
     def toggle_shortcut_help_dialog(self):
-        self.help_dialog_handler.toggle_dialog()
+        self.help_dialog_handler.toggle_dialog()  # 传递当前语言参数
 
 if __name__ == '__main__':
     # 配置读取逻辑为：

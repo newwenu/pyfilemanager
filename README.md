@@ -39,8 +39,14 @@ requirements.txt/pyproject.toml
 
 ## 其他
 
-界面目前仅有中文界面
-
 目前仅支持windows系统
 
 目前在win11上测试正常
+
+# 更新
+## 2025.7.13
+支持了中英文语言切换,在主界面按"Ctrl+L"即可切换
+
+# update
+## 2025.7.13
+support language switch,press "Ctrl+L" in main window to switch

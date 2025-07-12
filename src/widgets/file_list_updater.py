@@ -255,7 +255,8 @@ class FileListUpdater:
     def _create_list_item_from_info(self, info: dict):
         """适配异步扫描结果的列表项创建（修改：使用翻译）"""
         file_type = 'folder' if info["is_dir"] else get_file_type(info["name"])
-        size = '<文件夹>' if (info["is_dir"] and not self.show_all_sizes) else format_size(info["size"])
+        # size = '<文件夹>' if (info["is_dir"] and not self.show_all_sizes) else format_size(info["size"])
+        size = self.translation.get("folder", "<文件夹>") if (info["is_dir"] and not self.show_all_sizes) else format_size(info["size"])
         if info["is_dir"] and self.show_all_sizes:
             # 替换为翻译文本（默认值"计算中"）
             size = self.translation.get("calculating", "计算中")
