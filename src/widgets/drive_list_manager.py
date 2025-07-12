@@ -50,7 +50,7 @@ class DriveListManager:
                     free_bytes, total_bytes = win32api.GetDiskFreeSpaceEx(drive)[:2]
                     vol_info = win32api.GetVolumeInformation(drive)
                     # 关键修改：卷标显示使用翻译模板
-                    display_name = translation.get("drive_label_format", "{vol_name} ({drive_letter})").format(
+                    display_name = "{vol_name} ({drive_letter})".format(
                         vol_name=vol_info[0] if vol_info[0] else translation.get("default_drive_label", "本地磁盘"),
                         drive_letter=drive.strip('\\')
                     )

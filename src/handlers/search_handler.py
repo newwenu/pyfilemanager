@@ -14,6 +14,7 @@ class SearchHandler:
         self.search_input = None
         self.enter_pressed = False  # 标记是否通过回车触发搜索
         self.is_visible = False  # ：记录当前是否可见
+        self.translation = main_window.translation  # 获取主窗口的翻译对象
         self._init_ui()
 
     def _show_search_input(self):
@@ -32,12 +33,14 @@ class SearchHandler:
             self.search_input.setVisible(True)
             self.search_input.setFocus()
             self.is_visible = True
-            self.main_window.statusBar().showMessage("简单搜索模式:")
+            self.main_window.statusBar().showMessage(self.translation.get("search_status", "简单搜索模式:"))
 
     def _hide_toolbar(self):
         """隐藏工具栏（搜索完成或失去焦点时触发）"""
         self.main_window.toolbar.setVisible(False)  # 隐藏工具栏
-        self.main_window.statusBar().showMessage("就绪",1000)  # 恢复默认状态
+        self.main_window.statusBar().showMessage(self.translation.get("status_ready", "就绪"))
+        
+        # self.main_window.statusBar().showMessage("就绪",1000)  # 恢复默认状态
 
     def _init_ui(self):
         """初始化搜索输入框和高级搜索按钮（修改后）"""
@@ -47,12 +50,16 @@ class SearchHandler:
         
         # 搜索输入框
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("搜索文件...")
+        # self.search_input.setPlaceholderText("搜索文件...")
+        self.search_input.setPlaceholderText(self.translation.get("search_placeholder", "搜索文件..."))
+        self.search_input.setClearButtonEnabled(True)  # 启用清除按钮
         self.search_input.returnPressed.connect(self._on_search)
         layout.addWidget(self.search_input)
         
         # ：高级搜索按钮
-        self.advanced_btn = QPushButton("高级搜索")
+        # self.advanced_btn = QPushButton("高级搜索")
+        self.advanced_btn = QPushButton(self.translation.get("advanced_btn", "高级搜索"))
+
         self.advanced_btn.clicked.connect(self._open_advanced_search)  # 绑定点击事件
         layout.addWidget(self.advanced_btn)  # 添加到工具栏
         
@@ -67,7 +74,8 @@ class SearchHandler:
         
         # ：无结果时显示提示
         if match_count == 0:
-            self.main_window.statusBar().showMessage("未找到匹配文件", 3000)  # 状态栏显示3秒
+            # self.main_window.statusBar().showMessage("未找到匹配文件", 3000)  # 状态栏显示3秒
+            self.main_window.statusBar().showMessage(self.translation.get("search_no_results", "未找到匹配文件"), 3000)
 
     def _open_advanced_search(self):
         """打开高级搜索界面"""

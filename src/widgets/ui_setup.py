@@ -24,7 +24,7 @@ def setup_ui(main_window, config_manager):
 def setup_window(main_window, config, translation: dict):
     """设置窗口基础属性"""
     # main_window.setWindowTitle("极简文件管理器")
-    main_window.setWindowTitle(translation["window_title"])  # 从翻译文件获取标题
+    main_window.setWindowTitle(translation.get("window_title", "极简文件管理器"))  # 从翻译文件获取标题
     init_width, init_height = config.get("initial_size", [800, 600])
     main_window.setGeometry(200, 100, init_width, init_height)
     main_window.setWindowIcon(create_char_icon('📂'))
@@ -209,7 +209,7 @@ def setup_status_bar(main_window, translation: dict):  # 新增 translation 参�
     """设置状态栏（修改：使用翻译文本）"""
     main_window.status_bar = QStatusBar()
     main_window.setStatusBar(main_window.status_bar)
-    main_window.status_bar.showMessage(translation["status_ready"])  # 就绪提示
+    main_window.status_bar.showMessage(translation.get("status_ready", "就绪提示"))  # 就绪提示
 
     # ：创建工具栏（若未创建）
     if not hasattr(main_window, 'toolbar'):

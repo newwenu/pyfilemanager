@@ -1,5 +1,6 @@
 {
     "window_title": "Simple File Manager",
+    "folder": "<Folder>",
     "address_bar_placeholder": "Enter path...",
     "btn_new_folder": "New Folder",
     "cb_hidden": "Show hidden files",
@@ -10,7 +11,6 @@
     "file_list_size": "Size",   
     "drive_list_name": "Name",  
     "drive_list_usage": "Space Usage",
-    "drive_label_format": "{vol_name} ({drive_letter})",
     "default_drive_label": "Local Disk",
     "unknown_drive_format": "Unknown Drive ({drive})",
     "unknown_capacity": "Capacity Unknown",
@@ -21,5 +21,13 @@
     "status_text": "{current_path} | Total: {total} | Files: {file_count} | Folders: {folder_count} | Selected: {selected_count}",
     "scan_error": "Directory scan error: {error_msg}",
     "this_pc": "This PC",
-    "local_disk_format": "Local Disk ({drive_letter})"
+    "local_disk_format": "Local Disk ({drive_letter})",
+    "shortcut_dialog_title": "Shortcut Help",
+    "shortcut_header": "Common Shortcuts",
+    "shortcut_desc": "Description",
+    "shortcut_key": "Shortcut",
+    "search_placeholder": "Search files...",
+    "search_no_results": "No results found",
+    "search_status": "Simple search mode:",
+    "advanced_btn": "Advanced Search"
 }
