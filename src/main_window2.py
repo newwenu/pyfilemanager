@@ -16,7 +16,7 @@ if True:
     from utils.keyboard_handler import KeyboardHandler
     from dbload_manager.database_manager import DatabaseManager
     from handlers.drag_drop_handler import DragDropHandler  # 导入
-    from utils.config_manager import ConfigManager
+    from config_manager.config_manager import ConfigManager
     from utils.logging_config import init_logging
     from handlers.help_dialog_handler import HelpDialogHandler
     from handlers.file_operation import FileOperationHandler
@@ -142,7 +142,7 @@ class FileManager(QMainWindow):
 
 if __name__ == '__main__':
     # 配置读取逻辑为：
-    config_manager = ConfigManager("userdata/config/setting1.json")
+    config_manager = ConfigManager("userdata/config/setting.json")
     app = QApplication(sys.argv)
     # 创建主窗口
     window = FileManager("media/background2.png", config_manager)

@@ -3,7 +3,7 @@ import os
 from typing import Optional
 from logging.handlers import TimedRotatingFileHandler  # 导入
 
-from utils.config_manager import ConfigManager
+from config_manager.config_manager import ConfigManager
 
 def init_logging(config_manager: Optional["ConfigManager"] = None):
     """
