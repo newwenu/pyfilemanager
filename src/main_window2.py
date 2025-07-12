@@ -36,6 +36,7 @@ class FileManager(QMainWindow):
         self.show_all_sizes = False # ：显示所有大小
         self.config_manager = config_manager  # ：配置管理器
         config = config_manager.config
+        self.translation = config_manager.load_translation("en_US")  # 加载翻译文件
         # 初始化日志（通过配置管理器传递参数）
         init_logging(self.config_manager)
         self.icons, self.icon_paths = create_icon_set("media",self.config_manager.get("file_list_icon_size")*2)  # 使用独立图标管理函数
@@ -47,7 +48,8 @@ class FileManager(QMainWindow):
         
         # 初始化键盘处理器
         self.keyboard_handler = KeyboardHandler(self)
-        setup_ui(self, config)  # UI 初始化（内部创建 toolbar）
+        translation = self.config_manager.load_translation("zh_CN")  # 加载翻译文件
+        setup_ui(self, self.config_manager)  # UI 初始化（内部创建 toolbar）
         setup_event_bindings(self,config)  # 事件绑定
         # 初始化文件列表更新器
         self.file_list_updater = FileListUpdater(self)

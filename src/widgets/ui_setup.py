@@ -10,18 +10,21 @@ from widgets.focus_style_filter import install_focus_style_filter  # 导入
 from widgets.rounded_button import AntiAliasRoundedButton  # ：导入自定义按钮类
 
 from widgets.custom_tree_widget import FileListWidget
-def setup_ui(main_window, config):
+def setup_ui(main_window, config_manager):
     """主窗口 UI 初始化入口函数"""
-    setup_window(main_window, config)
+    config = config_manager.config
+    translation = main_window.translation
+    setup_window(main_window, config, translation)
     setup_main_layout(main_window)
-    setup_top_widget(main_window, config)
-    setup_status_bar(main_window)
-    setup_splitter(main_window, config)
-    main_window.file_list.header().setSectionsClickable(True)  # 启用表头部分的单击事件
+    setup_top_widget(main_window, config, translation)
+    setup_status_bar(main_window, translation)
+    setup_splitter(main_window, config, translation)  # 新增：传递 translation 参数
+    main_window.file_list.header().setSectionsClickable(True) # 设置表头可点击
 
-def setup_window(main_window, config):
+def setup_window(main_window, config, translation: dict):
     """设置窗口基础属性"""
-    main_window.setWindowTitle("极简文件管理器")
+    # main_window.setWindowTitle("极简文件管理器")
+    main_window.setWindowTitle(translation["window_title"])  # 从翻译文件获取标题
     init_width, init_height = config.get("initial_size", [800, 600])
     main_window.setGeometry(200, 100, init_width, init_height)
     main_window.setWindowIcon(create_char_icon('📂'))
@@ -38,37 +41,43 @@ def setup_main_layout(main_window):
     # 调用独立方法初始化设置按钮
     # setup_settings_button(main_window)
 
-def setup_top_widget(main_window, config):
-    """设置顶部功能区（完整实现）"""
+def setup_top_widget(main_window, config, translation: dict):
+    """设置顶部功能区（修改：确保按钮属性正确绑定）"""
     top_widget = QWidget()
     top_widget.setFixedHeight(30)
     top_widget.setStyleSheet("background-color: rgba(40, 40, 40, 108);")  # 半透明背景
     top_layout = QHBoxLayout(top_widget)
     top_layout.setContentsMargins(1, 1, 1, 1)
     top_layout.setSpacing(9)
-
+    
     control_height = 30  # 控制按钮高度
     main_window.address_bar = QLineEdit()
-    main_window.address_bar.setPlaceholderText("输入路径...")
-    main_window.address_bar.setFixedHeight(control_height)  # 地址栏高度
-    main_window.address_bar.installEventFilter(main_window.keyboard_handler)  # 让 KeyboardHandler 监听地址栏事件
-    main_window.btn_new_folder = QPushButton("新建文件夹")
+    # 地址栏提示（翻译缺失时显示"输入路径..."）
+    main_window.address_bar.setPlaceholderText(translation.get("address_bar_placeholder", "输入路径..."))
+    
+    # 关键修复：显式初始化 btn_new_folder 并绑定到 main_window
+    main_window.btn_new_folder = QPushButton(translation.get("btn_new_folder", "新建文件夹"))
     main_window.btn_new_folder.setFixedHeight(control_height)  # 按钮高度
-
-    main_window.cb_hidden = QCheckBox("显示隐藏文件")
+    
+    # 显示隐藏文件复选框（翻译缺失时显示"显示隐藏文件"）
+    main_window.cb_hidden = QCheckBox(translation.get("cb_hidden", "显示隐藏文件"))
     main_window.cb_hidden.setFixedHeight(control_height)  # 复选框高度
 
-    main_window.cb_show_sizes = QCheckBox("显示所有大小")
+    # 显示所有大小复选框（翻译缺失时显示"显示所有大小"）
+    main_window.cb_show_sizes = QCheckBox(translation.get("cb_show_sizes", "显示所有大小"))
     main_window.cb_show_sizes.setFixedHeight(control_height)  # 复选框高度
+
+    main_window.address_bar.setFixedHeight(control_height)  # 地址栏高度
+    main_window.address_bar.installEventFilter(main_window.keyboard_handler)  # 让 KeyboardHandler 监听地址栏事件
 
     main_window.main_layout.addWidget(top_widget, stretch=-10)
     top_layout.addWidget(main_window.address_bar)
     top_layout.addWidget(main_window.cb_show_sizes)
     top_layout.addWidget(main_window.cb_hidden)
-    top_layout.addWidget(main_window.btn_new_folder)
+    top_layout.addWidget(main_window.btn_new_folder)  # 确保按钮添加到布局
     top_layout.setContentsMargins(1, 1, 1, 1)  # 设置边距
 
-def setup_splitter(main_window, config):
+def setup_splitter(main_window, config, translation: dict):
     """设置左右分栏布局（完整实现）"""
     font_size = config.get("font_size", 12)
     splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -84,8 +93,10 @@ def setup_splitter(main_window, config):
     
     # 左侧导航树
     main_window.nav_tree = QTreeWidget()
-    main_window.nav_tree.setObjectName("nav_tree")  # 添加对象名称标识
-    main_window.nav_tree.setHeaderLabel("分区")
+    main_window.nav_tree.setObjectName("nav_tree")
+    # 关键修改：使用翻译设置导航树标题
+    main_window.nav_tree.setHeaderLabel(translation.get("nav_tree_header", "分区"))  # 新增翻译
+    
     # 修改：使用独立配置的图标大小
     main_window.nav_tree.setIconSize(QSize(nav_tree_icon_size, nav_tree_icon_size))  # 调大图标尺寸
     main_window.nav_tree.setFont(file_font)
@@ -107,7 +118,12 @@ def setup_splitter(main_window, config):
     # 右侧文件列表（半透明背景）
     # 主文件列表初始化（关键修改）
     main_window.file_list = FileListWidget()  # 自定义的文件列表控件
-    main_window.file_list.setHeaderLabels(["名称", "大小"])  
+    # main_window.file_list.setHeaderLabels(["名称", "大小"])  
+    # 关键修改：使用翻译设置文件列表表头
+    main_window.file_list.setHeaderLabels([
+        translation.get("file_list_name", "名称"),  # 新增翻译
+        translation.get("file_list_size", "大小")   # 新增翻译
+    ])
     main_window.file_list.setObjectName("file_list")  # 添加对象名称标识
     # main_window.file_list.setHeaderLabels(["名称", "大小"])
     # main_window.file_list.setColumnHidden(2, True)  # 隐藏“修改时间”列
@@ -154,7 +170,12 @@ def setup_splitter(main_window, config):
     # ：独立驱动器列表（默认隐藏）
     main_window.drive_list = QTreeWidget()
     main_window.drive_list.setObjectName("drive_list")
-    main_window.drive_list.setHeaderLabels(["名称", "空间使用情况"])  # 驱动器列表表头
+    # 关键修改：使用翻译设置驱动器列表表头
+    main_window.drive_list.setHeaderLabels([
+        translation.get("drive_list_name", "名称"),    # 新增翻译
+        translation.get("drive_list_usage", "空间使用情况")  # 新增翻译
+    ])
+    
     # 继承file_list样式（可根据需求单独配置）
     main_window.drive_list.setFont(file_font)
     main_window.drive_list.setStyleSheet(main_window.file_list.styleSheet())  # 复用样式
@@ -178,12 +199,12 @@ def setup_splitter(main_window, config):
     install_focus_style_filter(main_window.nav_tree, nav_initial_style)
     # ：启用触摸事件接收（适配触摸设备）
     # main_window.file_list.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents, True)
-def setup_status_bar(main_window):
-    """设置状态栏（完整实现）"""
+def setup_status_bar(main_window, translation: dict):  # 新增 translation 参数
+    """设置状态栏（修改：使用翻译文本）"""
     main_window.status_bar = QStatusBar()
     main_window.setStatusBar(main_window.status_bar)
-    # 初始状态显示默认信息（与主窗口逻辑一致）
-    main_window.status_bar.showMessage("就绪")
+    main_window.status_bar.showMessage(translation["status_ready"])  # 就绪提示
+
     # ：创建工具栏（若未创建）
     if not hasattr(main_window, 'toolbar'):
         main_window.toolbar = main_window.addToolBar("主工具栏")
@@ -234,7 +255,3 @@ def setup_settings_button(main_window):
         if hasattr(main_window.settings_btn, 'drag_offset'):
             del main_window.settings_btn.drag_offset
             main_window.settings_btn.setCursor(Qt.PointingHandCursor)
-
-    main_window.settings_btn.mousePressEvent = mouse_press
-    main_window.settings_btn.mouseMoveEvent = mouse_move
-    main_window.settings_btn.mouseReleaseEvent = mouse_release

@@ -50,3 +50,20 @@ class ConfigManager:
     def get(self, key, default=None):
         """公共接口：获取配置值（暴露简单接口）"""
         return self.config.get(key, default)
+
+    def load_translation(self, lang: str) -> dict:
+        """加载指定语言的翻译文件（文件缺失时返回硬编码默认值）"""
+        lang_path = os.path.join("userdata", "languages", f"{lang}.json")
+        try:
+            with open(lang_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            print(f"警告：未找到语言文件 {lang_path}，使用硬编码默认值")
+            return {  # 硬编码默认翻译（中文）
+                "window_title": "极简文件管理器",
+                "address_bar_placeholder": "输入路径...",
+                "btn_new_folder": "新建文件夹",
+                "cb_hidden": "显示隐藏文件",
+                "cb_show_sizes": "显示所有大小",
+                "status_ready": "就绪"
+            }

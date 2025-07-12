@@ -1,0 +1,18 @@
+{
+    "window_title": "极简文件管理器",
+    "address_bar_placeholder": "输入路径...",
+    "btn_new_folder": "新建文件夹",
+    "cb_hidden": "显示隐藏文件",
+    "cb_show_sizes": "显示所有大小",
+    "status_ready": "就绪",
+    "nav_tree_header": "驱动器",
+    "file_list_name": "名称",
+    "file_list_size": "大小",
+    "drive_list_name": "名称",
+    "drive_list_usage": "使用情况",
+    "file_list_mtime": "修改时间",
+    "calculating": "计算中...",
+    "empty_dir_hint": "当前目录为空",
+    "status_text": "{current_path} | 总计: {total} | 文件: {file_count} | 文件夹: {folder_count} | 已选: {selected_count}",
+    "scan_error": "目录扫描错误: {error_msg}"
+}

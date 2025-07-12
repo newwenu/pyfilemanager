@@ -1,0 +1,18 @@
+{
+    "window_title": "Simple File Manager",
+    "address_bar_placeholder": "Enter path...",
+    "btn_new_folder": "New Folder",
+    "cb_hidden": "Show hidden files",
+    "cb_show_sizes": "Show all sizes",
+    "status_ready": "Ready",
+    "nav_tree_header": "Drives", 
+    "file_list_name": "Name",    
+    "file_list_size": "Size",   
+    "drive_list_name": "Name",  
+    "drive_list_usage": "Usage",
+    "file_list_mtime": "Modified Time",
+    "calculating": "Calculating...",
+    "empty_dir_hint": "Current directory is empty",
+    "status_text": "{current_path} | Total: {total} | Files: {file_count} | Folders: {folder_count} | Selected: {selected_count}",
+    "scan_error": "Directory scan error: {error_msg}"
+}

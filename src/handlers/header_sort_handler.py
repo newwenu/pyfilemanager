@@ -124,7 +124,9 @@ class HeaderSortHandler:
 
         if self.current_sort_column < len(self.column_to_key):
             # print(f"当前排序列：{self.current_sort_column}, 原始标题：{self.original_header_titles}")
+            # print(f"更新表头：{direction}, 当前列索引：{self.current_sort_column}")
             original_title = self.original_header_titles[self.current_sort_column]
+            
         else:
             original_title = "未知列"  # 兜底处理越界情况
         # 仅使用原始标题 + 当前方向符号
