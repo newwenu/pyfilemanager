@@ -43,9 +43,9 @@ def on_tree_select(main_window, item,config):
             config=config,
             icons=main_window.drive_icons,
             status_bar=main_window.status_bar,
-            current_path=main_window.current_path
+            current_path=main_window.current_path,
+            translation=main_window.translation 
         )
-        # show_drives_in_filelist(main_window,config)  # 已通过导入补充该函数
         main_window.address_bar.setText("此电脑")
         main_window.last_updated_path = '此电脑'
     else:

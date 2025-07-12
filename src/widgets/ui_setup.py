@@ -186,12 +186,18 @@ def setup_splitter(main_window, config, translation: dict):
 
     main_window.main_layout.addWidget(splitter)
     splitter.setSizes([int(main_window.width() * 0.35), int(main_window.width() * 0.65)])
-    # 初始化导航树（传递导航树实例和主窗口的图标集合）
-    init_navigation_tree(main_window.nav_tree, main_window.drive_icons)  # 传递图标参数
+    # # 初始化导航树（传递导航树实例和主窗口的图标集合）
+    # init_navigation_tree(main_window.nav_tree, main_window.drive_icons)  # 传递图标参数
+    
     # 触发首次文件列表更新（使用主窗口已初始化的 file_list_updater）
     # main_window.update_filelist()  # 关键修改：调用主窗口的更新方法
 
-
+    # 初始化导航树（传递图标集合和翻译）
+    init_navigation_tree(
+        main_window.nav_tree,
+        main_window.drive_icons,
+        translation=translation  # 传递翻译字典
+    )
     # 安装文件列表焦点过滤器（调用统一函数）
     install_focus_style_filter(main_window.file_list, initial_style)
 
