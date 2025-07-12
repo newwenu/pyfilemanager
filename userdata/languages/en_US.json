@@ -9,10 +9,17 @@
     "file_list_name": "Name",    
     "file_list_size": "Size",   
     "drive_list_name": "Name",  
-    "drive_list_usage": "Usage",
+    "drive_list_usage": "Space Usage",
+    "drive_label_format": "{vol_name} ({drive_letter})",
+    "default_drive_label": "Local Disk",
+    "unknown_drive_format": "Unknown Drive ({drive})",
+    "unknown_capacity": "Capacity Unknown",
+    "drive_count_format": "{current_path} | Total Drives: {count}",
     "file_list_mtime": "Modified Time",
     "calculating": "Calculating...",
     "empty_dir_hint": "Current directory is empty",
     "status_text": "{current_path} | Total: {total} | Files: {file_count} | Folders: {folder_count} | Selected: {selected_count}",
-    "scan_error": "Directory scan error: {error_msg}"
+    "scan_error": "Directory scan error: {error_msg}",
+    "this_pc": "This PC",
+    "local_disk_format": "Local Disk ({drive_letter})"
 }

@@ -2,22 +2,22 @@ from PySide6.QtWidgets import QTreeWidgetItem, QProgressBar
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QFont
 import sys
+import os
+import shutil  # 补充缺失导入（Unix-like系统需要）
 from utils.file_utils import format_size  # 确保路径正确
+
 class DriveListManager:
     @classmethod
-    def update_drive_list(cls, file_list, config, icons, status_bar, current_path):
-        """独立管理驱动器列表的创建逻辑"""
+    def update_drive_list(cls, file_list, config, icons, status_bar, current_path, translation: dict):  # 新增 translation 参数
+        """独立管理驱动器列表的创建逻辑（修改：添加翻译支持）"""
         file_list.clear()
         file_list.setUniformRowHeights(False)  # 保持行高独立
         
-        # 1. 基础配置读取
-        # drives = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
+        # 1. 基础配置读取（不变）
         if sys.platform == "win32":
             import win32api
-            # Windows：使用 win32api 获取逻辑驱动器
             drives = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
         else:
-            # Unix-like（macOS/Linux）：获取常见挂载点目录
             mount_points = []
             if sys.platform == "darwin":  # macOS
                 mount_points = [os.path.join("/Volumes", d) for d in os.listdir("/Volumes") if not d.startswith(".")]
@@ -27,46 +27,50 @@ class DriveListManager:
                         mount_points.extend([os.path.join(base, d) for d in os.listdir(base)])
             drives = list(set(mount_points))  # 去重
 
-        file_list.setHeaderLabels(["名称", "空间使用情况"])
+        # 关键修改：使用翻译设置表头标签
+        file_list.setHeaderLabels([
+            translation.get("drive_list_name", "名称"),  # 名称列翻译（默认"名称"）
+            translation.get("drive_list_usage", "空间使用情况")  # 空间使用情况列翻译（默认"空间使用情况"）
+        ])
         
-        # 2. 样式配置（从config读取）
+        # 2. 样式配置（不变）
         drive_icon_size = config.get("drive_icon_size", 48)
         drive_font_size = config.get("Drive_font_size", 20)
         file_list.setIconSize(QSize(drive_icon_size, drive_icon_size))  # 图标尺寸
         
-        # 3. 字体与行高设置
+        # 3. 字体与行高设置（不变）
         larger_font = QFont()
         larger_font.setPointSize(drive_font_size)
         new_height = drive_icon_size + 10  # 行高计算
         
-        # 4. 遍历磁盘创建条目
+        # 4. 遍历磁盘创建条目（修改：替换硬编码提示）
         for drive in drives:
-            # 磁盘信息获取（保持原有逻辑）
             try:
                 if sys.platform == "win32":
-                    # Windows：使用 win32api 获取卷标和空间
                     free_bytes, total_bytes = win32api.GetDiskFreeSpaceEx(drive)[:2]
                     vol_info = win32api.GetVolumeInformation(drive)
-                    display_name = f"{vol_info[0]} ({drive.strip('\\')})" if vol_info[0] else f"本地磁盘 ({drive.strip('\\')})"
+                    # 关键修改：卷标显示使用翻译模板
+                    display_name = translation.get("drive_label_format", "{vol_name} ({drive_letter})").format(
+                        vol_name=vol_info[0] if vol_info[0] else translation.get("default_drive_label", "本地磁盘"),
+                        drive_letter=drive.strip('\\')
+                    )
                 else:
-                    # Unix-like：使用 shutil 跨平台获取空间，目录名作为卷标
                     total_bytes, used_bytes, free_bytes = shutil.disk_usage(drive)
                     display_name = os.path.basename(drive.rstrip('/'))  # 目录名作为显示名称
                 
-                drive_letter = drive.strip('\\')
+                # drive_letter = drive.strip('\\')
                 free_bytes, total_bytes = win32api.GetDiskFreeSpaceEx(drive)[:2]
                 used_bytes = total_bytes - free_bytes
                 percent_used = (used_bytes / total_bytes * 100) if total_bytes > 0 else 0
                 total_str = format_size(total_bytes)
                 used_str = format_size(used_bytes)
-                # vol_info = win32api.GetVolumeInformation(drive)
-                # display_name = f"{vol_info[0]} ({drive_letter})" if vol_info[0] else f"本地磁盘 ({drive_letter})"
-            except:
-                display_name = f"未知驱动器 ({drive.strip('\\')})"
-                used_str = total_str = "容量未知"
+            except Exception as e:
+                # 关键修改：未知驱动器提示使用翻译
+                display_name = translation.get("unknown_drive_format", "未知驱动器 ({drive})").format(drive=drive.strip('\\'))
+                used_str = total_str = translation.get("unknown_capacity", "容量未知")  # 容量未知翻译
                 percent_used = 0
             
-            # 创建列表项
+            # 创建列表项（不变）
             item = QTreeWidgetItem(file_list, [display_name])
             item.setFont(0, larger_font)
             item.setIcon(0, icons.get('hardware', icons['default']))
@@ -74,7 +78,7 @@ class DriveListManager:
             item.setSizeHint(1, QSize(0, new_height))
             item.setData(0, Qt.UserRole, drive)
             
-            # 进度条创建（保持原有逻辑）
+            # 进度条创建（不变）
             progress = QProgressBar()
             progress.setRange(0, 1000)
             progress.setValue(percent_used * 10)
@@ -86,7 +90,12 @@ class DriveListManager:
             """)
             file_list.setItemWidget(item, 1, progress)
         
-        # 5. 列宽调整与状态栏更新
+        # 5. 列宽调整与状态栏更新（修改：使用翻译）
         file_list.setColumnWidth(0, 180)
         file_list.setColumnWidth(1, 300)
-        status_bar.showMessage(f"{current_path} | 磁盘总数：{len(drives)}")
+        # 关键修改：状态栏提示使用翻译模板
+        status_text = translation.get("drive_count_format", "{current_path} | 磁盘总数：{count}").format(
+            current_path=current_path,
+            count=len(drives)
+        )
+        status_bar.showMessage(status_text)
