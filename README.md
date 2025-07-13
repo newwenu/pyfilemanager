@@ -38,3 +38,4 @@ requirements.txt/pyproject.toml
 # 更新
 ## 2025.7.13
 支持了中英文语言切换,在主界面按"Ctrl+L"即可切换
+main3
