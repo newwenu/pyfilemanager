@@ -1,13 +1,14 @@
 newly...-en now maybe a little rough
 # Simple File Manager
-### 0en English
+### en English
 ## Attention
 Some functions may not work because some files have not been committed.
-####Personalized images, please add a folder named "media" in the src directory, or run main.pyw.
-This will automatically create the folder.
-Put the png image files you need in it.
 ## Dependencies
 requirements.txt/pyproject.toml
+#### Personalized images, please add a folder named "media" in the src directory, or run main.pyw.
+This will automatically create the folder.
+Put the png image files you need in it.
+
 ## png name / Image names
 #### Background
 #### background.png (can be configured in setting.json)
