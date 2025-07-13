@@ -20,6 +20,8 @@ def setup_ui(main_window, config_manager):
     setup_status_bar(main_window, translation)
     setup_splitter(main_window, config, translation)  # 新增：传递 translation 参数
     main_window.file_list.header().setSectionsClickable(True) # 设置表头可点击
+    # 设置选择模式为多选（关键修改）
+    main_window.file_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
 
 def setup_window(main_window, config, translation: dict):
     """设置窗口基础属性"""
