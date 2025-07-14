@@ -243,5 +243,5 @@ def on_item_clicked(main_window, item, column):
     else:
         # 首次展开时加载子目录（复用已有的展开事件逻辑）
         if folder_path not in main_window.file_list_updater.loaded_subdirs:
-            main_window.file_list_updater.on_folder_expanded(item)  # 触发子目录加载
+            main_window.file_list_updater.async_handler.on_folder_expanded(item)  # 触发子目录加载
         item.setExpanded(True)

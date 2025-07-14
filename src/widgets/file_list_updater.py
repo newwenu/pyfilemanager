@@ -10,6 +10,7 @@ from handlers.header_sort_handler import HeaderSortHandler  # 新增导入
 from utils.sort_utils import sort_file_list  # 新增：导入排序工具
 from utils.logging_config import get_logger
 import weakref  # 新增弱引用模块导入
+from .file_list_async_handler import FileListAsyncHandler  # 新增导入
 logger = get_logger(__name__)
 class FileListUpdater:
     def __init__(self, fm):  # 仅传递主窗口实例
@@ -31,9 +32,12 @@ class FileListUpdater:
         self.last_updated_path = None  # 新增：记录最后一次更新的路径
         self.error_occurred = False
         # 新增：绑定文件夹展开事件
-        self.file_list.itemExpanded.connect(self.on_folder_expanded)
+        # self.file_list.itemExpanded.connect(self.on_folder_expanded)
+        self.async_handler = FileListAsyncHandler(self)  # 初始化异步处理模块
+        # 替换原事件绑定
+        # self.file_list.itemExpanded.connect(self.async_handler.on_folder_expanded)  # 改为调用模块方法
         # 新增：记录已加载子目录的路径（避免重复加载）
-        self.loaded_subdirs = set()
+        # self.loaded_subdirs = set()
         
     @property
     def file_list(self) -> QTreeWidget:
@@ -316,67 +320,67 @@ class FileListUpdater:
         self.error_occurred = True
         
         
-        # 新增：绑定文件夹展开事件（`FileListUpdater`初始化）
-        # 新增：记录已加载子目录的路径（避免重复加载）
-        self.loaded_subdirs = set()
-        # 新增：绑定文件夹展开事件
-        self.file_list.itemExpanded.connect(self.on_folder_expanded)
+        # # 新增：绑定文件夹展开事件（`FileListUpdater`初始化）
+        # # 新增：记录已加载子目录的路径（避免重复加载）
+        # self.loaded_subdirs = set()
+        # # 新增：绑定文件夹展开事件
+        # self.file_list.itemExpanded.connect(self.on_folder_expanded)
 
-    def on_folder_expanded(self, item):
-        """文件夹项展开时加载子目录（优化：已加载时直接展开）"""
-        folder_path = item.data(0, Qt.UserRole)  # 从UserRole获取存储的路径
-        # print(f"[调试] 尝试展开文件夹：{folder_path}")  # 新增：打印展开的路径
-        if not folder_path:
-            # print(f"[调试] 无效路径，跳过展开")  # 新增：路径为空时提示
-            return
+    # def on_folder_expanded(self, item):
+    #     """文件夹项展开时加载子目录（优化：已加载时直接展开）"""
+    #     folder_path = item.data(0, Qt.UserRole)  # 从UserRole获取存储的路径
+    #     # print(f"[调试] 尝试展开文件夹：{folder_path}")  # 新增：打印展开的路径
+    #     if not folder_path:
+    #         # print(f"[调试] 无效路径，跳过展开")  # 新增：路径为空时提示
+    #         return
         
-        # 关键修改：检查是否已加载且存在子节点
-        if folder_path in self.loaded_subdirs:
-            if item.childCount() > 0:
-                # print(f"[调试] 已加载过子目录且存在子节点，直接展开：{folder_path}")
-                item.setExpanded(True)  # 显式展开节点
-                return
-            # else:
-                # print(f"[调试] 已加载过子目录但无内容，重新加载：{folder_path}")
+    #     # 关键修改：检查是否已加载且存在子节点
+    #     if folder_path in self.loaded_subdirs:
+    #         if item.childCount() > 0:
+    #             # print(f"[调试] 已加载过子目录且存在子节点，直接展开：{folder_path}")
+    #             item.setExpanded(True)  # 显式展开节点
+    #             return
+    #         # else:
+    #             # print(f"[调试] 已加载过子目录但无内容，重新加载：{folder_path}")
         
-        # 显示加载中提示（使用翻译）
-        item.setText(1, self.translation.get("calculating", "计算中..."))
+    #     # 显示加载中提示（使用翻译）
+    #     item.setText(1, self.translation.get("calculating", "计算中..."))
         
-        # 关键修改：使用弱引用保存item，避免强引用导致对象无法销毁
-        weak_item = weakref.ref(item)
-        self.file_list_loader.start_load_subdir(
-            parent_path=folder_path,
-            show_hidden=self.show_hidden,
-            callback=lambda sub_list: self._on_subdir_loaded(sub_list, weak_item)
-        )
+    #     # 关键修改：使用弱引用保存item，避免强引用导致对象无法销毁
+    #     weak_item = weakref.ref(item)
+    #     self.file_list_loader.start_load_subdir(
+    #         parent_path=folder_path,
+    #         show_hidden=self.show_hidden,
+    #         callback=lambda sub_list: self._on_subdir_loaded(sub_list, weak_item)
+    #     )
 
-    def _on_subdir_loaded(self, sub_list: list, weak_parent_item):
-        """子目录加载完成后更新UI（新增弱引用有效性检查）"""
-        # 关键修改：通过弱引用获取实际对象，若已销毁则跳过
-        parent_item = weak_parent_item()
-        if not parent_item:
-            return  # 对象已销毁，直接返回
+    # def _on_subdir_loaded(self, sub_list: list, weak_parent_item):
+    #     """子目录加载完成后更新UI（新增弱引用有效性检查）"""
+    #     # 关键修改：通过弱引用获取实际对象，若已销毁则跳过
+    #     parent_item = weak_parent_item()
+    #     if not parent_item:
+    #         return  # 对象已销毁，直接返回
         
-        parent_path = parent_item.data(0, Qt.UserRole)
-        self.loaded_subdirs.add(parent_path)
+    #     parent_path = parent_item.data(0, Qt.UserRole)
+    #     self.loaded_subdirs.add(parent_path)
         
-        # 恢复原大小显示（使用翻译）
-        parent_item.setText(1, self.translation.get("folder", "<文件夹>"))
+    #     # 恢复原大小显示（使用翻译）
+    #     parent_item.setText(1, self.translation.get("folder", "<文件夹>"))
         
-        # 关键新增：清除父节点原有的所有子节点（避免重复）
-        parent_item.takeChildren()  # 移除旧子节点
+    #     # 关键新增：清除父节点原有的所有子节点（避免重复）
+    #     parent_item.takeChildren()  # 移除旧子节点
         
-        # 使用当前全局排序规则对子目录内容排序
-        sorted_sub_list = sort_file_list(
-            sub_list,
-            sort_key=self.header_handler.current_sort_key,  # 从排序处理器获取当前排序键
-            reverse=self.header_handler.current_reverse      # 从排序处理器获取当前排序方向
-        )
+    #     # 使用当前全局排序规则对子目录内容排序
+    #     sorted_sub_list = sort_file_list(
+    #         sub_list,
+    #         sort_key=self.header_handler.current_sort_key,  # 从排序处理器获取当前排序键
+    #         reverse=self.header_handler.current_reverse      # 从排序处理器获取当前排序方向
+    #     )
         
-        # 遍历排序后的子目录数据，添加为父项的子节点
-        for sub_info in sorted_sub_list:
-            sub_item = self._create_list_item_from_info_child(sub_info)
-            self._apply_hidden_style2(sub_item, sub_info["path"])
-            parent_item.addChild(sub_item)  # 保持层级关系
+    #     # 遍历排序后的子目录数据，添加为父项的子节点
+    #     for sub_info in sorted_sub_list:
+    #         sub_item = self._create_list_item_from_info_child(sub_info)
+    #         self._apply_hidden_style2(sub_item, sub_info["path"])
+    #         parent_item.addChild(sub_item)  # 保持层级关系
         
-        parent_item.setExpanded(True)  # 展开父项显示子节点
+    #     parent_item.setExpanded(True)  # 展开父项显示子节点
