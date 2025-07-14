@@ -93,8 +93,9 @@ class HeaderSortHandler:
         
 
     def _update_sorted_list(self):
-        """调用排序逻辑并刷新文件列表（增加数据校验）"""
+        """调用排序逻辑并刷新文件列表（新增子目录同步排序）"""
         try:
+            # 原有逻辑：更新顶级目录排序
             current_file_list = self.fm.file_list_data
             # 校验数据是否存在（避免空列表或字段缺失）
             if not current_file_list or self.current_sort_key not in current_file_list[0]:
@@ -105,11 +106,28 @@ class HeaderSortHandler:
                 sort_key=self.current_sort_key,
                 reverse=self.current_reverse
             )
-            # print(self.current_reverse)
             self.fm._update_filelist_from_sorted(sorted_list)
-            # self.fm._update_filelist_from_thread(sorted_list)
+            
+            # 关键新增：遍历所有已展开的父目录，重新排序其子目录
+            file_list = self.fm.file_list
+            for idx in range(file_list.topLevelItemCount()):
+                parent_item = file_list.topLevelItem(idx)
+                if parent_item.isExpanded() and parent_item.data(0, Qt.UserRole) in self.fm.loaded_subdirs:
+                    # 获取父目录的子项并重新排序
+                    sub_items = [parent_item.child(i) for i in range(parent_item.childCount())]
+                    sub_info_list = [item.data(0, Qt.UserRole) for item in sub_items]  # 从子项中提取文件信息
+                    sorted_sub_info = sort_file_list(
+                        sub_info_list,
+                        sort_key=self.current_sort_key,
+                        reverse=self.current_reverse
+                    )
+                    # 清空旧子项并添加排序后的新子项
+                    parent_item.takeChildren()
+                    for sub_info in sorted_sub_info:
+                        sub_item = self.fm._create_list_item_from_info(sub_info)
+                        self.fm._apply_hidden_style2(sub_item, sub_info["path"])
+                        parent_item.addChild(sub_item)
         except Exception as e:
-            # 错误提示（与工程现有错误处理风格一致）
             from handlers.m_event_handlers import show_error
             show_error(self.fm.fm, "排序失败", str(e))
 

@@ -1,8 +1,8 @@
 import os
 from PySide6.QtCore import QThread, Signal, QObject
 from utils.file_utils import should_show  # 复用现有过滤函数
-# from utils.logging_config import get_logger
-# logger = get_logger(__name__)
+from utils.logging_config import get_logger
+logger = get_logger(__name__)
 
 class FileListLoaderThread(QThread):
     """异步扫描目录的线程类"""
@@ -15,34 +15,45 @@ class FileListLoaderThread(QThread):
         self._is_running = True  # 终止标记
         
     def run(self):
-        """核心：异步扫描目录并收集文件信息"""
-        # print("FileListLoaderThread started.")
+        """核心：异步扫描目录并收集文件信息（添加调试打印）"""
         file_list = []
         try:
             with os.scandir(self.path) as entries:
                 for entry in entries:
-                    if not self._is_running:  # 支持中途终止
+                    if not self._is_running:
+                        # print(f"[调试] 扫描终止：{self.path}（用户中断）")  # 新增：中断提示
                         return
-                    if not should_show(entry, self.show_hidden):  # 复用现有过滤逻辑
+                    if not should_show(entry, self.show_hidden):
                         continue
-                    # 收集文件元数据（新增“类型”字段）
+                    # 新增：判断文件夹是否有子目录（简化逻辑，仅检查是否有至少一个子项）
+                    has_children = False
+                    if entry.is_dir():
+                        try:
+                            # 快速判断是否有子项（避免递归扫描）
+                            with os.scandir(entry.path) as sub_entries:
+                                has_children = any(sub_entries)  # 存在至少一个子项
+                        except PermissionError:
+                            has_children = False  # 无权限时默认无
+                    # 补充has_children字段到文件信息
                     file_info = {
                         "name": entry.name,
                         "path": entry.path,
                         "is_dir": entry.is_dir(),
                         "size": entry.stat().st_size,
-                        "mtime": entry.stat().st_mtime
+                        "mtime": entry.stat().st_mtime,
+                        "has_children": has_children  # 新增字段
                     }
                     file_list.append(file_info)
-            self.list_loaded.emit(file_list)  # 发送扫描结果到主线程
+            # print(f"[调试] 子目录扫描完成，路径：{self.path}，扫描到 {len(file_list)} 个文件/文件夹")  # 新增：扫描结果提示
+            self.list_loaded.emit(file_list)
         except PermissionError as e:
-            self.error_occurred.emit(f"无权限访问目录: {self.path}")  # 发射权限错误
-            # print("warn:无权限访问目录:", self.path)
+            # print(f"[调试] 无权限访问目录：{self.path}（错误：{str(e)}）")  # 新增：权限错误提示
+            self.error_occurred.emit(f"无权限访问目录: {self.path}")
             self.list_loaded.emit([])
         except Exception as e:
-            self.error_occurred.emit(f"扫描目录时出错: {self.path}")  # 异常时发送错误信息
-            self.list_loaded.emit([])  # 发送空列表表示加载失败
-        
+            # print(f"[调试] 扫描目录时出错：{self.path}（错误：{str(e)}）")  # 新增：异常提示
+            self.error_occurred.emit(f"扫描目录时出错: {self.path}")
+            self.list_loaded.emit([])
 
     def stop(self):
         """外部调用终止线程"""
@@ -76,6 +87,17 @@ class FileListLoaderManager(QObject):
         thread.finished.connect(thread.deleteLater)
         thread.finished.connect(lambda: self._on_thread_finished(thread, path))
         thread.start()
+
+    def start_load_subdir(self, parent_path: str, show_hidden: bool, callback):
+        """启动子目录异步加载（新增方法）"""
+        # 创建专用线程加载子目录（路径为parent_path）
+        loader = FileListLoaderThread(parent_path, show_hidden)
+        loader.list_loaded.connect(callback)  # 加载完成后触发回调
+        loader.start()
+        # 可选：管理线程生命周期（避免内存泄漏）
+        self.all_threads.add(loader)
+        self.active_threads[parent_path] = loader
+        return loader
 
     def _on_thread_finished(self, thread, path):
         # print(f"[Thread finished] {getattr(thread, 'path', None)}")

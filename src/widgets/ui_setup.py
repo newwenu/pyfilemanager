@@ -261,3 +261,16 @@ def setup_settings_button(main_window):
         if hasattr(main_window.settings_btn, 'drag_offset'):
             del main_window.settings_btn.drag_offset
             main_window.settings_btn.setCursor(Qt.PointingHandCursor)
+
+
+def on_file_list_expand(main_window, item):
+    """文件列表项展开时加载子目录"""
+    path = item.data(0, Qt.UserRole)  # 获取存储的路径
+    if not path or item.childCount() > 0:  # 已有子节点不重复加载
+        return
+    
+    # 调用文件列表更新器加载子目录（假设已实现异步加载方法）
+    sub_dirs = main_window.file_list_updater.load_subdirectories(path)  # 伪代码，实际调用异步加载
+    for sub_info in sub_dirs:
+        sub_item = main_window.file_list_updater._create_list_item_from_info(sub_info)
+        item.addChild(sub_item)  # 将子项添加到展开的父项中

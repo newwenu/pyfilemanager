@@ -29,7 +29,32 @@ def setup_event_bindings(main_window, config):
     main_window.file_list.itemDoubleClicked.connect(
         lambda item, column: on_item_double_click(main_window, item, column)
     )
+    # 新增：文件列表单击事件（处理文件夹展开）
+    main_window.file_list.itemClicked.connect(
+        lambda item, column: on_item_clicked(main_window, item, column)
+    )
 
+def on_item_clicked(main_window, item, column):
+    """文件列表项单击处理（添加调试日志）"""
+    if column != 0:
+        logger.debug(f"非名称列单击（列索引：{column}），忽略")  # 新增列索引日志
+        return
+
+    folder_path = item.data(0, Qt.UserRole)
+    if not folder_path or not os.path.isdir(folder_path):
+        logger.debug(f"非文件夹项单击（路径：{folder_path}），忽略")  # 新增路径验证日志
+        return
+
+    # 记录展开状态切换
+    if item.isExpanded():
+        logger.debug(f"折叠文件夹：{folder_path}")  # 折叠日志
+        item.setExpanded(False)
+    else:
+        if folder_path not in main_window.file_list_updater.loaded_subdirs:
+            logger.debug(f"首次展开文件夹，触发子目录加载：{folder_path}")  # 首次加载日志
+            main_window.file_list_updater.on_folder_expanded(item)
+        logger.debug(f"展开文件夹：{folder_path}")  # 展开日志
+        item.setExpanded(True)
 
 def on_tree_select(main_window, item,config):
     """导航树选择事件（完整实现）"""
@@ -86,9 +111,17 @@ def handle_new_folder(main_window):
     )
 
 def toggle_hidden_files(main_window, state):
-    """切换隐藏文件显示"""
+    """优化隐藏文件显示：立即刷新并保持当前展开状态"""
     main_window.show_hidden = state == Qt.CheckState.Checked.value
+    # 保留当前展开的目录路径
+    expanded_paths = [item.data(0, Qt.UserRole) 
+                     for item in main_window.file_list.findItems("", Qt.MatchContains) 
+                     if item.isExpanded()]
     main_window.update_filelist()
+    # 恢复展开状态
+    for item in main_window.file_list.findItems("", Qt.MatchContains):
+        if item.data(0, Qt.UserRole) in expanded_paths:
+            item.setExpanded(True)
 
 def toggle_show_all_sizes(main_window, state):
     """切换显示所有大小"""
@@ -112,6 +145,53 @@ def on_address_change(main_window,config):
         main_window.update_filelist()
     else:
         show_error(main_window, "错误", "路径不存在")
+
+# def on_item_double_click(main_window, item, column):
+#     """优化双击处理：目录展开/折叠，文件直接打开"""
+#     path = item.data(0, Qt.UserRole)  # 从UserRole获取完整路径
+#     if not path:
+#         return
+
+#     if os.path.isdir(path):
+#         # 切换展开状态
+#         if item.isExpanded():
+#             item.setExpanded(False)
+#         else:
+#             item.setExpanded(True)
+#             # # 异步加载子目录（示例，需结合file_list_loader）
+#             # main_window.file_list_updater.load_subdirectory(path, item)
+#     else:
+#         # 直接打开文件（原有逻辑）
+#         os.startfile(path)  # Windows专用，跨平台需调整
+
+def toggle_hidden_files(main_window, state):
+    """优化隐藏文件显示：立即刷新并保持当前展开状态"""
+    main_window.show_hidden = state == Qt.CheckState.Checked.value
+    # 保留当前展开的目录路径
+    expanded_paths = [item.data(0, Qt.UserRole) 
+                     for item in main_window.file_list.findItems("", Qt.MatchContains) 
+                     if item.isExpanded()]
+    main_window.update_filelist()
+    # 恢复展开状态
+    for item in main_window.file_list.findItems("", Qt.MatchContains):
+        if item.data(0, Qt.UserRole) in expanded_paths:
+            item.setExpanded(True)
+
+def handle_delete_file(main_window):
+    """处理删除文件操作"""
+    main_window.file_manager.delete_files(
+        parent_widget=main_window,
+        current_path=main_window.current_path,
+        selected_items=main_window.file_list.selectedItems(),
+        update_callback=main_window.update_filelist,
+        error_callback=lambda title, msg: show_error(main_window, title, msg)
+    )
+
+def show_error(main_window, title, msg):
+    """错误提示"""
+    QMessageBox.critical(main_window, title, msg)
+    logger.error(f"{title}: {msg}")
+    print(f"{title}: {msg}")
 
 def on_item_double_click(main_window, item, column):
     """双击文件/文件夹处理（完整实现）"""
@@ -146,18 +226,22 @@ def on_item_double_click(main_window, item, column):
         except Exception as e:
             show_error(main_window, "错误", str(e))
 
-def handle_delete_file(main_window):
-    """处理删除文件操作"""
-    main_window.file_manager.delete_files(
-        parent_widget=main_window,
-        current_path=main_window.current_path,
-        selected_items=main_window.file_list.selectedItems(),
-        update_callback=main_window.update_filelist,
-        error_callback=lambda title, msg: show_error(main_window, title, msg)
-    )
+def on_item_clicked(main_window, item, column):
+    """文件列表项单击处理（实现文件夹展开）"""
+    # 仅处理第一列的单击（名称列）
+    if column != 0:
+        return
 
-def show_error(main_window, title, msg):
-    """错误提示"""
-    QMessageBox.critical(main_window, title, msg)
-    logger.error(f"{title}: {msg}")
-    print(f"{title}: {msg}")
+    # 判断是否为文件夹（通过item的UserRole存储的路径是否为目录）
+    folder_path = item.data(0, Qt.UserRole)
+    if not folder_path or not os.path.isdir(folder_path):
+        return  # 非文件夹项，不处理
+
+    # 切换展开状态（展开/折叠）
+    if item.isExpanded():
+        item.setExpanded(False)
+    else:
+        # 首次展开时加载子目录（复用已有的展开事件逻辑）
+        if folder_path not in main_window.file_list_updater.loaded_subdirs:
+            main_window.file_list_updater.on_folder_expanded(item)  # 触发子目录加载
+        item.setExpanded(True)
