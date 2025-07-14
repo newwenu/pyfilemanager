@@ -39,6 +39,7 @@ class FileListUpdater:
         # 新增：记录已加载子目录的路径（避免重复加载）
         # self.loaded_subdirs = set()
         
+        
     @property
     def file_list(self) -> QTreeWidget:
         """通过主窗口直接获取文件列表控件"""
@@ -74,17 +75,10 @@ class FileListUpdater:
         """通过主窗口直接获取文件夹大小管理器"""
         return self.fm.folder_size_manager
 
-    # 删除原folder_threads属性（关键修改）
-    # @property
-    # def folder_threads(self) -> dict:
-    #     """通过主窗口直接获取线程存储字典"""
-    #     return self.fm.folder_threads
-
     def update_filelist(self):
         """更新文件列表（核心功能）"""
-        # self.file_list_loader.stop_all()  # 触发管理器清理
-        self._clean_old_threads()
         self.file_list.clear()
+        self.async_handler.loaded_subdirs.clear()
         self._setup_header_layout()  # 设置列布局
         # 可选：显示加载中的提示（如“加载中...”）
 
@@ -121,13 +115,13 @@ class FileListUpdater:
             if self.show_mtime:
                 self.file_list.setColumnWidth(2, 150)
 
-    def _clean_old_threads(self):
-        """清理未完成的文件夹大小计算线程（操作内部字典）"""
-        for path, thread in list(self.folder_threads.items()):
-            thread.stop()
-            thread.wait()
-            thread.deleteLater()
-            del self.folder_threads[path]
+    # def _clean_old_threads(self):
+    #     """清理未完成的文件夹大小计算线程（操作内部字典）"""
+    #     for path, thread in list(self.folder_threads.items()):
+    #         thread.stop()
+    #         thread.wait()
+    #         thread.deleteLater()
+    #         del self.folder_threads[path]
 
     def start_folder_size_thread(self, path, item):
         """启动文件夹大小计算线程（使用内部字典存储）"""
@@ -137,7 +131,7 @@ class FileListUpdater:
         if thread is not None:  # ：检查线程是否有效
             self.folder_threads[path] = thread  # 仅存储有效线程
     
-    def _apply_hidden_style2(self, item, entry):
+    def _apply_hidden_style(self, item, entry):
         """应用隐藏文件灰色显示样式"""
         try:
             if sys.platform == "win32":
@@ -231,7 +225,7 @@ class FileListUpdater:
                 file_count += 1
             # 创建列表项（复用 _create_list_item 逻辑）
             item = self._create_list_item_from_info(info)
-            self._apply_hidden_style2(item, info["path"])  # 隐藏文件样式
+            self._apply_hidden_style(item, info["path"])  # 隐藏文件样式
             # 处理文件夹大小计算（与原有逻辑一致）
             if info["is_dir"] and self.show_all_sizes:
                 self._handle_folder_size_calculation2(info["path"], item)
@@ -253,7 +247,7 @@ class FileListUpdater:
             for info in filelist2:
                 # 创建列表项（复用 _create_list_item 逻辑）
                 item = self._create_list_item_from_info(info)
-                self._apply_hidden_style2(item, info["path"])  # 隐藏文件样式
+                self._apply_hidden_style(item, info["path"])  # 隐藏文件样式
                 # 新增：处理文件夹大小计算（与_update_filelist_from_thread逻辑一致）
                 if info["is_dir"] and self.show_all_sizes:
                     self._handle_folder_size_calculation2(info["path"], item)

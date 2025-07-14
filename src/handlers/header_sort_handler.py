@@ -125,7 +125,7 @@ class HeaderSortHandler:
                     parent_item.takeChildren()
                     for sub_info in sorted_sub_info:
                         sub_item = self.fm._create_list_item_from_info(sub_info)
-                        self.fm._apply_hidden_style2(sub_item, sub_info["path"])
+                        self.fm._apply_hidden_style(sub_item, sub_info["path"])
                         parent_item.addChild(sub_item)
         except Exception as e:
             from handlers.m_event_handlers import show_error
