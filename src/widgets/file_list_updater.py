@@ -9,8 +9,9 @@ from threads.file_list_loader import FileListLoaderManager  # 导入
 from handlers.header_sort_handler import HeaderSortHandler  # 新增导入
 from utils.sort_utils import sort_file_list  # 新增：导入排序工具
 from utils.logging_config import get_logger
-import weakref  # 新增弱引用模块导入
 from .file_list_async_handler import FileListAsyncHandler  # 新增导入
+# from .folder_size_handler import 
+from .folder_size_calculator import FolderSizeCalculator  # 新增导入
 logger = get_logger(__name__)
 class FileListUpdater:
     def __init__(self, fm):  # 仅传递主窗口实例
@@ -38,6 +39,7 @@ class FileListUpdater:
         # self.file_list.itemExpanded.connect(self.async_handler.on_folder_expanded)  # 改为调用模块方法
         # 新增：记录已加载子目录的路径（避免重复加载）
         # self.loaded_subdirs = set()
+        self.folder_size_calculator = FolderSizeCalculator(self)
         
         
     @property
@@ -228,7 +230,9 @@ class FileListUpdater:
             self._apply_hidden_style(item, info["path"])  # 隐藏文件样式
             # 处理文件夹大小计算（与原有逻辑一致）
             if info["is_dir"] and self.show_all_sizes:
-                self._handle_folder_size_calculation2(info["path"], item)
+                # 关键调整：使用新的计算逻辑
+                self.folder_size_calculator.handle_folder_size_calculation(info["path"], item)
+                # self._handle_folder_size_calculation2(info["path"], item)
         self._update_status_bar(file_count, folder_count)
         # 无文件时显示空提示（使用翻译）
         if file_count == 0 and folder_count == 0:

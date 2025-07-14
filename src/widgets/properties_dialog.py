@@ -81,7 +81,7 @@ class FilePropertiesDialog(QDialog):
                 self.calc_thread.start()  # 启动后台线程
 
         except Exception as e:
-            self.parent.show_error("错误", f"获取属性失败: {str(e)}")
+            print("错误", f"获取属性失败: {str(e)}")
             self.close()
 
     def _update_folder_size(self, formatted_size):
