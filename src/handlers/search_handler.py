@@ -2,13 +2,14 @@ from PySide6.QtWidgets import QLineEdit, QHBoxLayout, QWidget, QPushButton, QDia
 import os
 from time import sleep
 
-from ctypes import windll
+# from ctypes import windll
 from PySide6.QtCore import QProcess, QTimer
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 from PySide6.QtGui import QWindow
 
 class SearchHandler:
     def __init__(self, main_window, file_list_updater):
+        return
         self.main_window = main_window
         self.file_list_updater = file_list_updater
         self.search_input = None

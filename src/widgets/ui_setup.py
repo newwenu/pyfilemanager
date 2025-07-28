@@ -76,7 +76,7 @@ def setup_top_widget(main_window, config, translation: dict):
     top_layout.addWidget(main_window.address_bar)
     top_layout.addWidget(main_window.cb_show_sizes)
     top_layout.addWidget(main_window.cb_hidden)
-    top_layout.addWidget(main_window.btn_new_folder)  # 确保按钮添加到布局
+    # top_layout.addWidget(main_window.btn_new_folder)  # 确保按钮添加到布局
     top_layout.setContentsMargins(1, 1, 1, 1)  # 设置边距
 
 def setup_splitter(main_window, config, translation: dict):

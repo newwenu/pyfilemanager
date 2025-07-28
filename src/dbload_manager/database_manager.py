@@ -1,10 +1,10 @@
 import sqlite3
-import os
-
+# import os
+from os import path,makedirs
 class DatabaseManager:
-    def __init__(self, db_path="userdata\\db\\folder_size.db"):
-        if not os.path.exists(db_path):
-            os.makedirs(os.path.dirname(db_path), exist_ok=True)
+    def __init__(self, db_path=path.join("userdata", "db", "folder_size.db")):
+        if not path.exists(db_path):
+            makedirs(path.dirname(db_path), exist_ok=True)
         self.conn = sqlite3.connect(db_path)
         self.create_table()
 

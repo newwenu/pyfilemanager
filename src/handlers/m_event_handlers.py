@@ -103,8 +103,7 @@ def on_address_change(main_window,config):
         return
     new_path = main_window.address_bar.text()
     if main_window.address_bar.text().startswith('home'):
-        new_path = os.path.join(__file__,"..//..//home")
-        new_path = os.path.normpath(new_path)
+        new_path = main_window.home_handler.home_path
         # print(new_path)
 
     if os.path.exists(new_path):

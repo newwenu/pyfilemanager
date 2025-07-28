@@ -55,7 +55,6 @@ class ConfigManager:
     def load_translation(self, lang: str) -> dict:
         """加载指定语言的翻译文件（文件缺失时返回硬编码默认值）"""
         lang_path = os.path.join("userdata", "languages", f"{lang}.json")
-        # lang_path = f"userdata//languages//{lang}.json"
         try:
             with open(lang_path, "r", encoding="utf-8") as f:
                 return json.load(f)

@@ -46,7 +46,7 @@ class FileManager(QMainWindow):
         self.drive_icons,self.icon_paths = create_icon_set("media",self.config_manager.get("drive_icon_size")*2)
         self.folder_size_index = {}  # ：索引库（路径: 大小）
         # ：初始化 SQLite 数据库
-        db_path = "userdata\\db\\folder_size.db"  # 数据库文件路径（可从 config 配置）
+        db_path = os.path.join("userdata", "db", "folder_size.db")  # 数据库文件路径（可从 config 配置）
         self.db=DatabaseManager(db_path)
         
         # 初始化键盘处理器

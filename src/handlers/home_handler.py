@@ -4,7 +4,9 @@ class HomeHandler:
     def __init__(self, main_window):
         self.main_window = main_window
         # 定义 home_path（项目目录下的 "home" 文件夹）
-        self.home_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "home")
+        home_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..","..", "home")
+        self.home_path = os.path.normpath(home_path)
+        # print(self.home_path)
         # 确保 home 文件夹存在（若不存在则创建）
         os.makedirs(self.home_path, exist_ok=True)
 
