@@ -57,6 +57,8 @@ Put the png image files you need in it.
 
  Currently tested and working on Windows 11.
 
+ On archlinux, some shortcut keys may not work.
+
 ## Update
 
 ## 2025.7.13

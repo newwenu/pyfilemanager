@@ -56,6 +56,8 @@ requirements.txt/pyproject.toml
 
 目前在win10/win11/archLinux上测试正常
 
+需要注意的是：archlinux上快捷键操作异常
+
 ## 更新
 
 ## 2025.7.13
