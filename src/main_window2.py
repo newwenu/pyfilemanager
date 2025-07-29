@@ -2,6 +2,7 @@ import sys
 import os
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem
+from PySide6.QtGui import QGuiApplication,QPalette
 if True:
     #导入
     from threads.folder_size import FolderSizeManager
@@ -30,7 +31,8 @@ class FileManager(QMainWindow):
         self.lang = config_manager.get("language","zh-CN")
         # 初始化语言管理器（替代原语言逻辑）
         self.language_manager = LanguageManager(self, config_manager)
-        
+        system_palette = QGuiApplication.palette()  # 获取系统当前调色板
+        self.sys_bg = system_palette.color(QPalette.Window)
         self.last_updated_path = None  # ：上次更新的路径
         self.folder_threads = {}  # 用于存储每个文件夹的线程
         self.image_path = image_path

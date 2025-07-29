@@ -11,12 +11,17 @@ def get_system_drives() -> List[str]:
         import win32api
         return win32api.GetLogicalDriveStrings().split('\x00')[:-1]
     else:
+        # 1. 优先获取用户主目录（确保前置）
+        home_dir = os.path.expanduser('~')
+        drives = [home_dir]  # 主目录作为第一个元素
+
+        # 2. 收集其他挂载点（如 /mnt、/media 等）
         mount_points = []
         if sys.platform == "darwin":  # macOS
             mount_points = [
                 os.path.join("/Volumes", d) 
                 for d in os.listdir("/Volumes") 
-                if not d.startswith(".")  # 过滤隐藏卷（如 ".Trash"）
+                if not d.startswith(".")  and d != os.path.basename(home_dir) # 过滤隐藏卷（如 ".Trash"）
             ]
         else:  # Linux
             for base in ["/mnt", "/media"]:
@@ -24,14 +29,13 @@ def get_system_drives() -> List[str]:
                     mount_points.extend([
                         os.path.join(base, d) 
                         for d in os.listdir(base)
+                        if d != os.path.basename(home_dir)  # 过滤主目录避免重复
                     ])
-        # return list(set(mount_points))  # 去重
-            # 去重后添加用户主目录（Linux/macOS）
-            drives = list(set(mount_points))
-            # 新增：获取用户主目录（如 "/home/user" 或 "/Users/user"）
-            home_dir = os.path.expanduser('~')
-            if home_dir not in drives:  # 避免重复
-                drives.append(home_dir)
+
+        # 3. 去重并添加到主目录之后
+        unique_mounts = list(set(mount_points))  # 去重其他挂载点
+        drives.extend(unique_mounts)  # 主目录在前，其他挂载点在后
+
         return drives
 
 def get_simplified_drive_display(drive: str, translation: dict) -> str:

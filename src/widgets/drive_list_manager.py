@@ -59,13 +59,11 @@ class DriveListManager:
                         vol_name=vol_info[0] if vol_info[0] else translation.get("default_drive_label", "本地磁盘"),
                         drive_letter=drive.strip('\\')
                     )
+                    used_bytes = total_bytes - free_bytes
                 else:
                     total_bytes, used_bytes, free_bytes = shutil.disk_usage(drive)
                     display_name = os.path.basename(drive.rstrip('/'))  # 目录名作为显示名称
                 
-                # drive_letter = drive.strip('\\')
-                free_bytes, total_bytes = win32api.GetDiskFreeSpaceEx(drive)[:2]
-                used_bytes = total_bytes - free_bytes
                 percent_used = (used_bytes / total_bytes * 100) if total_bytes > 0 else 0
                 total_str = format_size(total_bytes)
                 used_str = format_size(used_bytes)

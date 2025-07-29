@@ -47,7 +47,8 @@ def setup_top_widget(main_window, config, translation: dict):
     """设置顶部功能区（修改：确保按钮属性正确绑定）"""
     top_widget = QWidget()
     top_widget.setFixedHeight(30)
-    top_widget.setStyleSheet("background-color: rgba(40, 40, 40, 108);")  # 半透明背景
+    r, g, b, _ = main_window.sys_bg.getRgb()
+    top_widget.setStyleSheet(f"background-color: rgba({r}, {g}, {b}, 108);")  # 半透明背景
     top_layout = QHBoxLayout(top_widget)
     top_layout.setContentsMargins(1, 1, 1, 1)
     top_layout.setSpacing(9)
@@ -102,10 +103,11 @@ def setup_splitter(main_window, config, translation: dict):
     # 修改：使用独立配置的图标大小
     main_window.nav_tree.setIconSize(QSize(nav_tree_icon_size, nav_tree_icon_size))  # 调大图标尺寸
     main_window.nav_tree.setFont(file_font)
+    r,b,g,_ = main_window.sys_bg.getRgb()
     # 保存导航树的初始样式（）
     nav_initial_style = f"""
         QTreeWidget {{
-            background-color: rgba(0, 0, 0, {bg_alpha1});  
+            background-color: rgba({r}, {g}, {b}, {bg_alpha1});  
         }}
         QTreeWidget::item {{ 
             height: {nav_tree_icon_size}px;
@@ -153,7 +155,7 @@ def setup_splitter(main_window, config, translation: dict):
     # 保存文件列表的初始样式（关键修改）
     initial_style = f"""
         QTreeWidget {{
-            background-color: rgba(0,0,0, {bg_alpha2});
+            background-color: rgba({r}, {g}, {b}, {bg_alpha2});
         }}
         QTreeWidget::item {{ 
             height: {file_list_icon_size}px;
