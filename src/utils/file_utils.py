@@ -14,7 +14,7 @@ from config_manager.config_manager import ConfigManager
 
 
 # 初始化配置管理器（使用默认路径或自定义路径）
-config_manager = ConfigManager("userdata\\file-icon_type\\file-icon_type.json")
+config_manager = ConfigManager(os.path.join("userdata","file-icon_type","file-icon_type.json"))
 
 # 从配置中加载文件类型映射（优化：构建扩展名反向字典）
 _original_type_map = {k: tuple(v) for k, v in config_manager.get(

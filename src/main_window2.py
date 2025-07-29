@@ -37,7 +37,7 @@ class FileManager(QMainWindow):
         self.folder_threads = {}  # 用于存储每个文件夹的线程
         self.image_path = image_path
         start_path= config_manager.get("start_path",os.path.expanduser('~'))
-        self.current_path = start_path
+        self.current_path = start_path if os.path.exists(start_path) else os.path.expanduser('~')
         self.show_hidden = False  # ：控制是否显示隐藏文件
         self.show_all_sizes = False # ：显示所有大小
         self.config_manager = config_manager  # ：配置管理器
