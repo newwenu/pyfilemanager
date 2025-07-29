@@ -49,7 +49,7 @@ def init_navigation_tree(nav_tree, icons, translation: dict):  # 新增 translat
                     display_name = translation.get("home_folder", "主目录")  # 使用翻译键
                     item_icon = icons.get('hardware', icons['default'])  # 主目录专用图标(lack)
                 # Unix-like：目录名作为显示名称（无需翻译）
-                drive_label = os.path.basename(drive.rstrip('/'))
+                drive_label = ""
             display_name = drive_label
         except Exception as e:
             logger.error(f"获取驱动器信息失败: {drive}, 错误: {str(e)}")
