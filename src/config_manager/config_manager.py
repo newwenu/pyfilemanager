@@ -34,7 +34,8 @@ class ConfigManager:
                 "show_hidden_files": False,
                 "show_all_sizes": False,
                 "statusbar_visible": True,
-                "language": "zh_CN"
+                "language": "zh_CN",
+                "start_path": os.path.expanduser('~')  # 新增：启动路径配置
             }
             # 创建配置文件目录（如果不存在）
             config_dir = os.path.dirname(self.config_path)

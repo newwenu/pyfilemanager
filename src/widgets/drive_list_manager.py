@@ -3,9 +3,11 @@ from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QFont
 import sys
 import os
-import shutil  # 补充缺失导入（Unix-like系统需要）
 from utils.file_utils import format_size  # 确保路径正确
-
+if sys.platform == "win32":
+    import win32api
+else:
+    import shutil  # 补充缺失导入（Unix-like系统需要）
 class DriveListManager:
     @classmethod
     def update_drive_list(cls, file_list, config, icons, status_bar, current_path, translation: dict):  # 新增 translation 参数
@@ -14,19 +16,22 @@ class DriveListManager:
         file_list.setUniformRowHeights(False)  # 保持行高独立
         
         # 1. 基础配置读取（不变）
-        if sys.platform == "win32":
-            import win32api
-            drives = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
-        else:
-            mount_points = []
-            if sys.platform == "darwin":  # macOS
-                mount_points = [os.path.join("/Volumes", d) for d in os.listdir("/Volumes") if not d.startswith(".")]
-            else:  # Linux
-                for base in ["/mnt", "/media"]:
-                    if os.path.exists(base):
-                        mount_points.extend([os.path.join(base, d) for d in os.listdir(base)])
-            drives = list(set(mount_points))  # 去重
+        # if sys.platform == "win32":
+        #     import win32api
+        #     drives = win32api.GetLogicalDriveStrings().split('\x00')[:-1]
+        # else:
+        #     mount_points = []
+        #     if sys.platform == "darwin":  # macOS
+        #         mount_points = [os.path.join("/Volumes", d) for d in os.listdir("/Volumes") if not d.startswith(".")]
+        #     else:  # Linux
+        #         for base in ["/mnt", "/media"]:
+        #             if os.path.exists(base):
+        #                 mount_points.extend([os.path.join(base, d) for d in os.listdir(base)])
+        #     drives = list(set(mount_points))  # 去重
+        from utils.drive_utils import get_system_drives  # 新增导入
 
+        # 原获取drives的代码修改为：
+        drives = get_system_drives()
         # 关键修改：使用翻译设置表头标签
         file_list.setHeaderLabels([
             translation.get("drive_list_name", "名称"),  # 名称列翻译（默认"名称"）

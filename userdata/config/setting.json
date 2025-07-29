@@ -19,5 +19,6 @@
     "show_hidden_files": false,
     "show_all_sizes": false,
     "statusbar_visible": true,
-    "language": "zh_CN"
+    "language": "zh_CN",
+    "start_path": "X:\\"
 }
