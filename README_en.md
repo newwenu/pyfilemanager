@@ -65,4 +65,4 @@ Put the png image files you need in it.
 
 Support language switch,press "Ctrl+L" in main window to switch
 
-newly...-en now maybe a little rough
+greenhorn...-en now maybe a little rough
