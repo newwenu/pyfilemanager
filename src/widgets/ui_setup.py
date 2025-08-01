@@ -203,10 +203,10 @@ def setup_splitter(main_window, config, translation: dict):
         translation=translation  # 传递翻译字典
     )
     # 安装文件列表焦点过滤器（调用统一函数）
-    install_focus_style_filter(main_window.file_list, initial_style)
+    install_focus_style_filter(main_window.file_list, initial_style,main_window.sys_bg)
 
     # 安装导航树焦点过滤器（调用统一函数）
-    install_focus_style_filter(main_window.nav_tree, nav_initial_style)
+    install_focus_style_filter(main_window.nav_tree, nav_initial_style,main_window.sys_bg)
     # ：启用触摸事件接收（适配触摸设备）
     # main_window.file_list.setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents, True)
 def setup_status_bar(main_window, translation: dict):  # 新增 translation 参数

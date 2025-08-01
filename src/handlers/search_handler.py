@@ -1,11 +1,11 @@
-from PySide6.QtWidgets import QLineEdit, QHBoxLayout, QWidget, QPushButton, QDialog # 导入
+from PySide6.QtWidgets import QLineEdit, QHBoxLayout, QWidget, QPushButton, QDialog 
 import os
 from time import sleep
-
-# from ctypes import windll
+from ctypes import windll
 from PySide6.QtCore import QProcess, QTimer
-from PySide6.QtWidgets import QVBoxLayout, QWidget
+from PySide6.QtWidgets import QVBoxLayout, QWidget,QListWidget
 from PySide6.QtGui import QWindow
+import sys  # 新增：用于系统判断
 
 class SearchHandler:
     def __init__(self, main_window, file_list_updater):
@@ -79,18 +79,70 @@ class SearchHandler:
             self.main_window.statusBar().showMessage(self.translation.get("search_no_results", "未找到匹配文件"), 3000)
 
     def _open_advanced_search(self):
-        """打开高级搜索界面"""
-        dialog = AdvancedSearchDialog(self.main_window)
-        dialog.exec()
+        """打开高级搜索界面（跨平台适配）"""
+        if sys.platform == "win32":
+            # Windows 继续使用 Everything
+            dialog = AdvancedSearchDialog(self.main_window)
+            dialog.exec()
+        else:
+            # Linux 使用 Qt 内置搜索或调用 locate 命令
+            dialog = LinuxAdvancedSearchDialog(self.main_window)
+            dialog.exec()
+
+# 新增：Linux 高级搜索对话框类
+class LinuxAdvancedSearchDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(parent.translation.get("advanced_search", "高级搜索"))
+        self.main_window = parent
+        self.translation = parent.translation
+        self._init_ui()
+
+    def _init_ui(self):
+        layout = QVBoxLayout(self)
+        
+        # 搜索路径输入
+        self.path_input = QLineEdit()
+        self.path_input.setPlaceholderText(self.translation.get("search_path", "搜索路径（留空为当前目录）"))
+        layout.addWidget(self.path_input)
+        
+        # 关键字输入
+        self.keyword_input = QLineEdit()
+        self.keyword_input.setPlaceholderText(self.translation.get("search_keyword", "搜索关键字"))
+        layout.addWidget(self.keyword_input)
+        
+        # 搜索按钮
+        self.search_btn = QPushButton(self.translation.get("start_search", "开始搜索"))
+        self.search_btn.clicked.connect(self._on_search)
+        layout.addWidget(self.search_btn)
+        
+        # 结果显示
+        self.result_list = QListWidget()
+        layout.addWidget(self.result_list)
+
+    def _on_search(self):
+        """Linux 搜索逻辑（调用 locate 命令或 os.walk）"""
+        path = self.path_input.text().strip() or self.main_window.current_path
+        keyword = self.keyword_input.text().strip()
+        
+        # 示例：使用 os.walk 遍历目录（可替换为调用 locate 命令通过 QProcess 执行）
+        results = []
+        for root, dirs, files in os.walk(path):
+            for file in files + dirs:
+                if keyword in file:
+                    results.append(os.path.join(root, file))
+        
+        self.result_list.clear()
+        self.result_list.addItems(results)
 
 # ：高级搜索对话框类
 class AdvancedSearchDialog(QDialog):
     def __init__(self, parent=None):
-        return
         super().__init__(parent)
-        self.setWindowTitle("Everything 搜索")
-        # 移除固定尺寸设置（改为动态调整）
-        # self.setFixedSize(800, 600)  # 原固定尺寸，需删除
+        if sys.platform != "win32":
+            return  # Linux 不初始化此对话框（已由 LinuxAdvancedSearchDialog 替代）
+        
+        self.setWindowTitle(parent.translation.get("everything_search", "Everything 搜索"))
         self.everything_process = None
         self.everything_window = None
         self.everything_exe_path = os.path.join(
@@ -101,8 +153,10 @@ class AdvancedSearchDialog(QDialog):
         self._start_everything()
 
     def _embed_everything_window(self):
-        """获取 Everything 窗口句柄并嵌入到对话框（修改后）"""
-        return
+        """仅 Windows 执行窗口嵌入"""
+        if sys.platform != "win32":
+            return
+        
         hwnd = windll.user32.FindWindowW(None, "Everything")
         if not hwnd:
             sleep(2)
