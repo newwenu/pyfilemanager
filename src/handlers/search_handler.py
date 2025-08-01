@@ -1,13 +1,10 @@
 from PySide6.QtWidgets import QLineEdit, QHBoxLayout, QWidget, QPushButton, QDialog 
 import os
 from time import sleep
-from ctypes import windll
 from PySide6.QtCore import QProcess, QTimer
 from PySide6.QtWidgets import QVBoxLayout, QWidget,QListWidget
 from PySide6.QtGui import QWindow
 import sys  # 新增：用于系统判断
-import ctypes
-import sys
 
 
 def is_admin() -> bool:
@@ -15,8 +12,9 @@ def is_admin() -> bool:
     if sys.platform != "win32":
         return False  # 非Windows系统无需检测
     try:
+        from ctypes import windll
         # 尝试获取当前进程的管理员权限状态
-        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+        return windll.shell32.IsUserAnAdmin() != 0
     except Exception:
         return False
     
@@ -171,7 +169,7 @@ class AdvancedSearchDialog(QDialog):
         """仅 Windows 执行窗口嵌入"""
         if sys.platform != "win32":
             return
-        
+        from ctypes import windll
         hwnd = windll.user32.FindWindowW(None, "Everything")
         if not hwnd:
             sleep(2)
