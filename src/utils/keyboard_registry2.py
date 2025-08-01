@@ -1,17 +1,48 @@
 from PySide6.QtCore import Qt
 from handlers.m_event_handlers import on_tree_select  # 导入
 from PySide6.QtWidgets import QMessageBox
+import json
+from pathlib import Path
+
+# 辅助函数：加载用户自定义快捷键配置
+def load_user_shortcuts():
+    user_shortcuts_path = Path("userdata/config/usershortcuts.json")
+    if not user_shortcuts_path.exists():
+        return []
+    try:
+        with open(user_shortcuts_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data.get("shortcuts", [])
+    except Exception as e:
+        print(f"错误：加载用户快捷键配置失败 - {e}")
+        return []
+    
+    # 辅助函数：将modifiers字符串解析为Qt枚举（支持组合键）
+def parse_modifiers(modifiers_str: str) -> Qt.KeyboardModifier:
+    modifier_mapping = {
+        "AltModifier": Qt.KeyboardModifier.AltModifier,
+        "ControlModifier": Qt.KeyboardModifier.ControlModifier,
+        "ShiftModifier": Qt.KeyboardModifier.ShiftModifier,
+        "NoModifier": Qt.KeyboardModifier.NoModifier
+    }
+    modifiers = Qt.KeyboardModifier.NoModifier
+    for part in modifiers_str.split("+"):
+        if part in modifier_mapping:
+            modifiers |= modifier_mapping[part]
+    return modifiers
 
 # 新增：定义默认快捷键配置列表（数据接口）
 default_shortcuts = [
     # 高频导航操作（用户最常用）
     {
+        "id":"1",
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_Left),
         "callback": lambda main_window: main_window.navigate_parent_dir,
         "target_widget": None,
         "description": "返回上级目录"
     },
     {
+        "id":"2",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_H),
         "callback": lambda main_window: main_window.navigate_home,
         "target_widget": None,
@@ -35,6 +66,7 @@ default_shortcuts = [
         "description": "打开选中项（导航树）"
     },
     {
+        "id":"3",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_C),
         "callback": lambda main_window: (
             lambda: main_window.file_manager3.copy_files(main_window.file_list.selectedItems())
@@ -43,6 +75,7 @@ default_shortcuts = [
         "description": "复制选中文件"
     },
     {
+        "id":"4",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_X),
         "callback": lambda main_window: (
             lambda: main_window.file_manager3.cut_files(main_window.file_list.selectedItems())
@@ -51,12 +84,14 @@ default_shortcuts = [
         "description": "剪切选中文件"
     },
     {
+        "id":"5",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_V),
         "callback": lambda main_window: main_window.file_manager3.paste_files,
         "target_widget": lambda main_window: main_window.file_list,
         "description": "粘贴文件"
     },
     {
+        "id":"6",
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_Delete),
         "callback": lambda main_window: (
             lambda: main_window.file_manager.delete_files(
@@ -73,12 +108,14 @@ default_shortcuts = [
 
     # 编辑辅助操作（全选/重命名/新建）
     {
+        "id":"7",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_A),
         "callback": lambda main_window: main_window.file_list.selectAll,
         "target_widget": lambda main_window: main_window.file_list,
         "description": "全选文件"
     },
     {
+        "id":"8",
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F2),
         "callback": lambda main_window: (
             lambda: main_window.file_manager3.rename_item(main_window.file_list.currentItem())
@@ -87,6 +124,7 @@ default_shortcuts = [
         "description": "重命名选中项"
     },
     {
+        "id":"9",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_N),
         "callback": lambda main_window: main_window.btn_new_folder.click,
         "target_widget": None,
@@ -95,18 +133,21 @@ default_shortcuts = [
 
     # 界面控制操作（刷新/搜索/聚焦/列显隐）
     {
+        "id":"10",
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F5),
         "callback": lambda main_window: main_window.update_filelist,
         "target_widget": None,
         "description": "刷新界面"
     },
     {
+        "id":"11",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_F),
         "callback": lambda main_window: main_window.search_handler._show_search_input,
         "target_widget": None,
         "description": "显示搜索输入框"
     },
     {
+        "id":"12",
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_N),
         "callback": lambda main_window: lambda: main_window.nav_tree.setFocus(),
         "target_widget": None,
@@ -115,6 +156,7 @@ default_shortcuts = [
         "description": "聚焦导航树"
     },
     {
+        "id":"13",
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_F),
         "callback": lambda main_window: lambda: main_window.file_list.setFocus(),
         "target_widget": None,
@@ -123,6 +165,7 @@ default_shortcuts = [
         "description": "聚焦文件列表"
     },
     {
+        "id":"14",
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_D),
         "callback": lambda main_window: lambda: main_window.address_bar.setFocus(),
         "target_widget": None,
@@ -131,6 +174,7 @@ default_shortcuts = [
         "description": "聚焦地址栏"
     },
     {
+        "id":"15",
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_X),
         "callback": lambda main_window: (
             lambda: (
@@ -144,12 +188,14 @@ default_shortcuts = [
 
     # 辅助功能（帮助文档）
     {
+        "id":"16",
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F1),
         "callback": lambda main_window: main_window.toggle_shortcut_help_dialog,
         "target_widget": None,
         "description": "打开/关闭快捷键帮助对话框"
     },
     {
+        "id":"17",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_L),
         "callback": lambda main_window: lambda: main_window.language_manager.set_language(
             "en_US" if main_window.language_manager.lang == "zh_CN" else "zh_CN"
@@ -158,6 +204,26 @@ default_shortcuts = [
         "description": "切换语言（重启生效）"
     }
 ]
+# 加载用户自定义快捷键并更新默认配置（关键修改）
+user_shortcuts = load_user_shortcuts()
+for user_sc in user_shortcuts:
+    sc_id = user_sc.get("id")
+    if not sc_id:
+        continue  # 跳过无id的配置
+    modifiers_str = user_sc.get("modifiers", "NoModifier")
+    key_str = user_sc.get("key")
+    # 查找默认配置中对应id的项
+    for default_sc in default_shortcuts:
+        if default_sc.get("id") == sc_id:
+            # 解析modifiers和key为Qt枚举
+            modifiers = parse_modifiers(modifiers_str)
+            key = getattr(Qt.Key, key_str, None)
+            if key is not None:
+                default_sc["keys"] = (modifiers, key)  # 仅更新键值，保留原有callback等逻辑
+                print(f"成功更新快捷键id={sc_id}的键值为：{modifiers_str}+{key_str}")
+            else:
+                print(f"警告：无效的key值 {key_str}，跳过id={sc_id}的快捷键更新")
+            break
 
 # 新增：翻译映射字典（键为原中文描述，值为其他语言的翻译）
 shortcut_translations = {
@@ -179,7 +245,7 @@ shortcut_translations = {
     "聚焦地址栏": "Focus address bar",
     "切换修改时间列显隐": "Toggle modified time column",
     "打开/关闭快捷键帮助对话框": "Open/close shortcut help dialog",
-    "切换语言（重启生效）": "Switch language (restart effective)"
+    "切换语言/switch language（重启生效）": "Switch language/切换语言 (restart effective)"
 }
 
 def register_app_shortcuts(keyboard_handler, main_window):  # 新增语言参数

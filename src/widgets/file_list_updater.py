@@ -98,13 +98,13 @@ class FileListUpdater:
         if not self.current_path == '此电脑':
             # 从翻译获取表头文本（默认值为原硬编码）
             headers = [
-                self.translation.get("file_list_name", "名称"),  # 名称列翻译
-                self.translation.get("file_list_size", "大小")   # 大小列翻译
+                self.translation.get("name", "名称"),  # 名称列翻译
+                self.translation.get("size", "大小")   # 大小列翻译
             ]
             # 根据配置添加时间列（使用翻译）
             show_mtime = self.show_mtime
             if show_mtime:
-                headers.append(self.translation.get("file_list_mtime", "修改时间"))  # 修改时间列翻译
+                headers.append(self.translation.get("mtime", "修改时间"))  # 修改时间列翻译
             self.file_list.setColumnHidden(2, not show_mtime)  # 隐藏条件不变
             
             self.file_list.setHeaderLabels(headers)

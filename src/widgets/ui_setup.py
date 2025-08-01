@@ -58,8 +58,8 @@ def setup_top_widget(main_window, config, translation: dict):
     # 地址栏提示（翻译缺失时显示"输入路径..."）
     main_window.address_bar.setPlaceholderText(translation.get("address_bar_placeholder", "输入路径..."))
     
-    # 关键修复：显式初始化 btn_new_folder 并绑定到 main_window
-    main_window.btn_new_folder = QPushButton(translation.get("btn_new_folder", "新建文件夹"))
+    # 显式初始化 btn_new_folder 并绑定到 main_window
+    main_window.btn_new_folder = QPushButton(translation.get("new_folder", "新建文件夹"))
     main_window.btn_new_folder.setFixedHeight(control_height)  # 按钮高度
     
     # 显示隐藏文件复选框（翻译缺失时显示"显示隐藏文件"）
@@ -125,8 +125,8 @@ def setup_splitter(main_window, config, translation: dict):
     # main_window.file_list.setHeaderLabels(["名称", "大小"])  
     # 关键修改：使用翻译设置文件列表表头
     main_window.file_list.setHeaderLabels([
-        translation.get("file_list_name", "名称"),  # 新增翻译
-        translation.get("file_list_size", "大小")   # 新增翻译
+        translation.get("name", "名称"),  # 新增翻译
+        translation.get("size", "大小")   # 新增翻译
     ])
     main_window.file_list.setObjectName("file_list")  # 添加对象名称标识
     # main_window.file_list.setHeaderLabels(["名称", "大小"])

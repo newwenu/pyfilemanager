@@ -1,10 +1,13 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QMessageBox, QMenu  #  QMenu 导入（用于右键菜单）
+from PySide6.QtWidgets import QMessageBox  # 移除 QMenu 导入（已迁移）
 import os
 from widgets.properties_dialog import FilePropertiesDialog  # 属性对话框导入（用于右键菜单的属性操作）
 from widgets.drive_list_manager import DriveListManager
 from utils.logging_config import get_logger
+from widgets.context_menu import show_context_menu  # 新增：导入独立右键菜单模块
+
 logger = get_logger(__name__)
+
 def setup_event_bindings(main_window, config):
     """设置事件绑定（完整实现）"""
     # 导航树选择事件
@@ -58,23 +61,6 @@ def on_tree_select(main_window, item,config):
             main_window.last_updated_path = path
     main_window.address_bar.setText(main_window.current_path)
 
-def show_context_menu(main_window, pos):
-    """右键菜单显示（完整实现）"""
-    item = main_window.file_list.itemAt(pos)
-    menu = QMenu(main_window)
-    # 假设属性对话框已实现（需根据实际工程调整导入路径）
-    if item:
-        # 有选中项时显示删除和属性选项
-        delete_action = menu.addAction("删除")
-        prop_action = menu.addAction("属性")
-        delete_action.triggered.connect(lambda: handle_delete_file(main_window))
-        prop_action.triggered.connect(lambda: FilePropertiesDialog.show_for_selected_item(main_window))
-    else:
-        # 无选中项时显示新建文件夹选项
-        new_folder_action = menu.addAction("新建文件夹")
-        new_folder_action.triggered.connect(lambda: handle_new_folder(main_window))
-    # 在鼠标位置显示菜单
-    menu.exec(main_window.file_list.mapToGlobal(pos))
 
 def handle_new_folder(main_window):
     """处理新建文件夹操作"""
@@ -145,15 +131,15 @@ def on_item_double_click(main_window, item, column):
         except Exception as e:
             show_error(main_window, "错误", str(e))
 
-def handle_delete_file(main_window):
-    """处理删除文件操作"""
-    main_window.file_manager.delete_files(
-        parent_widget=main_window,
-        current_path=main_window.current_path,
-        selected_items=main_window.file_list.selectedItems(),
-        update_callback=main_window.update_filelist,
-        error_callback=lambda title, msg: show_error(main_window, title, msg)
-    )
+# def handle_delete_file(main_window):
+#     """处理删除文件操作"""
+#     main_window.file_manager.delete_files(
+#         parent_widget=main_window,
+#         current_path=main_window.current_path,
+#         selected_items=main_window.file_list.selectedItems(),
+#         update_callback=main_window.update_filelist,
+#         error_callback=lambda title, msg: show_error(main_window, title, msg)
+#     )
 
 def show_error(main_window, title, msg):
     """错误提示"""

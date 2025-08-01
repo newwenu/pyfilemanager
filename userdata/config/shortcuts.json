@@ -1,0 +1,107 @@
+{
+  "shortcuts": [
+    {
+      "id": "1",
+      "modifiers": "AltModifier",
+      "key": "Key_Left",
+      "description": "返回上级目录"
+    },
+    {
+      "id": "2",
+      "modifiers": "ControlModifier",
+      "key": "Key_H",
+      "description": "导航到主页"
+    },
+    {
+      "id": "3",
+      "modifiers": "ControlModifier",
+      "key": "Key_C",
+      "description": "复制选中文件"
+    },
+    {
+      "id": "4",
+      "modifiers": "ControlModifier",
+      "key": "Key_X",
+      "description": "剪切选中文件"
+    },
+    {
+      "id": "5",
+      "modifiers": "ControlModifier",
+      "key": "Key_V",
+      "description": "粘贴文件"
+    },
+    {
+      "id": "6",
+      "modifiers": "NoModifier",
+      "key": "Key_Delete",
+      "description": "删除选中文件"
+    },
+    {
+      "id": "7",
+      "modifiers": "ControlModifier",
+      "key": "Key_A",
+      "description": "全选文件"
+    },
+    {
+      "id": "8",
+      "modifiers": "NoModifier",
+      "key": "Key_F2",
+      "description": "重命名选中项"
+    },
+    {
+      "id":"9",
+      "modifiers":"ControlModifier",
+      "key": "Key_N",
+      "description": "新建文件夹"
+
+    },
+    {
+      "id":"10",
+      "modifiers":"NoModifier",
+      "key": "Key_F5",
+      "description": "刷新界面"
+    },
+    {
+        "id":"11",
+        "modifiers":"ControlModifier",
+        "key": "Key_S",
+        "description": "显示搜索输入框"
+    },
+    {
+      "id": "12",
+      "modifiers": "AltModifier",
+      "key": "Key_N",
+      "description": "聚焦导航树"
+    },
+    {
+      "id": "13",
+      "modifiers": "AltModifier",
+      "key": "Key_F",
+      "description": "聚焦文件列表"
+    },
+    {
+      "id": "14",
+      "modifiers": "AltModifier",
+      "key": "Key_D",
+      "description": "聚焦地址栏"
+    },
+    {
+      "id": "15",
+      "modifiers":"AltModifier",
+      "key": "Key_X",
+      "description": "切换修改时间列显隐"
+    },
+    {
+      "id": "16",
+      "modifiers": "NoModifier",
+      "key": "Key_F1",
+      "description": "打开/关闭快捷键帮助对话框"
+    },
+    {
+      "id": "17",
+      "modifiers": "ControlModifier",
+      "key": "Key_L",
+      "description": "切换语言（重启生效）"
+    }
+  ]
+}

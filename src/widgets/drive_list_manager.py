@@ -34,7 +34,7 @@ class DriveListManager:
         drives = get_system_drives()
         # 关键修改：使用翻译设置表头标签
         file_list.setHeaderLabels([
-            translation.get("drive_list_name", "名称"),  # 名称列翻译（默认"名称"）
+            translation.get("name", "名称"),  # 名称列翻译（默认"名称"）
             translation.get("drive_list_usage", "空间使用情况")  # 空间使用情况列翻译（默认"空间使用情况"）
         ])
         

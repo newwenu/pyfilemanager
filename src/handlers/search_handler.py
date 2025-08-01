@@ -9,7 +9,7 @@ from PySide6.QtGui import QWindow
 
 class SearchHandler:
     def __init__(self, main_window, file_list_updater):
-        return
+
         self.main_window = main_window
         self.file_list_updater = file_list_updater
         self.search_input = None
@@ -86,6 +86,7 @@ class SearchHandler:
 # ：高级搜索对话框类
 class AdvancedSearchDialog(QDialog):
     def __init__(self, parent=None):
+        return
         super().__init__(parent)
         self.setWindowTitle("Everything 搜索")
         # 移除固定尺寸设置（改为动态调整）
@@ -101,6 +102,7 @@ class AdvancedSearchDialog(QDialog):
 
     def _embed_everything_window(self):
         """获取 Everything 窗口句柄并嵌入到对话框（修改后）"""
+        return
         hwnd = windll.user32.FindWindowW(None, "Everything")
         if not hwnd:
             sleep(2)

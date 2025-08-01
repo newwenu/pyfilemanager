@@ -11,9 +11,9 @@ class FileManager2:
         # 修复后的对话框调用
         folder_name, ok = QInputDialog.getText(
             parent_widget,  # 传入有效的父窗口对象
-            "新建文件夹",
-            "请输入文件夹名称：",
-            text="新建文件夹"
+            parent_widget.translation.get("new_folder", "新建文件夹"),
+            parent_widget.translation.get("new_folder_tip", "请输入文件夹名称："),
+            text=parent_widget.translation.get("new_folder", "新建文件夹")
         )
         if not ok or not folder_name.strip():
             return
@@ -21,7 +21,7 @@ class FileManager2:
         counter = 1
         target_path = os.path.join(current_path, folder_name)
         while os.path.exists(target_path):
-            folder_name = f"新建文件夹({counter})"
+            folder_name = f"{parent_widget.translation.get('new_folder', '新建文件夹')}({counter})"
             target_path = os.path.join(current_path, folder_name)
             counter += 1
 
@@ -41,11 +41,16 @@ class FileManager2:
                        if os.path.isfile(os.path.join(current_path, item.text(0))))
         folder_count = len(selected_items) - file_count
 
-        # 确认对话框
+        # 确认对话框（优化：使用单条带占位符的翻译键）
+        confirm_msg = parent_widget.translation.get(
+            "confirm_delete_message",  # 翻译键统一为"confirm_delete_message"
+            "确定要删除 {file_count} 个文件 和 {folder_count} 个文件夹 到回收站吗？"  # 默认中文模板
+        ).format(file_count=file_count, folder_count=folder_count)  # 填充占位符
+
         if not QMessageBox.question(
             parent_widget,
-            "确认删除",
-            f"确定要删除 {file_count} 个文件和 {folder_count} 个文件夹到回收站吗？",
+            parent_widget.translation.get("confirm_delete", "确认删除"),
+            confirm_msg,  # 使用格式化后的消息
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         ) == QMessageBox.StandardButton.Yes:
             return
@@ -59,7 +64,7 @@ class FileManager2:
             try:
                 send2trash.send2trash(path)
             except Exception as e:
-                error_callback("错误", f"删除 {item.text(0)} 失败: {str(e)}")
+                error_callback(parent_widget.translation.get("error", "错误"), f"{parent_widget.translation.get('delete', '删除')} {item.text(0)} {parent_widget.translation.get('failed', '失败')}: {str(e)}")
         
         update_callback()  # 触发文件列表更新
 

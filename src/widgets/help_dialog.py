@@ -3,7 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from utils.keyboard_registry2 import shortcut_translations
 def qt_keys_to_string(keys):
-    """将 Qt 键枚举元组转换为用户可读的字符串（如 (AltModifier, Key_Left) → "Alt+Left"）"""
+    """将 Qt 键枚举元组转换为用户可读的字符串（支持组合键，如 (CtrlModifier|ShiftModifier, Key_A) → "Ctrl+Shift+A"）"""
     modifier, key = keys
     modifier_map = {
         Qt.KeyboardModifier.AltModifier: "Alt",
@@ -11,8 +11,16 @@ def qt_keys_to_string(keys):
         Qt.KeyboardModifier.ShiftModifier: "Shift",
         Qt.KeyboardModifier.NoModifier: ""
     }
-    modifier_str = modifier_map.get(modifier, "")
-    key_str = Qt.Key(key).name.replace("Key_", "")  # 转换为 "Left" 等可读名称
+    
+    # 提取所有生效的修饰符（支持组合键）
+    active_modifiers = []
+    for mod in modifier_map:
+        if modifier & mod and mod != Qt.KeyboardModifier.NoModifier:
+            active_modifiers.append(modifier_map[mod])
+    
+    modifier_str = "+".join(active_modifiers)  # 组合修饰符用 + 连接
+    key_str = Qt.Key(key).name.replace("Key_", "")  # 转换为 "A" 等可读名称
+    
     return f"{modifier_str}+{key_str}" if modifier_str else key_str
 
 class ShortcutHelpDialog(QDialog):

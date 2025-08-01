@@ -25,7 +25,8 @@ class FilePropertiesDialog(QDialog):
         super().__init__(parent)
         self.parent = parent
         self.file_path = file_path
-        self.setWindowTitle("文件属性")
+        # self.setWindowTitle("文件属性")
+        self.setWindowTitle(self.parent.translation.get("properties", "文件属性"))
         self._setup_ui()
         self._load_file_info()
 
@@ -47,16 +48,16 @@ class FilePropertiesDialog(QDialog):
         self.path_label = QLabel()
         self.size_label = QLabel()  # 将显示计算状态或最终结果
         self.mtime_label = QLabel()
-        self.btn_ok = QPushButton("确定")
+        self.btn_ok = QPushButton(self.parent.translation.get("confirm", "确定"))
         self.btn_ok.clicked.connect(self.accept)
         
-        self.layout.addWidget(QLabel("名称:"), 0, 0)
+        self.layout.addWidget(QLabel(self.parent.translation.get("name", "名称:")), 0, 0)
         self.layout.addWidget(self.name_label, 0, 1)
-        self.layout.addWidget(QLabel("路径:"), 1, 0)
+        self.layout.addWidget(QLabel(self.parent.translation.get("path", "路径:")), 1, 0)
         self.layout.addWidget(self.path_label, 1, 1)
-        self.layout.addWidget(QLabel("大小:"), 2, 0)
+        self.layout.addWidget(QLabel(self.parent.translation.get("size", "大小:")), 2, 0)
         self.layout.addWidget(self.size_label, 2, 1)
-        self.layout.addWidget(QLabel("修改时间:"), 3, 0)
+        self.layout.addWidget(QLabel(self.parent.translation.get("mtime", "修改时间:")), 3, 0)
         self.layout.addWidget(self.mtime_label, 3, 1)
         self.layout.addWidget(self.btn_ok, 4, 1, Qt.AlignmentFlag.AlignRight)
 
@@ -75,7 +76,7 @@ class FilePropertiesDialog(QDialog):
                 self.size_label.setText(format_size(size))
             else:
                 # 显示计算中提示并启动异步线程
-                self.size_label.setText("大小计算中...")
+                self.size_label.setText(self.parent.translation.get("size_calculating", "大小计算中..."))
                 self.calc_thread = SizeCalculationThread(self.file_path)
                 self.calc_thread.size_calculated.connect(self._update_folder_size)
                 self.calc_thread.start()  # 启动后台线程

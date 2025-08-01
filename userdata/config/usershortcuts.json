@@ -1,0 +1,47 @@
+{
+  "shortcuts": [
+    {
+      "id": "1",
+      "modifiers": "ControlModifier",
+      "key": "Key_Left",
+      "description": "返回上级目录"
+    },
+    {
+      "id":"9",
+      "modifiers":"ControlModifier+ShiftModifier",
+      "key": "Key_N",
+      "description": "新建文件夹"
+
+    },
+    {
+        "id":"11",
+        "modifiers":"ControlModifier+ShiftModifier",
+        "key": "Key_F",
+        "description": "显示搜索输入框"
+    },
+    {
+      "id": "12",
+      "modifiers": "ControlModifier",
+      "key": "Key_N",
+      "description": "聚焦导航树"
+    },
+    {
+      "id": "13",
+      "modifiers": "ControlModifier",
+      "key": "Key_F",
+      "description": "聚焦文件列表"
+    },
+    {
+      "id": "14",
+      "modifiers": "ControlModifier",
+      "key": "Key_D",
+      "description": "聚焦地址栏"
+    },
+    {
+      "id": "15",
+      "modifiers":"ControlModifier+ShiftModifier",
+      "key": "Key_T",
+      "description": "切换修改时间列显隐"
+    }
+  ]
+}
