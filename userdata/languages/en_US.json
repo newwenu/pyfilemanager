@@ -38,5 +38,6 @@
     "error": "Error",
     "failed": "failed",
     "confirm": "Confirm",
-    "size_calculating": "Size Calculating..."
+    "size_calculating": "Size Calculating...",
+    "everything_need_admin": "Administrator privileges required to use advanced search"
 }

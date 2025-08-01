@@ -6,7 +6,20 @@ from PySide6.QtCore import QProcess, QTimer
 from PySide6.QtWidgets import QVBoxLayout, QWidget,QListWidget
 from PySide6.QtGui import QWindow
 import sys  # 新增：用于系统判断
+import ctypes
+import sys
 
+
+def is_admin() -> bool:
+    """检测当前进程是否以管理员权限运行（Windows专用）"""
+    if sys.platform != "win32":
+        return False  # 非Windows系统无需检测
+    try:
+        # 尝试获取当前进程的管理员权限状态
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+    except Exception:
+        return False
+    
 class SearchHandler:
     def __init__(self, main_window, file_list_updater):
 
@@ -91,7 +104,7 @@ class SearchHandler:
 
 # 新增：Linux 高级搜索对话框类
 class LinuxAdvancedSearchDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle(parent.translation.get("advanced_search", "高级搜索"))
         self.main_window = parent
@@ -137,8 +150,10 @@ class LinuxAdvancedSearchDialog(QDialog):
 
 # ：高级搜索对话框类
 class AdvancedSearchDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent):
         super().__init__(parent)
+        self.main_window = parent
+        self.translation = parent.translation
         if sys.platform != "win32":
             return  # Linux 不初始化此对话框（已由 LinuxAdvancedSearchDialog 替代）
         
@@ -190,16 +205,27 @@ class AdvancedSearchDialog(QDialog):
         self.layout = QVBoxLayout(self)
 
     def _start_everything(self):
-        """启动 Everything 并嵌入其窗口（修改后）"""
+        """启动 Everything 并嵌入其窗口（新增管理员权限检测）"""
         # 校验路径是否存在
         if not os.path.exists(self.everything_exe_path):
             print(self.everything_exe_path)
-            print(self, "错误", "项目内未找到 Everything.exe，请检查 toolbox/Everythingsearch 目录！")
+            print(self, "错误", self.translation.get("everything_not_found", "项目内未找到 Everything.exe，请检查 toolbox/Everythingsearch 目录！"))
             return
-        i=0
+
+        # 新增：检测管理员权限
+        if not is_admin():
+            self.main_window.statusBar().showMessage(
+                self.translation.get("everything_need_admin", "需要管理员权限以使用高级搜索功能"), 3000
+            )
+            from PySide6.QtWidgets import QLabel
+            label = QLabel(self.translation.get("everything_need_admin", "需要管理员权限以使用高级搜索功能"))
+            self.layout.addWidget(label)
+            self.close()  # 关闭对话框
+            return
+
         self.everything_process = QProcess(self)
         self.everything_process.start(self.everything_exe_path)  # 使用项目内的绝对路径启动
-        QTimer.singleShot(1000, self._embed_everything_window)
+        QTimer.singleShot(100, self._embed_everything_window)
 
     def closeEvent(self, event):
         """关闭对话框时终止 Everything 进程（修复后）"""
