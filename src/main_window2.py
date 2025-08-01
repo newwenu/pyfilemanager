@@ -147,11 +147,3 @@ class FileManager(QMainWindow):
     def toggle_shortcut_help_dialog(self):
         self.help_dialog_handler.toggle_dialog()  # 传递当前语言参数
 
-if __name__ == '__main__':
-    # 配置读取逻辑为：
-    config_manager = ConfigManager("userdata/config/setting.json")
-    app = QApplication(sys.argv)
-    # 创建主窗口
-    window = FileManager("media/background2.png", config_manager)
-    window.show()
-    sys.exit(app.exec())

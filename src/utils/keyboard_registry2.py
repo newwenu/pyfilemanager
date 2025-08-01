@@ -3,10 +3,16 @@ from handlers.m_event_handlers import on_tree_select  # 导入
 from PySide6.QtWidgets import QMessageBox
 import json
 from pathlib import Path
-
+import sys
 # 辅助函数：加载用户自定义快捷键配置
 def load_user_shortcuts():
-    user_shortcuts_path = Path("userdata/config/usershortcuts.json")
+    """加载用户自定义快捷键配置"""
+    # 检查系统类型
+    if sys.platform == "win32":
+        load_path = "userdata/config/shortcutswindows.json"
+    else:
+        load_path = "userdata/config/shortcutslinux.json"
+    user_shortcuts_path = Path(load_path)
     if not user_shortcuts_path.exists():
         return []
     try:
