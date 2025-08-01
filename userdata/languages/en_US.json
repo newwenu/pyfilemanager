@@ -39,5 +39,10 @@
     "failed": "failed",
     "confirm": "Confirm",
     "size_calculating": "Size Calculating...",
-    "everything_need_admin": "Administrator privileges required to use advanced search"
+    "everything_need_admin": "Administrator privileges required to use advanced search",
+    "advanced_search": "Advanced Search",
+    "everything_search": "Everything Search",
+    "search_path": "Search Path",
+    "search_keyword": "Search Keyword",
+    "start_search": "Start Search"
 }
