@@ -18,6 +18,9 @@ class FolderSizeThread(QThread):
     def run(self):
         total_size = self.calculate_folder_size(self.path)
         if self._is_running:  # 仅在未被终止时发送信号
+            if total_size == -1:  # 新增：内容不可访问状态
+                print(self.path,"unaccessable")
+                self.size_updated.emit(self.path, "unaccessable")  # 发送状态标识
             # 原生格式化逻辑（不依赖外部函数）
             units = ['B', 'KB', 'MB', 'GB', 'TB']
             unit_index = 0
@@ -36,25 +39,38 @@ class FolderSizeThread(QThread):
 
     def calculate_folder_size(self, path):
         total_size = 0
-        for root, dirs, files in os.walk(path, followlinks=False):
-            # 优先响应强制终止标记（避免os.walk阻塞）
-            if self._terminate_requested or not self._is_running:
-                return 0
-            for file in files:
-                try:
-                    file_path = os.path.join(root, file)
-                    if sys.platform == "win32" and not file_path.startswith("\\\\?\\") and len(file_path) > 255:
-                        file_path = f"\\\\?\\{file_path}"  # 长路径处理
-                    total_size += max(os.path.getsize(file_path), 0)
-                    # 每处理10个文件休眠1ms（降低CPU占用）
-                    if (len(files) % 10) == 0:
-                        QThread.msleep(0)  # 需要导入QThread
-                except PermissionError:
-                    logger.error(f"无权限访问文件: {file_path}")
-                except Exception as e:
-                    logger.error(f"计算文件 {file_path} 大小时出错：{str(e)}")
-                    pass
-        return total_size
+        try:
+            # 增强：通过尝试读取目录内容验证根目录权限（替代os.access）
+            try:
+                os.listdir(path)  # 主动尝试读取目录内容（无权限会抛出PermissionError）
+            except PermissionError:
+                logger.debug(f"根目录 {path} 无读取权限，无法遍历")
+                return -1  # 或返回-1标记无权限
+            # logger.debug(f"开始遍历路径：{path}")  # 新增：记录遍历开始
+            for root, dirs, files in os.walk(path, followlinks=False):
+                # logger.debug(f"当前目录：{root}，文件数量：{len(files)}")
+                # 优先响应强制终止标记（避免os.walk阻塞）
+                if self._terminate_requested or not self._is_running:
+                    return 0
+                for file in files:
+                    try:
+                        file_path = os.path.join(root, file)
+                        if sys.platform == "win32" and not file_path.startswith("\\\\?\\") and len(file_path) > 255:
+                            file_path = f"\\\\?\\{file_path}"  # 长路径处理
+                        total_size += max(os.path.getsize(file_path), 0)
+                        # 每处理10个文件休眠1ms（降低CPU占用）
+                        if (len(files) % 10) == 0:
+                            QThread.msleep(0)  # 需要导入QThread
+                    except PermissionError:
+                        logger.error(f"无权限访问文件: {file_path}")
+                    except Exception as e:
+                        logger.error(f"计算文件 {file_path} 大小时出错：{str(e)}")
+                        pass
+            return total_size
+        except PermissionError as e:
+            print(path,"unaccessable")
+            logger.error(f"无法访问文件夹内容: {path}")
+            return -1
 
 
 class FolderSizeManager(QObject):
@@ -104,7 +120,10 @@ class FolderSizeManager(QObject):
 
     def _on_size_updated(self, path: str, size: str, item: QTreeWidgetItem):
         """线程计算完成后的回调"""
-        self.size_updated.emit(item, size)  # 触发 UI 更新信号
+        if size == "unaccessable":
+            self.size_updated.emit(item, self.parent.translation.get("unaccessable","无法访问"))
+        else:
+            self.size_updated.emit(item, size)  # 触发 UI 更新信号
         # 写入数据库（优化异常处理）
         try:
             # ：获取最后修改时间时添加异常捕获
@@ -112,12 +131,13 @@ class FolderSizeManager(QObject):
                 last_modified = os.path.getmtime(path)
                 if last_modified <= 0:
                     raise ValueError("无效时间戳")
-                if os.access(path, os.W_OK):
-                    raise PermissionError("无权限写入")
+                # print(f"路径 {path} 最后修改时间：{last_modified}")
+                # a = os.access(path, os.R_OK)
+                    #raise PermissionError("无权限访问")
             except Exception as e:
-                self.size_updated.emit(item,self.parent.translation.get("unaccessable","无法访问"))
-                # print(self.parent.translation.get("unaccess","无法访问"))
-                size = "unaccessable"
+                self.size_updated.emit(item,self.parent.translation.get("error","错误"))
+                # print(self.parent.translation.get("error","错误"))
+                # print(e)
             self.db.update_cache(
                 folder_path=path,
                 size=size,
