@@ -1,4 +1,4 @@
-import os
+import os , sys
 from PySide6.QtCore import QThread, Signal, QObject
 from PySide6.QtWidgets import QTreeWidgetItem
 from utils.logging_config import get_logger  # 替换原 logging 导入
@@ -43,7 +43,12 @@ class FolderSizeThread(QThread):
             for file in files:
                 try:
                     file_path = os.path.join(root, file)
-                    total_size += max(os.path.getsize(file_path), 0)  # 防御性编程（避免负数）
+                    if sys.platform == "win32" and not file_path.startswith("\\\\?\\") and len(file_path) > 255:
+                        file_path = f"\\\\?\\{file_path}"  # 长路径处理
+                    total_size += max(os.path.getsize(file_path), 0)
+                    # 每处理10个文件休眠1ms（降低CPU占用）
+                    if (len(files) % 10) == 0:
+                        QThread.msleep(0)  # 需要导入QThread
                 except PermissionError:
                     logger.error(f"无权限访问文件: {file_path}")
                 except Exception as e:
@@ -58,26 +63,44 @@ class FolderSizeManager(QObject):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.threads = {}  # 存储线程 {路径: 线程对象}
+        self.threads = {}  # 存储运行中的线程 {路径: 线程对象}
+        self.wait_queue = []  # 等待队列（路径, item）
+        self.max_threads = 10  # 最大同时运行线程数（可根据需求调整）
+        self.parent = parent
+        self.db = parent.db
 
     def start_calculate(self, path: str, item: QTreeWidgetItem):
-        """启动文件夹大小计算线程（避免重复计算）"""
+        """启动文件夹大小计算线程（增加并发限制）"""
         if path in self.threads:
-            logger.debug(f"路径 {path} 已存在计算线程，跳过重复启动")  # 使用模块日志
-            return  # 已存在同路径线程，跳过
+            logger.debug(f"路径 {path} 已存在计算线程，跳过重复启动")
+            return
+        # 检查当前线程数是否超过限制
+        if len(self.threads) >= self.max_threads:
+            logger.debug(f"当前线程数已达上限（{self.max_threads}），路径 {path} 加入等待队列")
+            # print(f"当前线程数已达上限（{self.max_threads}），路径 {path} 加入等待队列")
+            self.wait_queue.append((path, item))
+            return
         if not os.access(path, os.R_OK):
-            logger.error(f"路径 {path} 无读取权限，无法启动计算")  # 使用模块日志
-            self.size_updated.emit(item, "无读取权限")
+            logger.error(f"路径 {path} 无权限，无法启动计算")
+            self.size_updated.emit(item, self.parent.translation.get("no_permission","无权限"))
+            # print(self.parent.translation.get("no_permission","无权限"))
             return
         if not os.access(path, os.W_OK):
-            logger.error(f"路径 {path} 无写入权限，无法启动计算")  # 使用模块日志
-            self.size_updated.emit(item, "无写入权限")
+            logger.error(f"路径 {path} 无权限，无法启动计算")
+            self.size_updated.emit(item, self.parent.translation.get("no_permission","无权限"))
+            # print(self.parent.translation.get("no_permission","无权限"))
             return
+        # 启动线程并记录
         thread = FolderSizeThread(path)
         self.threads[path] = thread
-        # 连接线程信号到管理器的回调（使用 lambda 绑定固定参数）
         thread.size_updated.connect(lambda p, s: self._on_size_updated(p, s, item))
         thread.start()
+
+    def _check_wait_queue(self):
+        """检查等待队列并启动新线程"""
+        if self.wait_queue and len(self.threads) < self.max_threads:
+            path, item = self.wait_queue.pop(0)
+            self.start_calculate(path, item)  # 重新触发启动逻辑
 
     def _on_size_updated(self, path: str, size: str, item: QTreeWidgetItem):
         """线程计算完成后的回调"""
@@ -89,11 +112,13 @@ class FolderSizeManager(QObject):
                 last_modified = os.path.getmtime(path)
                 if last_modified <= 0:
                     raise ValueError("无效时间戳")
+                if os.access(path, os.W_OK):
+                    raise PermissionError("无权限写入")
             except Exception as e:
-                # last_modified = 0  # 无效时间戳设为0（或根据业务需求调整）
-                self.size_updated.emit(item, "读取出错")
-                return -1
-            self.parent().db.update_cache(
+                self.size_updated.emit(item,self.parent.translation.get("unaccessable","无法访问"))
+                # print(self.parent.translation.get("unaccess","无法访问"))
+                size = "unaccessable"
+            self.db.update_cache(
                 folder_path=path,
                 size=size,
                 last_modified=last_modified
@@ -103,6 +128,7 @@ class FolderSizeManager(QObject):
             logger.error(f"数据库写入失败，路径：{path}，大小：{size}，错误信息：{str(e)}")
         if path in self.threads:
             del self.threads[path]  # 清理已完成的线程记录
+            self._check_wait_queue()  # 新增：清理后立即检查等待队列
 
     def stop_all_threads(self):
         """停止所有正在运行的线程"""
@@ -113,5 +139,9 @@ class FolderSizeManager(QObject):
         logger.info(f"开始停止 {thread_count} 个文件夹大小计算线程")  # 使用模块日志
         for thread in self.threads.values():
             thread.stop()
-            thread.wait()  # 等待线程终止
+            # 等待线程主动退出（最长等待5秒）
+            if not thread.wait(5000):  # 5000ms超时
+                logger.warning(f"线程 {thread.path} 未及时终止，尝试强制终止")
+                thread.terminate()  # 强制终止（最后手段）
+                thread.wait(1000)  # 等待强制终止完成
         self.threads.clear()

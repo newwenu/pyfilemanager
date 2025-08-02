@@ -115,6 +115,7 @@ class FileManager(QMainWindow):
 
     def closeEvent(self, event):
         """窗口关闭时清理所有未完成的线程"""
+        self.statusBar().showMessage("正在关闭...")
         self.folder_size_manager.stop_all_threads()
         self.db.close()
         # 新增：终止文件列表加载线程

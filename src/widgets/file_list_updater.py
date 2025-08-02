@@ -162,7 +162,10 @@ class FileListUpdater:
             if current_last_modified != db_last_modified:
                 self.start_folder_size_thread(folder_path, item)
             else:
-                item.setText(1, cached_size)
+                if cached_size == "unaccessable":
+                    item.setText(1, self.translation.get("unaccessable","无法访问"))
+                else:
+                    item.setText(1, cached_size)
         else:
             self.start_folder_size_thread(folder_path, item)
 

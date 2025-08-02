@@ -36,11 +36,11 @@ class FileListLoaderThread(QThread):
                     file_list.append(file_info)
             self.list_loaded.emit(file_list)  # 发送扫描结果到主线程
         except PermissionError as e:
-            self.error_occurred.emit(f"无权限访问目录: {self.path}")  # 发射权限错误
+            self.error_occurred.emit(f"无法访问目录: {self.path}")  # 发射权限错误
             # print("warn:无权限访问目录:", self.path)
             self.list_loaded.emit([])
         except Exception as e:
-            self.error_occurred.emit(f"扫描目录时出错: {self.path}")  # 异常时发送错误信息
+            self.error_occurred.emit(f"加载目录时出错: {self.path}")  # 异常时发送错误信息
             self.list_loaded.emit([])  # 发送空列表表示加载失败
         
 
