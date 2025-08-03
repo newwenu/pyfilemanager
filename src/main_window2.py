@@ -55,11 +55,11 @@ class FileManager(QMainWindow):
         # 初始化键盘处理器
         self.keyboard_handler = KeyboardHandler(self)
         setup_ui(self, self.config_manager)  # UI 初始化（内部创建 toolbar）
-        setup_event_bindings(self,config)  # 事件绑定
+        setup_event_bindings(self,config_manager.config)  # 事件绑定
         # 初始化文件列表更新器
         self.file_list_updater = FileListUpdater(self)
         self.update_filelist()  # 初始加载文件列表
-        self.bg_manager = BackgroundManager(self.bg_label, self.image_path)
+        self.bg_manager = BackgroundManager(self.bg_label, self.image_path,random=config_manager.get("start-random",False))
         self.bg_manager.load_background()
         self.folder_size_manager = FolderSizeManager(self)
         self.folder_size_manager.size_updated.connect(self.update_folder_size)

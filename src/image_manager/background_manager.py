@@ -1,13 +1,18 @@
 import os
-from PySide6.QtGui import QImage, QPixmap, Qt
+from PySide6.QtGui import QImage, QPixmap, Qt,QTransform
 from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QLabel
+from .get_pic import get_webp
 from utils.logging_config import get_logger
 logger = get_logger(__name__)
 class BackgroundManager:
-    def __init__(self, bg_label: QLabel, image_path: str):
+    def __init__(self, bg_label: QLabel, image_path: str,random:bool=False):
         self.bg_label = bg_label  # 背景标签控件
-        self.image_path = image_path  # 背景图片路径
+        self.image_path = None
+        if not os.path.exists(image_path) or random:
+            self.image_path = get_webp()
+        if not self.image_path:
+            self.image_path = image_path  # 背景图片路径
         self.original_image = QImage()  # 缓存原始图片
         self.cached_size = QSize()  # 新增：缓存最后一次渲染的尺寸
         self.cached_pixmap = QPixmap()  # 新增：缓存渲染后的图片
@@ -21,6 +26,12 @@ class BackgroundManager:
         try:
             # 加载原始图片并转换格式（仅加载一次）
             self.original_image = QImage(self.image_path).convertToFormat(QImage.Format.Format_RGBA8888)
+            # 新增：获取图片尺寸信息
+            width = self.original_image.width()
+            height = self.original_image.height()
+            if width<height:
+                self.original_image = self.original_image.transformed(QTransform().rotate(90))
+            # logger.info(f"图片尺寸: {width}x{height} (宽x高)")
             # 初始调整大小（触发首次渲染）
             self._update_background_size(self.bg_label.parent().size())
         except Exception as e:

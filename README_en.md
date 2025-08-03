@@ -6,7 +6,13 @@
 
 ## Attention
 
-Some functions may not work because some files have not been committed.
+Functionality is partially limited due to:
+
+- Uncommitted binary assets (e.g.binary files-everything.exe)
+
+- Features under active development
+
+- Required external dependencies not bundled with source
 
 ## Dependencies
 
@@ -63,6 +69,12 @@ Put the png image files you need in it.
 
 ## 2025.7.13
 
-Support language switch,press "Ctrl+L" in main window to switch
+### Support language switch,press "Ctrl+L" in main window to switch
 
-greenhorn...-en now maybe a little rough
+###
+
+#### greenhorn...-en now maybe a little rough
+
+### 2025.8.3
+
+### Add get random background from network,need to get API by yourself,now only support return image data

@@ -20,5 +20,7 @@
     "show_all_sizes": false,
     "statusbar_visible": true,
     "language": "zh_CN",
-    "start_path": "X:\\"
+    "start_path": "X:\\",
+    "log_level": "info",
+    "start-random": false
 }
