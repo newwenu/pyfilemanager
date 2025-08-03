@@ -1,10 +1,11 @@
-import requests
+import urllib.request
+from urllib.error import URLError, HTTPError
 import os
 import hashlib  # 新增：用于计算文件哈希值
 import configparser
 
 
-def get_webp(url = None):
+def get_webp(url=None):
     
     save_path = os.path.join("media","webpic")
     if url is None:
@@ -15,11 +16,13 @@ def get_webp(url = None):
         config.read(ini_path)
         url = config.get('pic_url', 'url1')
     try:
-        r = requests.get(url, timeout=5)
-    except requests.RequestException as e:
-        print(f"请求失败: {e}")
+        with urllib.request.urlopen(url, timeout=5) as r:
+            content = r.read()
+            status_code = r.status
+    except (URLError, HTTPError) as e:
+        print(f"请求失败: {e.reason}")
         return ""
-    print(f"请求状态码：{r.status_code}")
+    print(f"请求状态码：{status_code}")
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     # 第一步：获取当前最大序号（用于生成新文件名）
@@ -36,7 +39,8 @@ def get_webp(url = None):
     new_num = max_num + 1
 
     # 第二步：计算新图片的哈希值（用于去重）
-    new_image_hash = hashlib.md5(r.content).hexdigest()  # 直接使用响应的二进制内容计算哈希
+    # 修改哈希计算部分
+    new_image_hash = hashlib.md5(content).hexdigest()
 
     # 第三步：检查是否已有相同内容的图片
     is_duplicate = False
@@ -49,17 +53,15 @@ def get_webp(url = None):
         print(is_duplicate)
         print(new_num)
         print(max_num)
-    return save_webp(r,is_duplicate,new_num,save_path)
+    return save_webp(content,is_duplicate,new_num,save_path)
 
     
-def save_webp(r,is_duplicate,new_num,save_path):
-    if is_duplicate:
-        print("检测到重复图片，不保存")
-    else:
-        save_path = os.path.join(save_path,f"background{new_num}.webp")
-        # 保存新图片（使用递增的序号）
+def save_webp(content,is_duplicate,new_num,save_path):
+    # 修改保存部分
+    if not is_duplicate:
+        save_path = os.path.join(save_path, f"background{new_num}.webp")
         with open(save_path, "wb") as f:
-            f.write(r.content)  # 用r.content（二进制）保存图片
+            f.write(content)  # 使用从urllib获取的内容
         print(f"新图片已保存为：{save_path}")
     return save_path
 
