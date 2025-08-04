@@ -4,18 +4,35 @@ from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QLabel
 from .get_pic import get_webp
 from utils.logging_config import get_logger
+from threads.webp_loader import WebpLoader
 logger = get_logger(__name__)
 class BackgroundManager:
     def __init__(self, bg_label: QLabel, image_path: str,random:bool=False):
         self.bg_label = bg_label  # 背景标签控件
         self.image_path = None
-        if not os.path.exists(image_path) or random:
-            self.image_path = get_webp()
-        if not self.image_path:
-            self.image_path = image_path  # 背景图片路径
+        if os.path.exists(image_path):
+            self.image_path = image_path
+        if random:
+            self._start_webp_loading()
+            # self.image_path = get_webp()
+        
         self.original_image = QImage()  # 缓存原始图片
         self.cached_size = QSize()  # 新增：缓存最后一次渲染的尺寸
         self.cached_pixmap = QPixmap()  # 新增：缓存渲染后的图片
+
+    def _start_webp_loading(self):
+        """启动异步加载网络图片"""
+        self.thread = WebpLoader()
+        self.thread.loaded.connect(self._on_webp_loaded)
+        self.thread.start()
+
+    def _on_webp_loaded(self, path):
+        """网络图片加载完成回调（新增有效性检查）"""
+        if path and os.path.exists(path):
+            self.image_path = path
+            self.load_background()
+        else:
+            logger.warning("网络图片加载失败，保持原有背景")
 
     def load_background(self):
         """加载并初始化背景图片（优化版：含尺寸缓存）"""
