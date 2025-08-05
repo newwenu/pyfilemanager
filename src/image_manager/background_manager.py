@@ -24,7 +24,7 @@ class BackgroundManager:
         self._set_temp_label(self)
         
         # 设置3秒后自动清除（无论成功与否）
-        QTimer.singleShot(3000, self._clear_temp_label)
+        QTimer.singleShot(3000, self.temp_label.hide)
         self.thread = WebpLoader()
         self.thread.loaded.connect(self._on_webp_loaded)
         self.thread.start()
@@ -56,7 +56,7 @@ class BackgroundManager:
             QTimer.singleShot(2000, self._clear_temp_label)
         else:
             logger.warning("网络图片加载失败，保持原有背景")
-            self._set_temp_label(self,"⚠️ 加载失败")
+            self._update_temp_label("⚠️ 加载失败")
             QTimer.singleShot(3000, self._clear_temp_label)
         # if hasattr(self, 'temp_label'):
         #     if path and os.path.exists(path):
