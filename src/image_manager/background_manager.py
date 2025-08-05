@@ -21,8 +21,18 @@ class BackgroundManager:
 
     def _start_webp_loading(self):
         """启动异步加载网络图片"""
+        self._set_temp_label(self)
+        
+        # 设置3秒后自动清除（无论成功与否）
+        QTimer.singleShot(3000, self._clear_temp_label)
+        self.thread = WebpLoader()
+        self.thread.loaded.connect(self._on_webp_loaded)
+        self.thread.start()
+
+    def _set_temp_label(self,parent):
+        """创建临时标签"""
         # 创建临时提示标签
-        self.temp_label = QLabel(self.bg_label)
+        self.temp_label = QLabel(parent.bg_label)
         self.temp_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
         # 调整边距使内容不贴边
         self.temp_label.setContentsMargins(0, 0, 10, 10)
@@ -36,12 +46,6 @@ class BackgroundManager:
             }
         """)
         self._update_temp_label("⏳ 加载中...")
-        
-        # 设置3秒后自动清除（无论成功与否）
-        QTimer.singleShot(3000, self._clear_temp_label)
-        self.thread = WebpLoader()
-        self.thread.loaded.connect(self._on_webp_loaded)
-        self.thread.start()
 
     def _on_webp_loaded(self, path):
         """网络图片加载完成回调（新增有效性检查）"""
@@ -52,7 +56,7 @@ class BackgroundManager:
             QTimer.singleShot(2000, self._clear_temp_label)
         else:
             logger.warning("网络图片加载失败，保持原有背景")
-            self._update_temp_label("⚠️ 加载失败")
+            self._set_temp_label(self,"⚠️ 加载失败")
             QTimer.singleShot(3000, self._clear_temp_label)
         # if hasattr(self, 'temp_label'):
         #     if path and os.path.exists(path):
