@@ -2,7 +2,7 @@
 
 ## Simple File Manager
 
-### en English
+### [enEnglish](README-en.md) | [zh简体中文](README-zh.md)
 
 ## Attention
 
@@ -16,7 +16,7 @@ Functionality is partially limited due to:
 
 ## Dependencies
 
-requirements.txt/pyproject.toml
+requirements.txt or pyproject.toml
 
 ## Customized images, please add a folder named "media" in the src directory, or run main.pyw
 
@@ -78,3 +78,7 @@ Put the png image files you need in it.
 ### 2025.8.3
 
 ### Add get random background from network,need to get API by yourself,now only support return image data
+
+## 2025.8.5
+
+### Continue to optimize image loading

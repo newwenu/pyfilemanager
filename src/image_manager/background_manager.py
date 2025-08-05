@@ -120,8 +120,8 @@ class BackgroundManager:
         # 更新缓存
         self.cached_pixmap = QPixmap.fromImage(scaled_image)
         self.cached_size = size
-        # 应用新图片后强制更新临时标签位置
-        self.temp_label.move(size.width() - self.temp_label.width() - 10, 
+        if hasattr(self, 'temp_label'):
+            self.temp_label.move(size.width() - self.temp_label.width() - 10, 
                            size.height() - self.temp_label.height() - 10)
         # 应用新图片
         self.bg_label.setPixmap(self.cached_pixmap)
