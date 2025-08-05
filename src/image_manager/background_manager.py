@@ -1,8 +1,7 @@
 import os
 from PySide6.QtGui import QImage, QPixmap, Qt,QTransform
-from PySide6.QtCore import QSize
 from PySide6.QtWidgets import QLabel
-from .get_pic import get_webp
+from PySide6.QtCore import QSize,QTimer
 from utils.logging_config import get_logger
 from threads.webp_loader import WebpLoader
 logger = get_logger(__name__)
@@ -22,6 +21,24 @@ class BackgroundManager:
 
     def _start_webp_loading(self):
         """启动异步加载网络图片"""
+        # 创建临时提示标签
+        self.temp_label = QLabel(self.bg_label)
+        self.temp_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
+        # 调整边距使内容不贴边
+        self.temp_label.setContentsMargins(0, 0, 10, 10)
+        self.temp_label.setStyleSheet("""
+            QLabel {
+                color: white;
+                background: rgba(0, 0, 0, 120);
+                padding: 4px 8px;
+                border-radius: 8px;
+                margin: 6px;
+            }
+        """)
+        self._update_temp_label("⏳ 加载中...")
+        
+        # 设置3秒后自动清除（无论成功与否）
+        QTimer.singleShot(3000, self._clear_temp_label)
         self.thread = WebpLoader()
         self.thread.loaded.connect(self._on_webp_loaded)
         self.thread.start()
@@ -33,6 +50,25 @@ class BackgroundManager:
             self.load_background()
         else:
             logger.warning("网络图片加载失败，保持原有背景")
+        if hasattr(self, 'temp_label'):
+            if path and os.path.exists(path):
+                self._update_temp_label("✅ 加载成功")
+                QTimer.singleShot(2000, self._clear_temp_label)
+            else:
+                self._update_temp_label("⚠️ 加载失败")
+                QTimer.singleShot(3000, self._clear_temp_label)
+
+    def _update_temp_label(self, text):
+        """更新临时标签内容"""
+        if hasattr(self, 'temp_label') and self.temp_label:
+            self.temp_label.setText(text)
+            self.temp_label.adjustSize()  # 自动调整标签尺寸
+
+    def _clear_temp_label(self):
+        """清除临时标签"""
+        if hasattr(self, 'temp_label') and self.temp_label:
+            self.temp_label.deleteLater()
+            del self.temp_label
 
     def load_background(self):
         """加载并初始化背景图片（优化版：含尺寸缓存）"""
@@ -76,7 +112,9 @@ class BackgroundManager:
         # 更新缓存
         self.cached_pixmap = QPixmap.fromImage(scaled_image)
         self.cached_size = size
-
+        # 应用新图片后强制更新临时标签位置
+        self.temp_label.move(size.width() - self.temp_label.width() - 10, 
+                           size.height() - self.temp_label.height() - 10)
         # 应用新图片
         self.bg_label.setPixmap(self.cached_pixmap)
         self.bg_label.setGeometry(0, 0, size.width(), size.height())
