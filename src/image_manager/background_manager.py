@@ -48,15 +48,19 @@ class BackgroundManager:
         if path and os.path.exists(path):
             self.image_path = path
             self.load_background()
+            self._update_temp_label("✅ 加载成功")
+            QTimer.singleShot(2000, self._clear_temp_label)
         else:
             logger.warning("网络图片加载失败，保持原有背景")
-        if hasattr(self, 'temp_label'):
-            if path and os.path.exists(path):
-                self._update_temp_label("✅ 加载成功")
-                QTimer.singleShot(2000, self._clear_temp_label)
-            else:
-                self._update_temp_label("⚠️ 加载失败")
-                QTimer.singleShot(3000, self._clear_temp_label)
+            self._update_temp_label("⚠️ 加载失败")
+            QTimer.singleShot(3000, self._clear_temp_label)
+        # if hasattr(self, 'temp_label'):
+        #     if path and os.path.exists(path):
+        #         self._update_temp_label("✅ 加载成功")
+        #         QTimer.singleShot(2000, self._clear_temp_label)
+        #     else:
+        #         self._update_temp_label("⚠️ 加载失败")
+        #         QTimer.singleShot(3000, self._clear_temp_label)
 
     def _update_temp_label(self, text):
         """更新临时标签内容"""
