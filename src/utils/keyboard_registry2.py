@@ -207,7 +207,7 @@ default_shortcuts = [
             "en_US" if main_window.language_manager.lang == "zh_CN" else "zh_CN"
         ),
         "target_widget": None,
-        "description": "切换语言（重启生效）"
+        "description": "切换语言/switch language（重启生效）"
     }
 ]
 # 加载用户自定义快捷键并更新默认配置（关键修改）
@@ -251,7 +251,7 @@ shortcut_translations = {
     "聚焦地址栏": "Focus address bar",
     "切换修改时间列显隐": "Toggle modified time column",
     "打开/关闭快捷键帮助对话框": "Open/close shortcut help dialog",
-    "切换语言/switch language（重启生效）": "Switch language/切换语言 (restart effective)"
+    "切换语言/switch language（重启生效）": "Switch language/切换语言 (requires restart)"
 }
 
 def register_app_shortcuts(keyboard_handler, main_window):  # 新增语言参数
