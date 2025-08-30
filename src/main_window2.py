@@ -3,30 +3,29 @@ import os
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QTreeWidgetItem
 from PySide6.QtGui import QGuiApplication,QPalette
-if True:
-    #导入
-    from threads.folder_size import FolderSizeManager
-    from utils.keyboard_registry2 import register_app_shortcuts,default_shortcuts
-    from widgets.file_list_updater import FileListUpdater
-    from widgets.ui_setup import setup_ui 
-    from handlers.m_event_handlers import setup_event_bindings
-    from image_manager.icon_manager import create_icon_set
-    from image_manager.background_manager import BackgroundManager
-    from Fileoperater.file_manager2 import FileManager2
-    from Fileoperater.file_manager3 import FileManager3
-    from handlers.keyboard_handler import KeyboardHandler
-    from dbload_manager.database_manager import DatabaseManager
-    from handlers.drag_drop_handler import DragDropHandler  # 导入
-    from config_manager.config_manager import ConfigManager
-    from utils.logging_config import init_logging
-    from handlers.help_dialog_handler import HelpDialogHandler
-    from handlers.file_operation import FileOperationHandler
-    from handlers.search_handler import SearchHandler
-    from handlers.home_handler import HomeHandler    
-    from language_manager.language_manager import LanguageManager
+
+from threads.folder_size import FolderSizeManager
+from utils.keyboard_registry2 import register_app_shortcuts
+from widgets.file_list_updater import FileListUpdater
+from widgets.ui_setup import setup_ui 
+from handlers.m_event_handlers import setup_event_bindings
+from image_manager.icon_manager import create_icon_set
+from image_manager.background_manager import BackgroundManager
+from Fileoperater.file_manager2 import FileManager2
+from Fileoperater.file_manager3 import FileManager3
+from handlers.keyboard_handler import KeyboardHandler
+from dbload_manager.database_manager import DatabaseManager
+from handlers.drag_drop_handler import DragDropHandler  
+from config_manager.config_manager import ConfigManager
+from utils.logging_config import init_logging
+from handlers.help_dialog_handler import HelpDialogHandler
+from handlers.file_operation import FileOperationHandler
+from handlers.search_handler import SearchHandler
+from handlers.home_handler import HomeHandler    
+from language_manager.language_manager import LanguageManager
 
 class FileManager(QMainWindow):
-    def __init__(self, image_path, config_manager: ConfigManager):  # 依赖注入
+    def __init__(self, config_manager: ConfigManager):  # 依赖注入
         super().__init__()
         self.lang = config_manager.get("language","zh-CN")
         # 初始化语言管理器（替代原语言逻辑）
@@ -35,7 +34,7 @@ class FileManager(QMainWindow):
         self.sys_bg = system_palette.color(QPalette.Window)
         self.last_updated_path = None  # ：上次更新的路径
         self.folder_threads = {}  # 用于存储每个文件夹的线程
-        self.image_path = image_path
+        self.image_path = config_manager.config["background_image"]
         start_path= config_manager.get("start_path",os.path.expanduser('~'))
         self.current_path = start_path if os.path.exists(start_path) else os.path.expanduser('~')
         self.show_hidden = False  # ：控制是否显示隐藏文件
@@ -73,7 +72,6 @@ class FileManager(QMainWindow):
         
         # ：提前初始化搜索处理器
         self.search_handler = SearchHandler(self, self.file_list_updater)
-        # self.search_handler = None
         # ：初始化文件操作处理器
         self.file_op_handler = FileOperationHandler(self)
         # ：初始化帮助对话框处理器

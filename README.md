@@ -2,7 +2,7 @@
 
 ## 极简文件管理器
 
-### [zh简体中文](README-zh.md) | [enEnglish](README-en.md)
+### [zh_cn简体中文](README.md) | [英文English](README-en.md)
 
 ## 注意
 
@@ -13,6 +13,8 @@
 - 尚在开发中的功能模块
 
 - 需额外获取的外部资源
+
+- 项目为个人项目，不提供任何担保，也暂不提供任何其它技术支持
 
 ## 依赖
 
@@ -63,6 +65,8 @@ requirements.txt 或 pyproject.toml
 目前在win10/win11/archLinux上测试正常
 
 需要注意的是：archlinux上快捷键操作与win10/win11不同
+
+## [使用说明书](使用说明书.md)
 
 ## 更新
 

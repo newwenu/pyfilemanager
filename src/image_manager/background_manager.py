@@ -3,7 +3,7 @@ from PySide6.QtGui import QImage, QPixmap, Qt,QTransform
 from PySide6.QtWidgets import QLabel
 from PySide6.QtCore import QSize,QTimer
 from utils.logging_config import get_logger
-from threads.webp_loader import WebpLoader
+from threads.webpic_loader import WebpLoader
 logger = get_logger(__name__)
 class BackgroundManager:
     def __init__(self, bg_label: QLabel, image_path: str,random:bool=False):

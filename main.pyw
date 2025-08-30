@@ -11,7 +11,6 @@ if __name__ == "__main__":
     config_manager = ConfigManager("userdata/config/setting.json")  # 创建 ConfigManager 实例
     app = QApplication(sys.argv)
     # 传递 ConfigManager 实例给 FileManager
-    background_image = config_manager.config["background_image"]
-    window = FileManager(background_image, config_manager)
+    window = FileManager(config_manager)
     window.show()
     sys.exit(app.exec())
