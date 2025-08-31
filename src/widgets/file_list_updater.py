@@ -267,7 +267,7 @@ class FileListUpdater:
             size = self.translation.get("calculating", "计算中")
         item = QTreeWidgetItem(self.file_list, [info["name"], size])
     # 特殊处理快捷方式文件
-        if file_type == 'shortcut' and not info["is_dir"]:
+        if file_type == 'shortcut' or file_type == 'defaulticon' and not info["is_dir"]:
             from PySide6.QtGui import QIcon
             shortcut_path = info["path"]
             icon_size = self.fm.config_manager.get("file_list_icon_size", 40)

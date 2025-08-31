@@ -82,3 +82,7 @@ Put the png image files you need in it.
 ## 2025.8.5
 
 ### Continue to optimize image loading
+
+## 2025.8.31
+
+### Support native file icon

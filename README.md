@@ -85,3 +85,8 @@ requirements.txt 或 pyproject.toml
 ## 2025.8.5
 
 ## 继续优化了图片加载
+
+## 2025.8.31
+
+## 支持原生文件图标
+
