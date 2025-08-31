@@ -8,6 +8,8 @@ from dbload_manager.database_manager import DatabaseManager
 from threads.file_list_loader import FileListLoaderManager  # 导入
 from handlers.header_sort_handler import HeaderSortHandler  # 新增导入
 from utils.sort_utils import sort_file_list  # 新增：导入排序工具
+# 导入快捷方式图标提取模块
+from image_manager.ink_icon import get_shortcut_icon_pixmap
 from utils.logging_config import get_logger
 logger = get_logger(__name__)
 class FileListUpdater:
@@ -258,13 +260,30 @@ class FileListUpdater:
     def _create_list_item_from_info(self, info: dict):
         """适配异步扫描结果的列表项创建（修改：使用翻译）"""
         file_type = 'folder' if info["is_dir"] else get_file_type(info["name"])
-        # size = '<文件夹>' if (info["is_dir"] and not self.show_all_sizes) else format_size(info["size"])
+        
         size = self.translation.get("folder", "<文件夹>") if (info["is_dir"] and not self.show_all_sizes) else format_size(info["size"])
         if info["is_dir"] and self.show_all_sizes:
             # 替换为翻译文本（默认值"计算中"）
             size = self.translation.get("calculating", "计算中")
         item = QTreeWidgetItem(self.file_list, [info["name"], size])
-        item.setIcon(0, self.icons.get(file_type, self.icons['default']))
+    # 特殊处理快捷方式文件
+        if file_type == 'shortcut' and not info["is_dir"]:
+            from PySide6.QtGui import QIcon
+            shortcut_path = info["path"]
+            icon_size = self.fm.config_manager.get("file_list_icon_size", 40)
+            pixmap = get_shortcut_icon_pixmap(shortcut_path, icon_size)
+            
+            if pixmap and not pixmap.isNull():
+                # 使用提取的图标
+                item.setIcon(0, QIcon(pixmap))
+            else:
+                # 回退到默认快捷方式图标
+                item.setIcon(0, self.icons.get(file_type, self.icons['default']))
+        else:
+            # 原有逻辑
+            item.setIcon(0, self.icons.get(file_type, self.icons['default']))
+    
+        # item.setIcon(0, self.icons.get(file_type, self.icons['default']))
         item.setToolTip(0, info["name"])
         if self.show_mtime:
             import datetime

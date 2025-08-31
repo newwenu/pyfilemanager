@@ -17,6 +17,7 @@ ICON_TYPE_MAPPING = {
     'hardware': 'hardware.png',
     'document': 'document.png',
     'spreadsheet': 'spreadsheet.png', 
+    'shortcut': 'shortcut.png',  # 添加这一行
     'default': 'file.png'
 }
 
@@ -44,11 +45,8 @@ def create_icon_set(icon_dir: str = "media", icon_size: int = 32) -> tuple[dict,
                     Qt.TransformationMode.SmoothTransformation  # 平滑缩放
                 )
                 icons[file_type] = QIcon(scaled_pixmap)
-            # icons[file_type] = QIcon(str(icon_path))
+
         else:
-            # 记录缺失图标警告
-            # logging.warning(f"图标文件缺失: {icon_path}，将使用字符图标替代")
-            
             # 使用缓存避免重复生成字符图标
             char = get_icon_char(file_type)
             if char not in char_icon_cache:
