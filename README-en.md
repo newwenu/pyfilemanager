@@ -14,6 +14,8 @@ Functionality is partially limited due to:
 
 - Required external dependencies not bundled with source
 
+- This is a personal project with no guarantees and no additional technical support provided at this time
+
 ## Dependencies
 
 requirements.txt or pyproject.toml
@@ -61,19 +63,17 @@ Put the png image files you need in it.
 
  Experiment conditions (using the latest py/pack)
 
- Currently tested and working on Windows 11.
+ Currently tested and working on Windows 10/Windows 11/ArchLinux
 
  On archlinux, some shortcut keys may not work.
+
+## [User Manual](User_Manual.md) | [中文使用说明书](使用说明书.md)
 
 ## Update
 
 ## 2025.7.13
 
 ### Support language switch,press "Ctrl+L" in main window to switch
-
-###
-
-#### greenhorn...-en now maybe a little rough
 
 ### 2025.8.3
 

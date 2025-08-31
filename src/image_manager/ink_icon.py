@@ -1,9 +1,5 @@
-
-import os
-from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtWidgets import QFileIconProvider
-
-from PySide6.QtCore import Qt, QFileInfo
+from PySide6.QtCore import QFileInfo
 
 def get_file_icon(file_path, icon_size=None):
     """
@@ -39,8 +35,6 @@ def get_shortcut_icon_pixmap(shortcut_path, icon_size=None):
     :param icon_size: 图标大小
     :return: QPixmap对象或None
     """
-    if icon_size:
-        icon_size *= 2
     
     pixmap = get_file_icon(shortcut_path, icon_size)
     

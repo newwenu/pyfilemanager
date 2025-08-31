@@ -66,7 +66,7 @@ requirements.txt 或 pyproject.toml
 
 需要注意的是：archlinux上快捷键操作与win10/win11不同
 
-## [使用说明书](使用说明书.md)
+## [使用说明书](使用说明书.md) | [English_Manual](User_Manual.md)
 
 ## 更新
 
