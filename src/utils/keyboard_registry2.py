@@ -208,6 +208,13 @@ default_shortcuts = [
         ),
         "target_widget": None,
         "description": "切换语言/switch language（重启生效）"
+    },
+    {
+        "id":"18",
+        "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_Comma),
+        "callback": lambda main_window: lambda: main_window.show_settings_dialog(),
+        "target_widget": None,
+        "description": "打开设置对话框"
     }
 ]
 # 加载用户自定义快捷键并更新默认配置（关键修改）

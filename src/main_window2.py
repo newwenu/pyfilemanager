@@ -23,6 +23,7 @@ from handlers.file_operation import FileOperationHandler
 from handlers.search_handler import SearchHandler
 from handlers.home_handler import HomeHandler    
 from language_manager.language_manager import LanguageManager
+from widgets.settings_dialog import SettingsDialog
 
 class FileManager(QMainWindow):
     def __init__(self, config_manager: ConfigManager):  # 依赖注入
@@ -146,3 +147,18 @@ class FileManager(QMainWindow):
     # 新增：切换快捷键帮助对话框的显示/隐藏
     def toggle_shortcut_help_dialog(self):
         self.help_dialog_handler.toggle_dialog()  # 传递当前语言参数
+        
+    def show_settings_dialog(self):
+        """显示设置对话框"""
+        # 创建设置对话框实例
+        dialog = SettingsDialog(self, self.config_manager)
+        # 连接设置改变信号到处理函数
+        dialog.settings_changed.connect(self.on_settings_changed)
+        # 显示对话框
+        dialog.exec()
+        
+    def on_settings_changed(self, new_config):
+        """处理设置改变事件"""
+        # 这里可以添加对设置改变的处理逻辑
+        # 例如更新界面、重新加载配置等
+        print("设置已更新:", new_config)

@@ -25,7 +25,6 @@ def setup_ui(main_window, config_manager):
 
 def setup_window(main_window, config, translation: dict):
     """设置窗口基础属性"""
-    # main_window.setWindowTitle("极简文件管理器")
     main_window.setWindowTitle(translation.get("window_title", "极简文件管理器"))  # 从翻译文件获取标题
     init_width, init_height = config.get("initial_size", [800, 600])
     main_window.setGeometry(200, 100, init_width, init_height)

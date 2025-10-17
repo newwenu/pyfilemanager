@@ -1,11 +1,10 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QGroupBox, QCheckBox, 
-                               QSpinBox, QLabel, QPushButton, QComboBox, QFormLayout,
-                               QTabWidget, QWidget, QScrollArea, QFrame, QLineEdit,
+                               QSpinBox, QPushButton, QComboBox, QFormLayout,
+                               QTabWidget, QWidget, QScrollArea, QLineEdit,
                                QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
 import os
-import json
+from widgets.collapsible_section import CollapsibleSection
 
 class SettingsDialog(QDialog):
     # 定义信号，当设置改变时发出
@@ -67,8 +66,14 @@ class SettingsDialog(QDialog):
         
     def _create_general_tab(self):
         """创建常规设置标签页"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
+        # 创建滚动区域
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        
+        # 创建内容widget
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
         layout.setSpacing(15)
         
         # 文件操作组
@@ -99,28 +104,78 @@ class SettingsDialog(QDialog):
         path_group = QGroupBox(self.tr("路径"))
         path_layout = QFormLayout(path_group)
         
-        # 记住上次路径
-        self.chk_remember_path = QCheckBox(self.tr("记住上次路径"))
-        path_layout.addRow(self.chk_remember_path)
+        # # 记住上次路径
+        # self.chk_remember_path = QCheckBox(self.tr("记住上次路径"))
+        # path_layout.addRow(self.chk_remember_path)
+        
+        # 启动时随机网络图片背景
+        self.chk_start_random = QCheckBox(self.tr("启动时随机图片背景（需要额外配置）"))
+        path_layout.addRow(self.chk_start_random)
         
         layout.addWidget(path_group)
         layout.addStretch()
+        
+        # 将内容widget设置到滚动区域
+        scroll_area.setWidget(content_widget)
         
         # 存储控件引用
         self.widgets.update({
             'show_hidden': self.chk_show_hidden,
             'show_all_sizes': self.chk_show_all_sizes,
             'search_hidden': self.chk_search_hidden,
-            'remember_path': self.chk_remember_path
+            # 'remember_path': self.chk_remember_path,
+            'start_random': self.chk_start_random
         })
         
-        return widget
+        return scroll_area
         
     def _create_display_tab(self):
         """创建显示设置标签页"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
+        # 创建滚动区域
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        
+        # 创建内容widget
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
         layout.setSpacing(15)
+        
+        # 窗口设置组
+        window_group = QGroupBox(self.tr("窗口设置"))
+        window_layout = QFormLayout(window_group)
+        
+        # 窗口标题
+        self.line_window_title = QLineEdit()
+        window_layout.addRow(self.tr("窗口标题:"), self.line_window_title)
+        
+        # 显示状态栏
+        self.chk_statusbar_visible = QCheckBox(self.tr("显示状态栏"))
+        window_layout.addRow(self.chk_statusbar_visible)
+        
+        layout.addWidget(window_group)
+        
+        # 背景图片设置组（移到折叠区域外）
+        background_group = QGroupBox(self.tr("背景图片"))
+        background_layout = QFormLayout(background_group)
+        
+        # 背景图片路径
+        bg_layout = QHBoxLayout()
+        self.line_background_image = QLineEdit()
+        self.btn_browse_bg = QPushButton(self.tr("浏览"))
+        self.btn_browse_bg.clicked.connect(self._browse_background_image)
+        bg_layout.addWidget(self.line_background_image)
+        bg_layout.addWidget(self.btn_browse_bg)
+        background_layout.addRow(self.tr("背景图片路径:"), bg_layout)
+        
+        layout.addWidget(background_group)
+        
+        # 显示设置可折叠栏目（包含界面显示、导航树设置和驱动器设置）
+        display_section = CollapsibleSection(self.tr("显示设置（点击展开）"))
+        
+        # 创建显示设置的内容布局
+        display_layout = QVBoxLayout()
+        display_layout.setSpacing(10)
         
         # 界面显示组
         interface_group = QGroupBox(self.tr("界面显示"))
@@ -142,7 +197,51 @@ class SettingsDialog(QDialog):
         self.spin_font_size.setSingleStep(1)
         interface_layout.addRow(self.tr("字体大小:"), self.spin_font_size)
         
-        layout.addWidget(interface_group)
+        # 字体族
+        self.line_font_family = QLineEdit()
+        interface_layout.addRow(self.tr("字体族:"), self.line_font_family)
+        
+        display_layout.addWidget(interface_group)
+        
+        # 导航树设置组
+        nav_tree_group = QGroupBox(self.tr("导航树设置"))
+        nav_tree_layout = QFormLayout(nav_tree_group)
+        
+        # 导航树图标大小
+        self.spin_nav_tree_icon_size = QSpinBox()
+        self.spin_nav_tree_icon_size.setRange(16, 128)
+        self.spin_nav_tree_icon_size.setSingleStep(8)
+        nav_tree_layout.addRow(self.tr("图标大小:"), self.spin_nav_tree_icon_size)
+        
+        # 导航树字体大小
+        self.spin_nav_tree_font_size = QSpinBox()
+        self.spin_nav_tree_font_size.setRange(8, 24)
+        self.spin_nav_tree_font_size.setSingleStep(1)
+        nav_tree_layout.addRow(self.tr("字体大小:"), self.spin_nav_tree_font_size)
+        
+        display_layout.addWidget(nav_tree_group)
+        
+        # 驱动器设置组
+        drive_group = QGroupBox(self.tr("驱动器设置"))
+        drive_layout = QFormLayout(drive_group)
+        
+        # 驱动器图标大小
+        self.spin_drive_icon_size = QSpinBox()
+        self.spin_drive_icon_size.setRange(16, 128)
+        self.spin_drive_icon_size.setSingleStep(8)
+        drive_layout.addRow(self.tr("图标大小:"), self.spin_drive_icon_size)
+        
+        # 驱动器字体大小
+        self.spin_drive_font_size = QSpinBox()
+        self.spin_drive_font_size.setRange(8, 24)
+        self.spin_drive_font_size.setSingleStep(1)
+        drive_layout.addRow(self.tr("字体大小:"), self.spin_drive_font_size)
+        
+        display_layout.addWidget(drive_group)
+        
+        # 设置显示设置栏目内容
+        display_section.setContentLayout(display_layout)
+        layout.addWidget(display_section)
         
         # 语言组
         language_group = QGroupBox(self.tr("语言"))
@@ -167,22 +266,54 @@ class SettingsDialog(QDialog):
         layout.addWidget(theme_group)
         layout.addStretch()
         
+        # 将内容widget设置到滚动区域
+        scroll_area.setWidget(content_widget)
+        
         # 存储控件引用
         self.widgets.update({
+            'window_title': self.line_window_title,
+            'statusbar_visible': self.chk_statusbar_visible,
             'show_mtime': self.chk_show_mtime,
+            'background_image': self.line_background_image,
             'icon_size': self.spin_icon_size,
             'font_size': self.spin_font_size,
+            'font_family': self.line_font_family,
+            'nav_tree_icon_size': self.spin_nav_tree_icon_size,
+            'nav_tree_font_size': self.spin_nav_tree_font_size,
+            'drive_icon_size': self.spin_drive_icon_size,
+            'drive_font_size': self.spin_drive_font_size,
             'language': self.combo_language,
             'theme': self.combo_theme
         })
         
-        return widget
+        return scroll_area
         
     def _create_advanced_tab(self):
         """创建高级设置标签页"""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
+        # 创建滚动区域
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        
+        # 创建内容widget
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
         layout.setSpacing(15)
+        
+        # 日志组
+        log_group = QGroupBox(self.tr("日志"))
+        log_layout = QFormLayout(log_group)
+        
+        # 日志级别
+        self.combo_log_level = QComboBox()
+        self.combo_log_level.addItem(self.tr("调试 (DEBUG)"), "DEBUG")
+        self.combo_log_level.addItem(self.tr("信息 (INFO)"), "INFO")
+        self.combo_log_level.addItem(self.tr("警告 (WARNING)"), "WARNING")
+        self.combo_log_level.addItem(self.tr("错误 (ERROR)"), "ERROR")
+        self.combo_log_level.addItem(self.tr("严重 (CRITICAL)"), "CRITICAL")
+        log_layout.addRow(self.tr("日志级别:"), self.combo_log_level)
+        
+        layout.addWidget(log_group)
         
         # 数据库组
         db_group = QGroupBox(self.tr("数据库"))
@@ -229,14 +360,18 @@ class SettingsDialog(QDialog):
         layout.addWidget(performance_group)
         layout.addStretch()
         
+        # 将内容widget设置到滚动区域
+        scroll_area.setWidget(content_widget)
+        
         # 存储控件引用
         self.widgets.update({
+            'log_level': self.combo_log_level,
             'db_path': self.line_db_path,
             'enable_cache': self.chk_enable_cache,
             'max_threads': self.spin_max_threads
         })
         
-        return widget
+        return scroll_area
         
     def _browse_db_path(self):
         """浏览数据库路径"""
@@ -259,7 +394,7 @@ class SettingsDialog(QDialog):
         reply = QMessageBox.question(
             self,
             self.tr("确认"),
-            self.tr("确定要清理所有缓存吗？"),
+            self.tr("确定要清理所有缓存吗？这将删除所有文件夹大小缓存(注意:此操作不可逆)"),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
@@ -268,18 +403,49 @@ class SettingsDialog(QDialog):
             # 这里应该调用实际的缓存清理逻辑
             QMessageBox.information(self, self.tr("提示"), self.tr("缓存已清理"))
             
+    def _browse_background_image(self):
+        """浏览背景图片路径"""
+        current_path = self.line_background_image.text()
+        if not current_path:
+            current_path = "./media/background.png"
+            
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            self.tr("选择背景图片"),
+            current_path,
+            self.tr("图片文件 (*.png *.jpg *.jpeg *.bmp *.gif);;所有文件 (*)")
+        )
+        
+        if file_path:
+            self.line_background_image.setText(file_path)
+            
     def _load_settings(self):
         """加载设置"""
         # 常规设置
         self.chk_show_hidden.setChecked(self.config.get("show_hidden", False))
         self.chk_show_all_sizes.setChecked(self.config.get("show_all_sizes", True))
         self.chk_search_hidden.setChecked(self.config.get("search_hidden", False))
-        self.chk_remember_path.setChecked(self.config.get("remember_path", True))
+        # self.chk_remember_path.setChecked(self.config.get("remember_path", True))
+        self.chk_start_random.setChecked(self.config.get("start-random", False))
+        
+        # 窗口设置
+        self.line_window_title.setText(self.config.get("window_title", "极简文件管理器"))
+        self.chk_statusbar_visible.setChecked(self.config.get("statusbar_visible", True))
         
         # 显示设置
         self.chk_show_mtime.setChecked(self.config.get("show_mtime", True))
+        self.line_background_image.setText(self.config.get("background_image", "media/background.png"))
         self.spin_icon_size.setValue(self.config.get("file_list_icon_size", 40))
         self.spin_font_size.setValue(self.config.get("font_size", 12))
+        self.line_font_family.setText(self.config.get("font_family", "Microsoft YaHei"))
+        
+        # 导航树设置
+        self.spin_nav_tree_icon_size.setValue(self.config.get("nav_tree_icon_size", 60))
+        self.spin_nav_tree_font_size.setValue(self.config.get("nav_tree_font_size", 15))
+        
+        # 驱动器设置
+        self.spin_drive_icon_size.setValue(self.config.get("drive_icon_size", 60))
+        self.spin_drive_font_size.setValue(self.config.get("Drive_font_size", 13))
         
         # 语言设置
         lang = self.config.get("language", "zh_CN")
@@ -294,6 +460,12 @@ class SettingsDialog(QDialog):
             self.combo_theme.setCurrentIndex(index)
             
         # 高级设置
+        # 日志级别
+        log_level = self.config.get("log_level", "info").upper()
+        index = self.combo_log_level.findData(log_level)
+        if index >= 0:
+            self.combo_log_level.setCurrentIndex(index)
+        
         self.line_db_path.setText(self.config.get("db_path", "./userdata/db/folder_size.db"))
         self.chk_enable_cache.setChecked(self.config.get("enable_cache", True))
         self.spin_max_threads.setValue(self.config.get("max_threads", 10))
@@ -301,27 +473,60 @@ class SettingsDialog(QDialog):
     def _save_settings(self):
         """保存设置"""
         new_config = {
-            # 常规设置
-            "show_hidden": self.chk_show_hidden.isChecked(),
-            "show_all_sizes": self.chk_show_all_sizes.isChecked(),
-            "search_hidden": self.chk_search_hidden.isChecked(),
-            "remember_path": self.chk_remember_path.isChecked(),
+            # 窗口设置
+            "window_title": self.line_window_title.text(),
+            "initial_size": self.config.get("initial_size", [900, 600]),
+            "file_list_bg_alpha": self.config.get("file_list_bg_alpha", 100),
+            "nav_tree_bg_alpha": self.config.get("nav_tree_bg_alpha", 100),
+            "background_image": self.line_background_image.text(),
+            "background_alpha": self.config.get("background_alpha", 150),
+            
+            # 字体设置
+            "font_size": self.spin_font_size.value(),
+            "font_family": self.line_font_family.text(),
+            "file_list_font_size": self.config.get("file_list_font_size", 14),
+            
+            # 图标设置
+            "nav_tree_icon_size": self.spin_nav_tree_icon_size.value(),
+            "file_list_icon_size": self.spin_icon_size.value(),
+            "drive_icon_size": self.spin_drive_icon_size.value(),
+            
+            # 字体大小设置
+            "nav_tree_font_size": self.spin_nav_tree_font_size.value(),
+            "Drive_font_size": self.spin_drive_font_size.value(),
             
             # 显示设置
+            "show_hidden_files": self.chk_show_hidden.isChecked(),
+            "show_all_sizes": self.chk_show_all_sizes.isChecked(),
+            "statusbar_visible": self.chk_statusbar_visible.isChecked(),
             "show_mtime": self.chk_show_mtime.isChecked(),
-            "file_list_icon_size": self.spin_icon_size.value(),
-            "font_size": self.spin_font_size.value(),
             
             # 语言设置
             "language": self.combo_language.currentData(),
             
-            # 主题设置
-            "theme": self.combo_theme.currentData(),
+            # 路径设置
+            "start_path": self.config.get("start_path", os.path.expanduser('~')),
             
-            # 高级设置
-            "db_path": self.line_db_path.text(),
-            "enable_cache": self.chk_enable_cache.isChecked(),
-            "max_threads": self.spin_max_threads.value()
+            # 日志设置
+            "log_level": self.combo_log_level.currentData().lower(),
+            
+            # 启动设置
+            "start-random": self.chk_start_random.isChecked(),
+            
+            # # 搜索设置
+            # "search_hidden": self.chk_search_hidden.isChecked(),
+            
+            # # 数据库设置
+            # "db_path": self.line_db_path.text(),
+            
+            # # 缓存设置
+            # "enable_cache": self.chk_enable_cache.isChecked(),
+            
+            # # 性能设置
+            # "max_threads": self.spin_max_threads.value(),
+            
+            # # 主题设置
+            # "theme": self.combo_theme.currentData()
         }
         
         return new_config
@@ -358,14 +563,30 @@ if __name__ == "__main__":
     class MockConfigManager:
         def __init__(self):
             self.config = {
+                "window_title": "文件管理器",
+                "initial_size": [900, 600],
+                "file_list_bg_alpha": 100,
+                "nav_tree_bg_alpha": 100,
+                "background_image": "media/background.png",
+                "background_alpha": 150,
+                "font_size": 15,
+                "font_family": "Microsoft YaHei",
+                "nav_tree_icon_size": 60,
+                "file_list_icon_size": 40,
+                "drive_icon_size": 60,
+                "file_list_font_size": 14,
+                "nav_tree_font_size": 15,
+                "Drive_font_size": 13,
                 "show_hidden": False,
-                "show_all_sizes": True,
+                "show_all_sizes": False,
+                "statusbar_visible": True,
+                "language": "zh_CN",
+                "start_path": os.path.expanduser('~'),
+                "log_level": "info",
+                "start-random": False,
                 "search_hidden": False,
                 "remember_path": True,
                 "show_mtime": True,
-                "file_list_icon_size": 40,
-                "font_size": 12,
-                "language": "zh_CN",
                 "theme": "light",
                 "db_path": "./userdata/db/folder_size.db",
                 "enable_cache": True,
@@ -389,4 +610,5 @@ if __name__ == "__main__":
     dialog = SettingsDialog(main_window, config_manager)
     dialog.show()
     
-    sys.exit(app.exec())
+    sys.exit(app.exec(),app.quit())
+    app.quit()

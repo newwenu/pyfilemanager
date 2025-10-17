@@ -17,7 +17,7 @@ class ConfigManager:
             print("警告：未找到配置文件，将创建默认配置...")
             # 自动创建默认配置文件
             default_config = {
-                "window_title": "文件管理器",
+                "window_title": "极简文件管理器",
                 "initial_size": [900, 600],
                 "file_list_bg_alpha": 100,
                 "nav_tree_bg_alpha": 100,
@@ -35,7 +35,10 @@ class ConfigManager:
                 "show_all_sizes": False,
                 "statusbar_visible": True,
                 "language": "zh_CN",
-                "start_path": os.path.expanduser('~')  # 新增：启动路径配置
+                "start_path": os.path.expanduser('~'),  # 新增：启动路径配置
+                "log_level": "info",
+                "start-random": False,
+                "show_mtime": True
             }
             # 创建配置文件目录（如果不存在）
             config_dir = os.path.dirname(self.config_path)
