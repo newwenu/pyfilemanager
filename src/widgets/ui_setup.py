@@ -65,10 +65,14 @@ def setup_top_widget(main_window, config, translation: dict):
     # 显示隐藏文件复选框（翻译缺失时显示"显示隐藏文件"）
     main_window.cb_hidden = QCheckBox(translation.get("cb_hidden", "显示隐藏文件"))
     main_window.cb_hidden.setFixedHeight(control_height)  # 复选框高度
+    # 设置复选框初始状态与配置文件同步
+    main_window.cb_hidden.setChecked(config.get("show_hidden_files", False))
 
     # 显示所有大小复选框（翻译缺失时显示"显示所有大小"）
     main_window.cb_show_sizes = QCheckBox(translation.get("cb_show_sizes", "显示所有大小"))
     main_window.cb_show_sizes.setFixedHeight(control_height)  # 复选框高度
+    # 设置复选框初始状态与配置文件同步
+    main_window.cb_show_sizes.setChecked(config.get("show_all_sizes", False))
 
     main_window.address_bar.setFixedHeight(control_height)  # 地址栏高度
     main_window.address_bar.installEventFilter(main_window.keyboard_handler)  # 让 KeyboardHandler 监听地址栏事件

@@ -1,6 +1,7 @@
 import os
 from PySide6.QtCore import QThread, Signal, QObject
 from utils.file_utils import should_show  # 复用现有过滤函数
+from utils.time_utils import get_file_mtime  # 使用自定义获取文件修改时间方法
 # from utils.logging_config import get_logger
 # logger = get_logger(__name__)
 
@@ -31,7 +32,7 @@ class FileListLoaderThread(QThread):
                         "path": entry.path,
                         "is_dir": entry.is_dir(),
                         "size": entry.stat().st_size,
-                        "mtime": entry.stat().st_mtime
+                        "mtime": get_file_mtime(entry.path)  # 使用自定义方法获取文件修改时间
                     }
                     file_list.append(file_info)
             self.list_loaded.emit(file_list)  # 发送扫描结果到主线程

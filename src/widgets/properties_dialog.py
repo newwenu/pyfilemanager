@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt, QThread, Signal  # 线程相关导入
-from datetime import datetime
+from utils.time_utils import get_file_mtime, format_mtime_timestamp_full
 import os
 from utils.file_utils import format_size
 from threads.folder_size import FolderSizeThread
@@ -65,10 +65,11 @@ class FilePropertiesDialog(QDialog):
         """优化：异步加载文件夹大小"""
         try:
             # 立即获取可快速读取的属性
-            mtime = datetime.fromtimestamp(os.path.getmtime(self.file_path))
+            mtime_timestamp = get_file_mtime(self.file_path)
+            mtime_str = format_mtime_timestamp_full(mtime_timestamp)
             self.name_label.setText(os.path.basename(self.file_path))
             self.path_label.setText(self.file_path)
-            self.mtime_label.setText(mtime.strftime('%Y-%m-%d %H:%M:%S'))
+            self.mtime_label.setText(mtime_str)
 
             # 文件大小直接读取，文件夹异步计算
             if os.path.isfile(self.file_path):

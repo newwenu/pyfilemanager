@@ -37,8 +37,9 @@ class FileManager(QMainWindow):
         self.image_path = config_manager.config["background_image"]
         start_path= config_manager.get("start_path",os.path.expanduser('~'))
         self.current_path = start_path if os.path.exists(start_path) else os.path.expanduser('~')
-        self.show_hidden = False  # ：控制是否显示隐藏文件
-        self.show_all_sizes = False # ：显示所有大小
+        # 从配置文件读取show_hidden和show_all_sizes设置，默认为False
+        self.show_hidden = config_manager.get("show_hidden_files", False)  # ：控制是否显示隐藏文件
+        self.show_all_sizes = config_manager.get("show_all_sizes", False)  # ：显示所有大小
         self.config_manager = config_manager  # ：配置管理器
         config = config_manager.config
         self.translation = config_manager.load_translation(self.lang)  # 加载翻译文件
@@ -145,4 +146,3 @@ class FileManager(QMainWindow):
     # 新增：切换快捷键帮助对话框的显示/隐藏
     def toggle_shortcut_help_dialog(self):
         self.help_dialog_handler.toggle_dialog()  # 传递当前语言参数
-

@@ -286,10 +286,10 @@ class FileListUpdater:
         # item.setIcon(0, self.icons.get(file_type, self.icons['default']))
         item.setToolTip(0, info["name"])
         if self.show_mtime:
-            import datetime
+            from utils.time_utils import format_mtime_timestamp
             if info["mtime"]:
                 # 格式化时间戳为可读格式（如 "2024-06-01 12:34"）
-                mtime_str = datetime.datetime.fromtimestamp(info["mtime"]).strftime("%Y-%m-%d %H:%M")
+                mtime_str = format_mtime_timestamp(info["mtime"])
                 item.setText(2, mtime_str)  # 设置第三列内容
         return item
     def _handle_scan_error(self, error_msg):

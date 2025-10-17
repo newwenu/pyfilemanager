@@ -128,7 +128,8 @@ class FolderSizeManager(QObject):
         try:
             # ：获取最后修改时间时添加异常捕获
             try:
-                last_modified = os.path.getmtime(path)
+                from utils.time_utils import get_file_mtime
+                last_modified = get_file_mtime(path)
                 if last_modified <= 0:
                     raise ValueError("无效时间戳")
                 # print(f"路径 {path} 最后修改时间：{last_modified}")
