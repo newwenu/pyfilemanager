@@ -9,6 +9,8 @@ class LanguageManager:
         self.main_window = main_window
         self.config_manager = config_manager
         self.lang = config_manager.config.get("language", "zh_CN")
+        # 缓存已加载的翻译，避免重复加载
+        self._translation_cache = None
 
     def set_language(self, lang: str):
         """修改语言配置并重启应用"""
@@ -16,35 +18,25 @@ class LanguageManager:
         self.config_manager.save_config()
         self._restart_app()
 
-    # def _restart_app(self):
-    #     """安全重启应用（确保定时器回调在事件循环中执行）"""
-    #     # 延迟 500ms 启动新进程（事件循环保持运行）
-    #     def start_new_process():
-    #         print("启动新进程前")
-    #         print("当前工作目录:", os.getcwd())
-    #         print("当前脚本路径:", sys.argv[0])
-    #         print("启动新进程")
-    #         # 触发应用退出（在启动新进程后）
-    #         QApplication.quit()
-    #         # 启动独立新进程
-    #         # cwd = os.getcwd()
-    #         subprocess.Popen([sys.executable] + sys.argv, cwd=os.getcwd()).wait()
-            
-    #         # 原进程退出（确保不残留）
-    #         sys.exit(0)
-            
-        
-    #     # 设置定时器（事件循环保持运行直到回调执行）
-    #     QTimer.singleShot(500, start_new_process)
+    def get_translation(self):
+        """获取当前语言的翻译字典，提供统一简便的语言获取方法"""
+        if self._translation_cache is None:
+            self._translation_cache = self.config_manager.load_translation(self.lang)
+        return self._translation_cache
 
+    def get_component_translation(self, component_key):
+        """获取指定组件的翻译字典"""
+        translation = self.get_translation()
+        return translation.get(component_key, {})
+
+    def get_shortcut_translations(self):
+        """获取当前语言的快捷键翻译字典"""
+        translation = self.get_translation()
+        return translation.get("shortcuts", {})
 
     def _restart_app(self):
         """安全重启（延迟原进程退出，避免阻塞）"""
         def start_new_process():
-            # print("启动新进程前")
-            # print("当前工作目录:", os.getcwd())
-            # print("当前脚本路径:", sys.argv[0])
-            # print("启动新进程")
             
             # 启动新进程（不阻塞原进程）
             subprocess.Popen([sys.executable] + sys.argv, cwd=os.getcwd())

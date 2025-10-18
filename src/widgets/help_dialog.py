@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QScrollArea, QWidget, QGridLayout, QLabel
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from utils.keyboard_registry2 import shortcut_translations
+
 def qt_keys_to_string(keys):
     """将 Qt 键枚举元组转换为用户可读的字符串（支持组合键，如 (CtrlModifier|ShiftModifier, Key_A) → "Ctrl+Shift+A"）"""
     modifier, key = keys
@@ -19,14 +19,32 @@ def qt_keys_to_string(keys):
             active_modifiers.append(modifier_map[mod])
     
     modifier_str = "+".join(active_modifiers)  # 组合修饰符用 + 连接
+    
+    # 特殊按键名称映射，使其更直观
+    key_name_map = {
+        "Comma": ",",
+        "Period": ".",
+        "Slash": "/",
+        "Backslash": "\\",
+        "Semicolon": ";",
+        "Apostrophe": "'",
+        "BracketLeft": "[",
+        "BracketRight": "]",
+        "Minus": "-",
+        "Equal": "=",
+        "Space": "Space"
+    }
+    
     key_str = Qt.Key(key).name.replace("Key_", "")  # 转换为 "A" 等可读名称
+    # 应用特殊按键名称映射
+    key_str = key_name_map.get(key_str, key_str)
     
     return f"{modifier_str}+{key_str}" if modifier_str else key_str
 
 class ShortcutHelpDialog(QDialog):
     def __init__(self, parent=None, shortcuts=None, lang: str = "zh_CN"):  # 新增语言参数
         super().__init__(parent)
-        translation=parent.translation
+        translation = parent.language_manager.get_translation()  # 通过LanguageManager获取翻译
         # self.setWindowTitle("快捷键说明")
         self.setWindowTitle(translation.get("shortcut_dialog_title", "快捷键说明"))
         # 修复：添加 Qt.WindowCloseButtonHint 显示关闭按钮
@@ -69,13 +87,15 @@ class ShortcutHelpDialog(QDialog):
         grid_layout.addWidget(desc_label, 2, 0)
         grid_layout.addWidget(key_label, 2, 1)
 
+        # 获取快捷键翻译字典
+        shortcut_translations = parent.language_manager.get_shortcut_translations()
         # 遍历快捷键数据，逐行添加内容
         for row, shortcut in enumerate(shortcuts or [], start=3):  # 从第3行开始
             # 过滤掉Return键的热键
             if shortcut["keys"][1] == Qt.Key.Key_Return:
                 continue  # 跳过当前快捷键条目
             # 根据语言选择描述
-            if lang == "en_US":
+            if lang != "zh_CN":  # 非中文时使用翻译
                 desc_text = shortcut_translations.get(shortcut["description"], shortcut["description"])
             else:
                 desc_text = shortcut["description"]  # 默认使用中文

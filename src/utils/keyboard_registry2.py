@@ -238,33 +238,12 @@ for user_sc in user_shortcuts:
                 print(f"警告：无效的key值 {key_str}，跳过id={sc_id}的快捷键更新")
             break
 
-# 新增：翻译映射字典（键为原中文描述，值为其他语言的翻译）
-shortcut_translations = {
-    "返回上级目录": "Go to parent directory",
-    "导航到主页": "Navigate to home",
-    "打开选中项（文件列表）": "Open selected item (file list)",
-    "打开选中项（导航树）": "Open selected item (navigation tree)",
-    "复制选中文件": "Copy selected files",
-    "剪切选中文件": "Cut selected files",
-    "粘贴文件": "Paste files",
-    "删除选中文件": "Delete selected files",
-    "全选文件": "Select all files",
-    "重命名选中项": "Rename selected item",
-    "新建文件夹": "New folder",
-    "刷新界面": "Refresh interface",
-    "显示搜索输入框": "Show search input",
-    "聚焦导航树": "Focus navigation tree",
-    "聚焦文件列表": "Focus file list",
-    "聚焦地址栏": "Focus address bar",
-    "切换修改时间列显隐": "Toggle modified time column",
-    "打开/关闭快捷键帮助对话框": "Open/close shortcut help dialog",
-    "切换语言/switch language（重启生效）": "Switch language/切换语言 (requires restart)"
-}
-
 def register_app_shortcuts(keyboard_handler, main_window):  # 新增语言参数
     """通过主窗口实例集中注册快捷键（更易扩展）"""
     # 遍历默认快捷键配置列表完成注册
-    lang=main_window.lang
+    lang = main_window.language_manager.lang  # 使用LanguageManager获取当前语言
+    # 获取快捷键翻译字典
+    shortcut_translations = main_window.language_manager.get_shortcut_translations()
     for shortcut in default_shortcuts:
         # 处理需要延迟获取的部件实例（如target_widget/target_p）
         target_widget = shortcut.get("target_widget")(main_window) if callable(shortcut.get("target_widget")) else shortcut.get("target_widget")
@@ -273,7 +252,7 @@ def register_app_shortcuts(keyboard_handler, main_window):  # 新增语言参数
         callback = shortcut["callback"](main_window) if callable(shortcut["callback"]) else shortcut["callback"]
         
         # 根据语言选择描述（中文直接使用原description，其他语言从映射获取）
-        if lang == "en_US":
+        if lang != "zh_CN":  # 非中文时使用翻译
             description = shortcut_translations.get(shortcut["description"], shortcut["description"])
         else:
             description = shortcut["description"]  # 默认使用中文

@@ -28,9 +28,9 @@ from widgets.settings_dialog import SettingsDialog
 class FileManager(QMainWindow):
     def __init__(self, config_manager: ConfigManager):  # 依赖注入
         super().__init__()
-        self.lang = config_manager.get("language","zh-CN")
         # 初始化语言管理器（替代原语言逻辑）
         self.language_manager = LanguageManager(self, config_manager)
+        self.lang = self.language_manager.lang  # 从LanguageManager获取当前语言
         system_palette = QGuiApplication.palette()  # 获取系统当前调色板
         self.sys_bg = system_palette.color(QPalette.Window)
         self.last_updated_path = None  # ：上次更新的路径
@@ -43,7 +43,7 @@ class FileManager(QMainWindow):
         self.show_all_sizes = config_manager.get("show_all_sizes", False)  # ：显示所有大小
         self.config_manager = config_manager  # ：配置管理器
         config = config_manager.config
-        self.translation = config_manager.load_translation(self.lang)  # 加载翻译文件
+        self.translation = self.language_manager.get_translation()  # 通过LanguageManager获取翻译文件
         # 初始化日志（通过配置管理器传递参数）
         init_logging(self.config_manager)
         self.icons, self.icon_paths = create_icon_set("media",self.config_manager.get("file_list_icon_size")*2)  # 使用独立图标管理函数
@@ -151,7 +151,7 @@ class FileManager(QMainWindow):
     def show_settings_dialog(self):
         """显示设置对话框"""
         # 创建设置对话框实例
-        dialog = SettingsDialog(self, self.config_manager)
+        dialog = SettingsDialog(self, self.config_manager,self.language_manager)
         # 连接设置改变信号到处理函数
         dialog.settings_changed.connect(self.on_settings_changed)
         # 显示对话框

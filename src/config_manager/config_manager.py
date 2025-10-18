@@ -30,7 +30,7 @@ class ConfigManager:
                 "drive_icon_size": 60,
                 "file_list_font_size": 14,
                 "nav_tree_font_size": 15,
-                "Drive_font_size": 13,
+                "drive_font_size": 13,
                 "show_hidden_files": False,
                 "show_all_sizes": False,
                 "statusbar_visible": True,

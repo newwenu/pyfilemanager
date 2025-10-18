@@ -40,7 +40,7 @@ class DriveListManager:
         
         # 2. 样式配置（不变）
         drive_icon_size = config.get("drive_icon_size", 48)
-        drive_font_size = config.get("Drive_font_size", 20)
+        drive_font_size = config.get("drive_font_size", 20)
         file_list.setIconSize(QSize(drive_icon_size, drive_icon_size))  # 图标尺寸
         
         # 3. 字体与行高设置（不变）
