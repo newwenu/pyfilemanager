@@ -103,6 +103,10 @@ class SettingsDialog(QDialog):
             # 对于布尔值，需要特殊处理确保正确比较
             elif isinstance(current_value, bool):
                 is_modified = current_value != config_value
+            # 对于日志级别，需要特殊处理大小写问题
+            elif config_key == "log_level":
+                # 将配置值和当前值都转换为大写进行比较
+                is_modified = str(current_value).upper() != str(config_value).upper()
             else:
                 is_modified = current_value != config_value
             self.widgets[modified_indicator_key].setVisible(is_modified)
@@ -694,7 +698,7 @@ class SettingsDialog(QDialog):
             "drive_icon_size": self.spin_drive_icon_size.value(),
             "file_list_font_size": self.spin_font_size.value(),
             "nav_tree_font_size": self.spin_nav_tree_font_size.value(),
-            "Drive_font_size": self.spin_drive_font_size.value(),
+            "drive_font_size": self.spin_drive_font_size.value(),
             "show_hidden_files": self.chk_show_hidden.isChecked(),
             "show_all_sizes": self.chk_show_all_sizes.isChecked(),
             "statusbar_visible": self.chk_statusbar_visible.isChecked(),

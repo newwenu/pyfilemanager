@@ -10,7 +10,7 @@
     "nav_tree_icon_size": 60,
     "file_list_icon_size": 40,
     "drive_icon_size": 60,
-    "file_list_font_size": 14,
+    "file_list_font_size": 15,
     "nav_tree_font_size": 15,
     "drive_font_size": 13,
     "show_hidden_files": false,
