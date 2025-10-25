@@ -1,6 +1,9 @@
 {
     "window_title": "极简文件管理器",
-    "initial_size": [900,600],
+    "initial_size": [
+        900,
+        600
+    ],
     "file_list_bg_alpha": 100,
     "nav_tree_bg_alpha": 100,
     "background_image": "media/background.png",
@@ -18,7 +21,7 @@
     "statusbar_visible": true,
     "language": "zh_CN",
     "start_path": "X:\\",
-    "log_level": "info",
+    "log_level": "INFO",
     "start-random": false,
     "show_mtime": false
 }

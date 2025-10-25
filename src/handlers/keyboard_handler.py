@@ -62,7 +62,7 @@ class KeyboardHandler(QObject):
             return  # Alt键未按下，无需显示
 
         main_window = self.parent()
-        # ：记录全局快捷键提示的垂直偏移量（初始为0）
+        # 记录全局快捷键提示的垂直偏移量（初始为0）
         global_tip_offset = 0
         for cb in self.callbacks:
             if cb["is_focus"] and cb["description"]:

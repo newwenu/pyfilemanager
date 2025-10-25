@@ -23,7 +23,8 @@ from handlers.file_operation import FileOperationHandler
 from handlers.search_handler import SearchHandler
 from handlers.home_handler import HomeHandler    
 from language_manager.language_manager import LanguageManager
-from widgets.settings_dialog import SettingsDialog
+from widgets.settings_dialog_model import SettingsDialog
+from widgets.settings.settings_manager import SettingsDialogManager
 
 class FileManager(QMainWindow):
     def __init__(self, config_manager: ConfigManager):  # 依赖注入
@@ -81,6 +82,11 @@ class FileManager(QMainWindow):
         # self.help_dialog_handler = None
         # 注册应用级快捷键（此时 search_handler 已初始化）
         register_app_shortcuts(self.keyboard_handler, self)
+        
+        # 初始化设置对话框管理器
+        self.settings_manager = SettingsDialogManager.get_instance(self, self.config_manager, self.language_manager)
+        # 连接设置改变信号
+        self.settings_manager.settings_changed.connect(self.on_settings_changed)
 
         # 安装事件过滤器到文件列表
         self.file_list.installEventFilter(self.keyboard_handler)
@@ -149,13 +155,9 @@ class FileManager(QMainWindow):
         self.help_dialog_handler.toggle_dialog()  # 传递当前语言参数
         
     def show_settings_dialog(self):
-        """显示设置对话框"""
-        # 创建设置对话框实例
-        dialog = SettingsDialog(self, self.config_manager,self.language_manager)
-        # 连接设置改变信号到处理函数
-        dialog.settings_changed.connect(self.on_settings_changed)
-        # 显示对话框
-        dialog.exec()
+        """显示设置对话框 - 使用管理器避免内存泄漏"""
+        # 使用设置对话框管理器显示对话框
+        self.settings_manager.show_settings_dialog()
         
     def on_settings_changed(self, new_config):
         """处理设置改变事件"""

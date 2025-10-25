@@ -56,6 +56,10 @@ class ConfigManager:
         """公共接口：获取配置值（暴露简单接口）"""
         return self.config.get(key, default)
 
+    def set_setting(self, key, value):
+        """设置配置值"""
+        self.config[key] = value
+
     def load_translation(self, lang: str) -> dict:
         """加载指定语言的翻译文件（文件缺失时返回硬编码默认值）"""
         lang_path = os.path.join("userdata", "languages", f"{lang}.json")
