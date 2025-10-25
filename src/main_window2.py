@@ -36,7 +36,7 @@ class FileManager(QMainWindow):
         self.lang = self.language_manager.lang  # 从LanguageManager获取当前语言
         system_palette = QGuiApplication.palette()  # 获取系统当前调色板
         self.sys_bg = system_palette.color(QPalette.Window)
-        print("之前:",self.sys_bg.getRgb())
+        # print("之前:",self.sys_bg.getRgb())
         self.last_updated_path = None  # ：上次更新的路径
         self.folder_threads = {}  # 用于存储每个文件夹的线程
         self.image_path = config_manager.config["background_image"]
@@ -66,7 +66,7 @@ class FileManager(QMainWindow):
         # ：初始化 SQLite 数据库
         db_path = os.path.join("userdata", "db", "folder_size.db")  # 数据库文件路径（可从 config 配置）
         self.db=DatabaseManager(db_path)
-        print("主题色:",self.sys_bg.getRgb())
+        # print("主题色:",self.sys_bg.getRgb())
         # 初始化键盘处理器
         self.keyboard_handler = KeyboardHandler(self)
         setup_ui(self, self.config_manager)  # UI 初始化（内部创建 toolbar）
