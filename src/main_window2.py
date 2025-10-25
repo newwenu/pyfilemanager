@@ -144,7 +144,7 @@ class FileManager(QMainWindow):
 
     def on_theme_changed(self, theme):
         """处理主题改变事件"""
-        print(f"主题已切换到: {theme}")
+        # print(f"主题已切换到: {theme}")
         # 这里可以添加主题改变后的额外处理逻辑
         # 例如更新图标、背景等
 
@@ -188,7 +188,7 @@ class FileManager(QMainWindow):
         
         # 这里可以添加对设置改变的其他处理逻辑
         # 例如更新界面、重新加载配置等
-        print("设置已更新:", new_config)
+        # print("设置已更新:", new_config)
     
     def show_settings_tip(self, message, duration=2000, tip_type="info"):
         """在主窗口上显示设置提示 - 使用全局TipManager"""

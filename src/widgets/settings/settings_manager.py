@@ -120,9 +120,11 @@ class SettingsDialogManager(QObject):
         # 使用全局TipManager显示设置保存成功的提示
         if self._parent:
             # 获取翻译文本
-            translation = getattr(self._parent, 'translation', None)
-            if translation:
-                message = translation.get("dlg_settings_applied", "设置已应用")
+            if self._language_manager:
+                translation = self._language_manager.get_translation()
+                # 获取设置部分的翻译
+                settings_translation = translation.get("settings", {})
+                message = settings_translation.get("dlg_settings_applied", "设置已应用")
             else:
                 message = "设置已应用"
             
@@ -137,7 +139,7 @@ class SettingsDialogManager(QObject):
         # 延迟清理确保对话框完全关闭
         from PySide6.QtCore import QTimer
         # 使用更长的延迟确保对话框完全销毁
-        QTimer.singleShot(50, self._delayed_cleanup)
+        QTimer.singleShot(100, self._delayed_cleanup)
     
     def _delayed_cleanup(self):
         """延迟清理"""
