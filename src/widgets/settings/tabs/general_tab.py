@@ -24,14 +24,14 @@ class GeneralTab(QWidget):
         scroll_layout = QVBoxLayout(scroll_content)
         
         # 文件操作组
-        file_group = QGroupBox(self.translation.get("file_operation_settings", "文件操作"))
+        file_group = QGroupBox(self.translation.get("group_file_operations", "文件操作"))
         file_layout = QVBoxLayout(file_group)
         
         # 获取设置对话框实例用于创建修改指示器
         settings_dialog = self._get_settings_dialog()
         
         # 显示隐藏文件
-        self.chk_show_hidden = QCheckBox(self.translation.get("show_hidden_files", "显示隐藏文件和文件夹"))
+        self.chk_show_hidden = QCheckBox(self.translation.get("chk_show_hidden", "显示隐藏文件和文件夹"))
         self.chk_show_hidden.setChecked(self.config.get("show_hidden_files", True))
         show_hidden_layout = QHBoxLayout()
         show_hidden_layout.addWidget(self.chk_show_hidden)
@@ -40,8 +40,8 @@ class GeneralTab(QWidget):
         file_layout.addLayout(show_hidden_layout)
         self.widgets['show_hidden_files'] = self.chk_show_hidden
         
-        # 显示所有文件大小
-        self.chk_show_all_sizes = QCheckBox(self.translation.get("show_all_sizes", "显示所有文件大小"))
+        # 显示所有文件夹大小
+        self.chk_show_all_sizes = QCheckBox(self.translation.get("chk_show_folder_sizes", "显示所有文件夹大小"))
         self.chk_show_all_sizes.setChecked(self.config.get("show_all_sizes", False))
         show_all_sizes_layout = QHBoxLayout()
         show_all_sizes_layout.addWidget(self.chk_show_all_sizes)
@@ -61,11 +61,11 @@ class GeneralTab(QWidget):
         # scroll_layout.addWidget(basic_group)
         
         # 搜索组
-        search_group = QGroupBox(self.translation.get("search_settings", "搜索"))
+        search_group = QGroupBox(self.translation.get("group_search", "搜索"))
         search_layout = QVBoxLayout(search_group)
         
         # 搜索时包含隐藏文件
-        self.chk_search_hidden = QCheckBox(self.translation.get("search_hidden_files", "搜索时包含隐藏文件"))
+        self.chk_search_hidden = QCheckBox(self.translation.get("chk_search_hidden", "搜索时包含隐藏文件"))
         self.chk_search_hidden.setChecked(self.config.get("search_hidden", False))
         search_hidden_layout = QHBoxLayout()
         search_hidden_layout.addWidget(self.chk_search_hidden)
@@ -78,11 +78,11 @@ class GeneralTab(QWidget):
         scroll_layout.addWidget(search_group)
         
         # 路径组
-        path_group = QGroupBox(self.translation.get("path_settings", "路径"))
+        path_group = QGroupBox(self.translation.get("group_path", "路径"))
         path_layout = QVBoxLayout(path_group)
         
         # 启动时随机显示图片
-        self.chk_start_random = QCheckBox(self.translation.get("start_random", "启动时随机显示图片"))
+        self.chk_start_random = QCheckBox(self.translation.get("chk_start_random_bg", "启动时随机显示图片"))
         self.chk_start_random.setChecked(self.config.get("start_random", False))
         start_random_layout = QHBoxLayout()
         start_random_layout.addWidget(self.chk_start_random)

@@ -45,7 +45,7 @@ class SettingsDialog(BaseSettingsDialog):
             widgets=self.widgets,
             translation=self.translation
         )
-        self.tab_widget.addTab(self.general_tab, self.translation.get("general_tab", "常规"))
+        self.tab_widget.addTab(self.general_tab, self.translation.get("tab_general", "常规"))
         
         # 外观设置标签页
         self.appearance_tab = AppearanceTab(
@@ -54,7 +54,7 @@ class SettingsDialog(BaseSettingsDialog):
             widgets=self.widgets,
             translation=self.translation
         )
-        self.tab_widget.addTab(self.appearance_tab, self.translation.get("appearance_tab", "外观"))
+        self.tab_widget.addTab(self.appearance_tab, self.translation.get("tab_appearance", "外观"))
         
         # 高级设置标签页
         self.advanced_tab = AdvancedTab(
@@ -63,7 +63,7 @@ class SettingsDialog(BaseSettingsDialog):
             widgets=self.widgets,
             translation=self.translation
         )
-        self.tab_widget.addTab(self.advanced_tab, self.translation.get("advanced_tab", "高级"))
+        self.tab_widget.addTab(self.advanced_tab, self.translation.get("tab_advanced", "高级"))
     
     def _connect_signals(self):
         """连接信号 - 标签页内部已处理"""

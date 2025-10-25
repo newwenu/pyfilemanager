@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QPushButton, 
-                               QTabWidget, QMessageBox, QLabel, QFileDialog)
-from PySide6.QtCore import Signal, Qt
+                               QTabWidget, QLabel, QFileDialog)
+from PySide6.QtCore import Signal
 import os
 
 class BaseSettingsDialog(QDialog):
@@ -146,12 +146,11 @@ class BaseSettingsDialog(QDialog):
                 if modified_indicator_key in self.widgets:
                     self.widgets[modified_indicator_key].hide()
                     
-            QMessageBox.information(self, self.translation.get("dlg_info", "信息"), 
-                                  self.translation.get("dlg_settings_applied", "设置已应用"))
             return True
         except Exception as e:
-            QMessageBox.critical(self, self.translation.get("error", "错误"), 
-                               self.translation.get("apply_settings_failed", "应用设置失败") + f": {str(e)}")
+            # 显示错误提示（只有出错时才显示，避免与settings_manager的提示冲突）
+            if hasattr(self.parent_window, 'show_settings_tip'):
+                self.parent_window.show_settings_tip(self.translation.get("apply_settings_failed", "应用设置失败") + f": {str(e)}", 3000, "error")
             return False
             
     def accept(self):

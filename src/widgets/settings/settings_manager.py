@@ -7,6 +7,7 @@ import weakref
 import gc
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QDialog
+from tip_manager.tip_manager_proxy import TipManager
 
 
 class SettingsDialogManager(QObject):
@@ -115,20 +116,35 @@ class SettingsDialogManager(QObject):
     def _on_settings_changed(self, new_config):
         """转发设置改变信号"""
         self.settings_changed.emit(new_config)
+        
+        # 使用全局TipManager显示设置保存成功的提示
+        if self._parent:
+            # 获取翻译文本
+            translation = getattr(self._parent, 'translation', None)
+            if translation:
+                message = translation.get("dlg_settings_applied", "设置已应用")
+            else:
+                message = "设置已应用"
+            
+            TipManager.show_success(
+                self._parent,
+                message,
+                duration=2000
+            )
     
     def _on_dialog_finished(self):
         """对话框关闭时的清理"""
         # 延迟清理确保对话框完全关闭
         from PySide6.QtCore import QTimer
-        QTimer.singleShot(100, self._delayed_cleanup)
+        # 使用更长的延迟确保对话框完全销毁
+        QTimer.singleShot(50, self._delayed_cleanup)
     
     def _delayed_cleanup(self):
         """延迟清理"""
         self._cleanup_existing_dialog()
         
-        # 清理对父窗口的引用（避免循环引用）
-        if hasattr(self, '_parent'):
-            self._parent = None
+        # 注意：不要清理父窗口引用，否则后续对话框会失去父窗口
+        # 父窗口引用需要在管理器生命周期内保持有效
         
         # 强制垃圾回收两次以确保完全清理
         gc.collect()

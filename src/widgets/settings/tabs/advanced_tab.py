@@ -33,16 +33,16 @@ class AdvancedTab(QWidget):
         scroll_layout = QVBoxLayout(scroll_content)
         
         # 日志设置组
-        log_group = QGroupBox(self.translation.get("log_settings", "日志设置"))
+        log_group = QGroupBox(self.translation.get("group_log", "日志设置"))
         log_layout = QFormLayout(log_group)
         
         # 日志级别
         self.log_level_combo = QComboBox()
-        self.log_level_combo.addItem(self.translation.get("log_debug", "调试 (DEBUG)"), "DEBUG")
-        self.log_level_combo.addItem(self.translation.get("log_info", "信息 (INFO)"), "INFO")
-        self.log_level_combo.addItem(self.translation.get("log_warning", "警告 (WARNING)"), "WARNING")
-        self.log_level_combo.addItem(self.translation.get("log_error", "错误 (ERROR)"), "ERROR")
-        self.log_level_combo.addItem(self.translation.get("log_critical", "严重 (CRITICAL)"), "CRITICAL")
+        self.log_level_combo.addItem(self.translation.get("opt_debug", "调试 (DEBUG)"), "DEBUG")
+        self.log_level_combo.addItem(self.translation.get("opt_info", "信息 (INFO)"), "INFO")
+        self.log_level_combo.addItem(self.translation.get("opt_warning", "警告 (WARNING)"), "WARNING")
+        self.log_level_combo.addItem(self.translation.get("opt_error", "错误 (ERROR)"), "ERROR")
+        self.log_level_combo.addItem(self.translation.get("opt_critical", "严重 (CRITICAL)"), "CRITICAL")
         current_log_level = self.config.get("log_level", "INFO").upper()
         index = self.log_level_combo.findData(current_log_level)
         if index >= 0:
@@ -53,20 +53,20 @@ class AdvancedTab(QWidget):
         if settings_dialog:
             log_level_layout.addWidget(settings_dialog._create_modified_indicator('log_level'))
         log_level_layout.setContentsMargins(0, 0, 0, 0)
-        log_layout.addRow(self.translation.get("lbl_log_level", "日志级别:"), log_level_layout)
+        log_layout.addRow(QLabel(self.translation.get("lbl_log_level", "日志级别:")), log_level_layout)
         self.widgets['log_level'] = self.log_level_combo
         
         log_group.setLayout(log_layout)
         scroll_layout.addWidget(log_group)
         
         # 数据库设置组
-        db_group = QGroupBox(self.translation.get("database_settings", "数据库设置"))
+        db_group = QGroupBox(self.translation.get("group_database", "数据库设置"))
         db_layout = QFormLayout(db_group)
         
         # 数据库路径
         self.db_path_edit = QLineEdit()
         self.db_path_edit.setText(self.config.get("db_path", "./userdata/db/folder_size.db"))
-        self.btn_browse_db = QPushButton(self.translation.get("browse", "浏览"))
+        self.btn_browse_db = QPushButton(self.translation.get("btn_browse", "浏览"))
         db_path_layout = QHBoxLayout()
         db_path_layout.addWidget(self.db_path_edit)
         db_path_layout.addWidget(self.btn_browse_db)
@@ -74,18 +74,18 @@ class AdvancedTab(QWidget):
         if settings_dialog:
             db_path_layout.addWidget(settings_dialog._create_modified_indicator('db_path'))
         db_path_layout.setContentsMargins(0, 0, 0, 0)
-        db_layout.addRow(self.translation.get("lbl_db_path", "数据库路径:"), db_path_layout)
+        db_layout.addRow(QLabel(self.translation.get("lbl_db_path", "数据库路径:")), db_path_layout)
         self.widgets['db_path'] = self.db_path_edit
         
         db_group.setLayout(db_layout)
         scroll_layout.addWidget(db_group)
         
         # 缓存设置组
-        cache_group = QGroupBox(self.translation.get("cache_settings", "缓存设置"))
+        cache_group = QGroupBox(self.translation.get("group_cache", "缓存设置"))
         cache_layout = QVBoxLayout(cache_group)
         
         # 启用缓存
-        self.enable_cache_checkbox = QCheckBox(self.translation.get("enable_cache", "启用文件夹大小缓存"))
+        self.enable_cache_checkbox = QCheckBox(self.translation.get("chk_enable_cache", "启用文件夹大小缓存"))
         self.enable_cache_checkbox.setChecked(self.config.get("enable_cache", True))
         enable_cache_layout = QHBoxLayout()
         enable_cache_layout.addWidget(self.enable_cache_checkbox)
@@ -97,7 +97,7 @@ class AdvancedTab(QWidget):
         self.widgets['enable_cache'] = self.enable_cache_checkbox
         
         # 清理缓存按钮
-        self.btn_clean_cache = QPushButton(self.translation.get("clean_cache", "清理缓存"))
+        self.btn_clean_cache = QPushButton(self.translation.get("btn_clean_cache", "清理缓存"))
         cache_btn_layout = QHBoxLayout()
         cache_btn_layout.addStretch()
         cache_btn_layout.addWidget(self.btn_clean_cache)
@@ -107,7 +107,7 @@ class AdvancedTab(QWidget):
         scroll_layout.addWidget(cache_group)
         
         # 性能设置组
-        perf_group = QGroupBox(self.translation.get("performance_settings", "性能设置"))
+        perf_group = QGroupBox(self.translation.get("group_performance", "性能设置"))
         perf_layout = QFormLayout(perf_group)
         
         # 最大并发线程数
@@ -121,7 +121,7 @@ class AdvancedTab(QWidget):
         if settings_dialog:
             max_threads_layout.addWidget(settings_dialog._create_modified_indicator('max_threads'))
         max_threads_layout.setContentsMargins(0, 0, 0, 0)
-        perf_layout.addRow(self.translation.get("lbl_max_threads", "最大并发线程数:"), max_threads_layout)
+        perf_layout.addRow(QLabel(self.translation.get("lbl_max_threads", "最大并发线程数:")), max_threads_layout)
         self.widgets['max_threads'] = self.max_threads_spinbox
         
         perf_group.setLayout(perf_layout)

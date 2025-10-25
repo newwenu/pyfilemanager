@@ -37,7 +37,7 @@ class ConfigManager:
                 "language": "zh_CN",
                 "start_path": os.path.expanduser('~'),  # 新增：启动路径配置
                 "log_level": "info",
-                "start-random": False,
+                "start_random": False,
                 "show_mtime": True
             }
             # 创建配置文件目录（如果不存在）

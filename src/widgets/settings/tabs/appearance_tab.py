@@ -37,7 +37,7 @@ class AppearanceTab(QWidget):
         scroll_layout = QVBoxLayout(scroll_content)
         
         # 窗口设置组
-        window_group = QGroupBox(self.translation.get("window_settings", "窗口设置"))
+        window_group = QGroupBox(self.translation.get("group_window", "窗口设置"))
         window_layout = QFormLayout(window_group)
         
         # 窗口标题
@@ -49,11 +49,11 @@ class AppearanceTab(QWidget):
         if settings_dialog:
             title_layout.addWidget(settings_dialog._create_modified_indicator('window_title'))
         title_layout.setContentsMargins(0, 0, 0, 0)
-        window_layout.addRow(self.translation.get("window_title", "窗口标题:"), title_layout)
+        window_layout.addRow(self.translation.get("lbl_window_title", "窗口标题:"), title_layout)
         self.widgets['window_title'] = self.window_title_edit
         
         # 显示状态栏
-        self.statusbar_checkbox = QCheckBox(self.translation.get("show_status_bar", "显示状态栏"))
+        self.statusbar_checkbox = QCheckBox(self.translation.get("chk_show_statusbar", "显示状态栏"))
         self.statusbar_checkbox.setChecked(self.config.get("statusbar_visible", True))
         status_layout = QHBoxLayout()
         status_layout.addWidget(self.statusbar_checkbox)
@@ -67,38 +67,40 @@ class AppearanceTab(QWidget):
         window_group.setLayout(window_layout)
         scroll_layout.addWidget(window_group)
         
-        # 背景图片设置组
-        background_group = QGroupBox(self.translation.get("background_settings", "背景图片"))
+        # 背景设置子组
+        background_group = QGroupBox(self.translation.get("group_background", "背景设置"))
         background_layout = QFormLayout(background_group)
+        background_layout.setSpacing(10)
         
-        # 背景图片路径
-        background_path_layout = QHBoxLayout()
+        # 背景图片
         self.background_image_edit = QLineEdit()
-        self.background_image_edit.setText(self.config.get("background_image", "media/background.png"))
-        self.btn_browse_bg = QPushButton(self.translation.get("browse", "浏览"))
-        background_path_layout.addWidget(self.background_image_edit)
-        background_path_layout.addWidget(self.btn_browse_bg)
+        self.background_image_edit.setText(self.config.get("background_image", ""))
+        background_image_layout = QHBoxLayout()
+        background_image_layout.addWidget(self.background_image_edit)
         settings_dialog = self._get_settings_dialog()
         if settings_dialog:
-            background_path_layout.addWidget(settings_dialog._create_modified_indicator('background_image'))
-        background_path_layout.setContentsMargins(0, 0, 0, 0)
-        background_layout.addRow(self.translation.get("background_image", "背景图片路径:"), background_path_layout)
+            background_image_layout.addWidget(settings_dialog._create_modified_indicator('background_image'))
+        background_layout.addRow(QLabel(self.translation.get("lbl_background_path", "背景图片")), self.background_image_edit)
         self.widgets['background_image'] = self.background_image_edit
+        
+        # 浏览按钮
+        self.btn_browse_bg = QPushButton(self.translation.get("btn_browse", "浏览..."))
+        background_layout.addRow(self.btn_browse_bg)
         
         scroll_layout.addWidget(background_group)
         
         # 可折叠的显示设置栏目
-        display_section = CollapsibleSection(self.translation.get("display_settings", "显示设置（点击展开）"))
+        display_section = CollapsibleSection(self.translation.get("group_display_settings", "显示设置（点击展开）"))
         display_layout = QVBoxLayout()
         display_layout.setSpacing(10)
         
         # 界面显示子组
-        interface_group = QGroupBox(self.translation.get("interface_settings", "界面显示"))
+        interface_group = QGroupBox(self.translation.get("group_interface", "界面显示"))
         interface_layout = QFormLayout(interface_group)
         interface_layout.setSpacing(10)
         
         # 显示修改时间
-        self.show_mtime_checkbox = QCheckBox(self.translation.get("show_mtime", "显示修改时间"))
+        self.show_mtime_checkbox = QCheckBox(self.translation.get("chk_show_mtime", "显示修改时间"))
         self.show_mtime_checkbox.setChecked(self.config.get("show_mtime", False))
         show_mtime_layout = QHBoxLayout()
         show_mtime_layout.addWidget(self.show_mtime_checkbox)
@@ -117,9 +119,9 @@ class AppearanceTab(QWidget):
         icon_size_layout.addWidget(self.icon_size_spinbox)
         settings_dialog = self._get_settings_dialog()
         if settings_dialog:
-            icon_size_layout.addWidget(settings_dialog._create_modified_indicator('icon_size'))
-        interface_layout.addRow(QLabel(self.translation.get("icon_size", "图标大小")), icon_size_layout)
-        self.widgets['icon_size'] = self.icon_size_spinbox
+            icon_size_layout.addWidget(settings_dialog._create_modified_indicator('file_list_icon_size'))
+        interface_layout.addRow(QLabel(self.translation.get("lbl_icon_size", "图标大小")), icon_size_layout)
+        self.widgets['file_list_icon_size'] = self.icon_size_spinbox
         
         # 字体大小
         self.font_size_spinbox = QSpinBox()
@@ -131,24 +133,24 @@ class AppearanceTab(QWidget):
         settings_dialog = self._get_settings_dialog()
         if settings_dialog:
             font_size_layout.addWidget(settings_dialog._create_modified_indicator('font_size'))
-        interface_layout.addRow(QLabel(self.translation.get("font_size", "字体大小")), font_size_layout)
+        interface_layout.addRow(QLabel(self.translation.get("lbl_font_size", "字体大小")), font_size_layout)
         self.widgets['font_size'] = self.font_size_spinbox
         
         # 字体族
         self.font_family_edit = QLineEdit()
-        self.font_family_edit.setText(self.config.get("font_family", "Microsoft YaHei"))
+        self.font_family_edit.setText(self.config.get("font_family", "Segoe UI"))
         font_family_layout = QHBoxLayout()
         font_family_layout.addWidget(self.font_family_edit)
         settings_dialog = self._get_settings_dialog()
         if settings_dialog:
             font_family_layout.addWidget(settings_dialog._create_modified_indicator('font_family'))
-        interface_layout.addRow(QLabel(self.translation.get("font_family", "字体族")), font_family_layout)
+        interface_layout.addRow(QLabel(self.translation.get("lbl_font_family", "字体族")), font_family_layout)
         self.widgets['font_family'] = self.font_family_edit
         
         display_layout.addWidget(interface_group)
         
         # 导航树设置子组
-        tree_group = QGroupBox(self.translation.get("navigation_tree_settings", "导航树设置"))
+        tree_group = QGroupBox(self.translation.get("group_nav_tree", "导航树设置"))
         tree_layout = QFormLayout(tree_group)
         tree_layout.setSpacing(10)
         
@@ -162,7 +164,7 @@ class AppearanceTab(QWidget):
         settings_dialog = self._get_settings_dialog()
         if settings_dialog:
             tree_icon_size_layout.addWidget(settings_dialog._create_modified_indicator('nav_tree_icon_size'))
-        tree_layout.addRow(QLabel(self.translation.get("tree_icon_size", "导航树图标大小")), tree_icon_size_layout)
+        tree_layout.addRow(QLabel(self.translation.get("lbl_nav_tree_icon_size", "导航树图标大小")), tree_icon_size_layout)
         self.widgets['nav_tree_icon_size'] = self.tree_icon_size_spinbox
         
         # 导航树字体大小
@@ -175,13 +177,13 @@ class AppearanceTab(QWidget):
         settings_dialog = self._get_settings_dialog()
         if settings_dialog:
             tree_font_size_layout.addWidget(settings_dialog._create_modified_indicator('nav_tree_font_size'))
-        tree_layout.addRow(QLabel(self.translation.get("tree_font_size", "导航树字体大小")), tree_font_size_layout)
+        tree_layout.addRow(QLabel(self.translation.get("lbl_nav_tree_font_size", "导航树字体大小")), tree_font_size_layout)
         self.widgets['nav_tree_font_size'] = self.tree_font_size_spinbox
         
         display_layout.addWidget(tree_group)
         
         # 驱动器设置子组
-        drive_group = QGroupBox(self.translation.get("drive_settings", "驱动器设置"))
+        drive_group = QGroupBox(self.translation.get("group_drives", "驱动器设置"))
         drive_layout = QFormLayout(drive_group)
         drive_layout.setSpacing(10)
         
@@ -195,7 +197,7 @@ class AppearanceTab(QWidget):
         settings_dialog = self._get_settings_dialog()
         if settings_dialog:
             drive_icon_size_layout.addWidget(settings_dialog._create_modified_indicator('drive_icon_size'))
-        drive_layout.addRow(QLabel(self.translation.get("drive_icon_size", "驱动器图标大小")), drive_icon_size_layout)
+        drive_layout.addRow(QLabel(self.translation.get("lbl_drive_icon_size", "驱动器图标大小")), drive_icon_size_layout)
         self.widgets['drive_icon_size'] = self.drive_icon_size_spinbox
         
         # 驱动器字体大小
@@ -208,7 +210,7 @@ class AppearanceTab(QWidget):
         settings_dialog = self._get_settings_dialog()
         if settings_dialog:
             drive_font_size_layout.addWidget(settings_dialog._create_modified_indicator('drive_font_size'))
-        drive_layout.addRow(QLabel(self.translation.get("drive_font_size", "驱动器字体大小")), drive_font_size_layout)
+        drive_layout.addRow(QLabel(self.translation.get("lbl_drive_font_size", "驱动器字体大小")), drive_font_size_layout)
         self.widgets['drive_font_size'] = self.drive_font_size_spinbox
         
         display_layout.addWidget(drive_group)
@@ -218,7 +220,7 @@ class AppearanceTab(QWidget):
         scroll_layout.addWidget(display_section)
         
         # 语言设置组
-        language_group = QGroupBox(self.translation.get("language", "语言"))
+        language_group = QGroupBox(self.translation.get("group_language", "语言"))
         language_layout = QHBoxLayout(language_group)
         
         self.language_combo = self._create_language_combo()
@@ -233,7 +235,7 @@ class AppearanceTab(QWidget):
         self.widgets['language'] = self.language_combo
         
         # 主题设置组
-        theme_group = QGroupBox(self.translation.get("theme", "主题"))
+        theme_group = QGroupBox(self.translation.get("group_theme", "主题"))
         theme_layout = QHBoxLayout(theme_group)
         
         self.theme_combo = self._create_theme_combo()
@@ -279,7 +281,7 @@ class AppearanceTab(QWidget):
             
             # 数值框信号
             self.icon_size_spinbox.valueChanged.connect(
-                lambda value: settings_dialog._on_setting_changed('icon_size', value))
+                lambda value: settings_dialog._on_setting_changed('file_list_icon_size', value))
             self.font_size_spinbox.valueChanged.connect(
                 lambda value: settings_dialog._on_setting_changed('font_size', value))
             self.tree_icon_size_spinbox.valueChanged.connect(
@@ -315,9 +317,9 @@ class AppearanceTab(QWidget):
     def _create_language_combo(self):
         """创建语言选择下拉框"""
         combo = QComboBox()
-        # 添加语言选项
-        combo.addItem(self.translation.get("lang_chinese", "简体中文"), "zh_CN")
-        combo.addItem(self.translation.get("lang_english", "English"), "en")
+        # 添加语言选项 - 使用与配置文件中一致的值
+        combo.addItem(self.translation.get("opt_chinese", "简体中文"), "zh_CN")
+        combo.addItem(self.translation.get("opt_english", "English"), "en_US")
         # 设置当前选中项
         current_lang = self.config.get("language", "zh_CN")
         index = combo.findData(current_lang)
@@ -329,8 +331,8 @@ class AppearanceTab(QWidget):
         """创建主题选择下拉框"""
         combo = QComboBox()
         # 添加主题选项
-        combo.addItem(self.translation.get("theme_light", "浅色"), "light")
-        combo.addItem(self.translation.get("theme_dark", "深色"), "dark")
+        combo.addItem(self.translation.get("opt_light_theme", "浅色"), "light")
+        combo.addItem(self.translation.get("opt_dark_theme", "深色"), "dark")
         # 设置当前选中项
         current_theme = self.config.get("theme", "light")
         index = combo.findData(current_theme)

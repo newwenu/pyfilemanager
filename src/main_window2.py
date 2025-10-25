@@ -25,6 +25,7 @@ from handlers.home_handler import HomeHandler
 from language_manager.language_manager import LanguageManager
 from widgets.settings_dialog_model import SettingsDialog
 from widgets.settings.settings_manager import SettingsDialogManager
+from tip_manager.tip_manager_proxy import TipManager
 
 class FileManager(QMainWindow):
     def __init__(self, config_manager: ConfigManager):  # 依赖注入
@@ -61,7 +62,7 @@ class FileManager(QMainWindow):
         # 初始化文件列表更新器
         self.file_list_updater = FileListUpdater(self)
         self.update_filelist()  # 初始加载文件列表
-        self.bg_manager = BackgroundManager(self.bg_label, self.image_path,random=config_manager.get("start-random",False))
+        self.bg_manager = BackgroundManager(self.bg_label, self.image_path,random=config_manager.get("start_random",False))
         self.bg_manager.load_background()
         self.folder_size_manager = FolderSizeManager(self)
         self.folder_size_manager.size_updated.connect(self.update_folder_size)
@@ -164,3 +165,8 @@ class FileManager(QMainWindow):
         # 这里可以添加对设置改变的处理逻辑
         # 例如更新界面、重新加载配置等
         print("设置已更新:", new_config)
+    
+    def show_settings_tip(self, message, duration=2000, tip_type="info"):
+        """在主窗口上显示设置提示 - 使用全局TipManager"""
+        from tip_manager.tip_manager_proxy import show_tip
+        show_tip(self, message, duration, tip_type)

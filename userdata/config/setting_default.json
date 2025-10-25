@@ -19,6 +19,6 @@
     "language": "zh_CN",
     "start_path": "X:\\",
     "log_level": "info",
-    "start-random": false,
+    "start_random": false,
     "show_mtime": false
 }
