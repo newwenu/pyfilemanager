@@ -110,7 +110,7 @@ class SettingsDialog(QDialog):
             else:
                 is_modified = current_value != config_value
             self.widgets[modified_indicator_key].setVisible(is_modified)
-        print(f"Setting {config_key} changed to {current_value} (config: {self.config.get(config_key, default_value)})")
+        # print(f"Setting {config_key} changed to {current_value} (config: {self.config.get(config_key, default_value)})")
     
     def _create_general_tab(self):
         """创建常规设置标签页"""
