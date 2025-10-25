@@ -26,6 +26,7 @@ from language_manager.language_manager import LanguageManager
 from widgets.settings_dialog_model import SettingsDialog
 from widgets.settings.settings_manager import SettingsDialogManager
 from tip_manager.tip_manager_proxy import TipManager
+from theme_manager.theme_manager import ThemeManager
 
 class FileManager(QMainWindow):
     def __init__(self, config_manager: ConfigManager):  # 依赖注入
@@ -44,8 +45,18 @@ class FileManager(QMainWindow):
         self.show_hidden = config_manager.get("show_hidden_files", False)  # ：控制是否显示隐藏文件
         self.show_all_sizes = config_manager.get("show_all_sizes", False)  # ：显示所有大小
         self.config_manager = config_manager  # ：配置管理器
-        config = config_manager.config
+        # config = config_manager.config
         self.translation = self.language_manager.get_translation()  # 通过LanguageManager获取翻译文件
+        
+        # 初始化主题管理器
+        self.theme_manager = ThemeManager(self)
+        # 连接主题改变信号
+        self.theme_manager.theme_changed.connect(self.on_theme_changed)
+        
+        # 从配置加载主题设置并应用
+        current_theme = config_manager.get("theme", "auto")
+        self.theme_manager.apply_theme(current_theme)
+        
         # 初始化日志（通过配置管理器传递参数）
         init_logging(self.config_manager)
         self.icons, self.icon_paths = create_icon_set("media",self.config_manager.get("file_list_icon_size")*2)  # 使用独立图标管理函数
@@ -130,6 +141,12 @@ class FileManager(QMainWindow):
             self.file_list_updater.file_list_loader.stop_all()
         super().closeEvent(event)
 
+    def on_theme_changed(self, theme):
+        """处理主题改变事件"""
+        print(f"主题已切换到: {theme}")
+        # 这里可以添加主题改变后的额外处理逻辑
+        # 例如更新图标、背景等
+
     def update_filelist(self):
         """通过更新器触发文件列表更新"""
         if self.current_path == '此电脑':
@@ -162,7 +179,13 @@ class FileManager(QMainWindow):
         
     def on_settings_changed(self, new_config):
         """处理设置改变事件"""
-        # 这里可以添加对设置改变的处理逻辑
+        # 检查主题设置是否改变
+        if "theme" in new_config:
+            new_theme = new_config["theme"]
+            if new_theme != self.theme_manager.get_current_theme():
+                self.theme_manager.apply_theme(new_theme)
+        
+        # 这里可以添加对设置改变的其他处理逻辑
         # 例如更新界面、重新加载配置等
         print("设置已更新:", new_config)
     

@@ -331,10 +331,11 @@ class AppearanceTab(QWidget):
         """创建主题选择下拉框"""
         combo = QComboBox()
         # 添加主题选项
+        combo.addItem(self.translation.get("opt_auto_theme", "自动"), "auto")
         combo.addItem(self.translation.get("opt_light_theme", "浅色"), "light")
         combo.addItem(self.translation.get("opt_dark_theme", "深色"), "dark")
         # 设置当前选中项
-        current_theme = self.config.get("theme", "light")
+        current_theme = self.config.get("theme", "auto")
         index = combo.findData(current_theme)
         if index >= 0:
             combo.setCurrentIndex(index)

@@ -85,6 +85,7 @@
         "lbl_drive_font_size": "Font size:",
         "opt_chinese": "Simplified Chinese",
         "opt_english": "English",
+        "opt_auto_theme": "follow_system_theme",
         "opt_light_theme": "Light",
         "opt_dark_theme": "Dark",
         "lbl_log_level": "Log level:",

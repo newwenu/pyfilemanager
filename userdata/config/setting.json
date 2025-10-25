@@ -22,6 +22,7 @@
     "language": "zh_CN",
     "start_path": "X:\\",
     "log_level": "INFO",
+    "theme": "light",
     "start_random": false,
     "show_mtime": false
 }

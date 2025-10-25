@@ -35,6 +35,7 @@ class ConfigManager:
                 "show_all_sizes": False,
                 "statusbar_visible": True,
                 "language": "zh_CN",
+                "theme": "auto",  # 添加默认主题设置
                 "start_path": os.path.expanduser('~'),  # 新增：启动路径配置
                 "log_level": "info",
                 "start_random": False,
