@@ -27,11 +27,13 @@ class FileListLoaderThread(QThread):
                     if not should_show(entry, self.show_hidden):  # 复用现有过滤逻辑
                         continue
                     # 收集文件元数据（新增“类型”字段）
+                    # 对于文件夹，将大小设为0，实际大小会在后续异步计算中更新
+                    size = 0 if entry.is_dir() else entry.stat().st_size
                     file_info = {
                         "name": entry.name,
                         "path": entry.path,
                         "is_dir": entry.is_dir(),
-                        "size": entry.stat().st_size,
+                        "size": size,
                         "mtime": get_file_mtime(entry.path)  # 使用自定义方法获取文件修改时间
                     }
                     file_list.append(file_info)

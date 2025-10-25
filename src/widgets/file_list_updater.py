@@ -11,6 +11,7 @@ from utils.sort_utils import sort_file_list  # 新增：导入排序工具
 # 导入快捷方式图标提取模块
 from image_manager.ink_icon import get_shortcut_icon_pixmap
 from utils.logging_config import get_logger
+from utils.size_parser import parse_formatted_size
 logger = get_logger(__name__)
 class FileListUpdater:
     def __init__(self, fm):  # 仅传递主窗口实例
@@ -166,8 +167,27 @@ class FileListUpdater:
             else:
                 if cached_size == "unaccessable":
                     item.setText(1, self.translation.get("unaccessable","无法访问"))
+                    # 更新文件列表数据中的display_size字段、size字段
+                    for info in self.file_list_data:
+                        if info["path"] == folder_path:
+                            info["display_size"] = self.translation.get("unaccessable","无法访问")
+                            # 无法访问的文件夹大小设为0
+                            info["size"] = 0
+                            break
                 else:
                     item.setText(1, cached_size)
+                    # 更新文件列表数据中的display_size字段、size字段
+                    for info in self.file_list_data:
+                        if info["path"] == folder_path:
+                            info["display_size"] = cached_size
+                            # 使用parse_formatted_size函数解析格式化的大小字符串
+                            try:
+                                # 解析格式化大小为字节数
+                                actual_size = parse_formatted_size(cached_size)
+                                info["size"] = actual_size
+                            except Exception:
+                                info["size"] = 0  # 解析失败时设为0
+                            break
         else:
             self.start_folder_size_thread(folder_path, item)
 
@@ -261,11 +281,21 @@ class FileListUpdater:
         """适配异步扫描结果的列表项创建（修改：使用翻译）"""
         file_type = 'folder' if info["is_dir"] else get_file_type(info["name"])
         
-        size = self.translation.get("folder", "<文件夹>") if (info["is_dir"] and not self.show_all_sizes) else format_size(info["size"])
-        if info["is_dir"] and self.show_all_sizes:
-            # 替换为翻译文本（默认值"计算中"）
-            size = self.translation.get("calculating", "计算中")
+        # 使用display_size字段来确定显示的大小
+        if info["is_dir"]:
+            if self.show_all_sizes:
+                # 如果启用了显示所有大小，使用display_size字段
+                size = info.get("display_size", self.translation.get("calculating", "计算中"))
+            else:
+                # 否则显示"<文件夹>"
+                size = self.translation.get("folder", "<文件夹>")
+        else:
+            # 对于文件，使用display_size字段（应该与size字段相同）
+            size = format_size(info.get("display_size", info["size"]))
+            
         item = QTreeWidgetItem(self.file_list, [info["name"], size])
+        # 将路径信息存储在项的数据中，用于后续更新
+        item.setData(0, Qt.ItemDataRole.UserRole, info["path"])
     # 特殊处理快捷方式文件
         if file_type == 'shortcut' or file_type == 'defaulticon' and not info["is_dir"]:
             from PySide6.QtGui import QIcon

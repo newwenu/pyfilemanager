@@ -2,6 +2,7 @@ import os , sys
 from PySide6.QtCore import QThread, Signal, QObject
 from PySide6.QtWidgets import QTreeWidgetItem
 from utils.logging_config import get_logger  # 替换原 logging 导入
+from utils.size_parser import parse_formatted_size
 
 logger = get_logger(__name__)  # 通过日志模块获取记录器
 
@@ -85,6 +86,8 @@ class FolderSizeManager(QObject):
         self.parent = parent
         self.db = parent.db
 
+
+
     def start_calculate(self, path: str, item: QTreeWidgetItem):
         """启动文件夹大小计算线程（增加并发限制）"""
         if path in self.threads:
@@ -124,6 +127,24 @@ class FolderSizeManager(QObject):
             self.size_updated.emit(item, self.parent.translation.get("unaccessable","无法访问"))
         else:
             self.size_updated.emit(item, size)  # 触发 UI 更新信号
+            
+        # 直接更新file_list_data中的size字段和raw_size字段
+        try:
+            # 获取文件列表更新器
+            file_list_updater = self.parent.file_list_updater
+            
+            # 查找并更新file_list_data中的对应项
+            for file_info in file_list_updater.file_list_data:
+                if file_info.get("path") == path and file_info.get("is_dir"):
+                    # 解析格式化大小为字节数
+                    size_in_bytes = parse_formatted_size(size)
+                    file_info["size"] = size_in_bytes
+                    file_info["raw_size"] = size_in_bytes  # 同时更新raw_size字段
+                    logger.debug(f"直接更新file_list_data: {path} -> {size_in_bytes} bytes")
+                    break
+        except Exception as e:
+            logger.error(f"直接更新file_list_data失败: {str(e)}")
+            
         # 写入数据库（优化异常处理）
         try:
             # ：获取最后修改时间时添加异常捕获
