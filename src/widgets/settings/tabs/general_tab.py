@@ -1,8 +1,4 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, 
-                               QLabel, QLineEdit, QCheckBox, QSpinBox, 
-                               QPushButton, QGroupBox, QScrollArea)
-from PySide6.QtCore import Qt
-import os
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QGroupBox, QScrollArea)
 
 class GeneralTab(QWidget):
     """常规设置标签页"""

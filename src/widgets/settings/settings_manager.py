@@ -6,7 +6,6 @@
 import weakref
 import gc
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QDialog
 from tip_manager.tip_manager_proxy import TipManager
 
 

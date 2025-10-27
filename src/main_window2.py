@@ -7,7 +7,7 @@ from PySide6.QtGui import QGuiApplication,QPalette
 from threads.folder_size import FolderSizeManager
 from utils.keyboard_registry2 import register_app_shortcuts
 from widgets.file_list_updater import FileListUpdater
-from widgets.ui_setup import setup_ui 
+from widgets.ui_setup import UISetup 
 from handlers.m_event_handlers import setup_event_bindings
 from image_manager.icon_manager import create_icon_set
 from image_manager.background_manager import BackgroundManager
@@ -34,8 +34,9 @@ class FileManager(QMainWindow):
         # 初始化语言管理器（替代原语言逻辑）
         self.language_manager = LanguageManager(self, config_manager)
         self.lang = self.language_manager.lang  # 从LanguageManager获取当前语言
-        system_palette = QGuiApplication.palette()  # 获取系统当前调色板
-        self.sys_bg = system_palette.color(QPalette.Window)
+        # system_palette = QGuiApplication.palette()  # 获取系统当前调色板
+        # self.sys_bg = system_palette.color(QPalette.Window)
+        self.sys_bg = None
         # print("之前:",self.sys_bg.getRgb())
         self.last_updated_path = None  # ：上次更新的路径
         self.folder_threads = {}  # 用于存储每个文件夹的线程
@@ -69,7 +70,10 @@ class FileManager(QMainWindow):
         # print("主题色:",self.sys_bg.getRgb())
         # 初始化键盘处理器
         self.keyboard_handler = KeyboardHandler(self)
-        setup_ui(self, self.config_manager)  # UI 初始化（内部创建 toolbar）
+        
+        # UI 初始化 - 使用新的类结构
+        self.ui_setup = UISetup(self, self.config_manager)
+        self.ui_setup.setup_ui()  # UI 初始化（内部创建 toolbar）
         setup_event_bindings(self,config_manager.config)  # 事件绑定
         # 初始化文件列表更新器
         self.file_list_updater = FileListUpdater(self)

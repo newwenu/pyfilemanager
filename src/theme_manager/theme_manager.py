@@ -38,12 +38,12 @@ class ThemeManager(QObject):
                 # 使用PySide6原生接口设置浅色主题
                 app.styleHints().setColorScheme(Qt.ColorScheme.Light)
             else:
-                # 对于auto或其他情况，使用系统默认
+                # 对于auto或其他情况，使用系统默认主题
                 pass
                 
             # 获取当前调色板颜色并更新主窗口
             current_palette = app.palette()
-            self._override_main_window_sys_bg(current_palette.color(current_palette.ColorRole.Window))
+            # self._override_main_window_sys_bg(current_palette.color(current_palette.ColorRole.Window))
             
             # 发送主题改变信号
             self.theme_changed.emit(theme_name)
@@ -53,6 +53,7 @@ class ThemeManager(QObject):
     
     def _override_main_window_sys_bg(self, color):
         """覆写主窗口的sys_bg变量"""
+        return
         if self.main_window and hasattr(self.main_window, 'sys_bg'):
             self.main_window.sys_bg = color
             print(f"主题色已更新: {color.getRgb()}")

@@ -2,7 +2,6 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
                                QLabel, QLineEdit, QCheckBox, QSpinBox, 
                                QPushButton, QGroupBox, QScrollArea, QComboBox)
 from PySide6.QtCore import Qt
-import os
 
 class AdvancedTab(QWidget):
     """高级设置标签页"""
