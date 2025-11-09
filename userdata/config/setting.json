@@ -24,5 +24,11 @@
     "log_level": "INFO",
     "theme": "auto",
     "start_random": false,
-    "show_mtime": false
+    "show_mtime": false,
+    "show_context_menu_delete": true,
+    "show_context_menu_properties": true,
+    "show_context_menu_open_explorer": true,
+    "show_context_menu_new_folder": true,
+    "show_blank_menu_new_folder": true,
+    "show_blank_menu_open_explorer": true
 }

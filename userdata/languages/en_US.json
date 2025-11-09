@@ -114,7 +114,17 @@
         "dlg_settings_applied": "Settings applied",
         "btn_ok": "OK",
         "btn_cancel": "Cancel",
-        "btn_apply": "Apply"
+        "btn_apply": "Apply",
+        "tab_context_menu": "Context Menu",
+        "group_file_list_menu": "File List Context Menu",
+        "group_blank_area_menu": "Blank Area Context Menu",
+        "chk_show_delete": "Show Delete Option",
+        "chk_show_properties": "Show Properties Option",
+        "chk_show_open_in_explorer_file_list": "Show Open in Explorer Option",
+        "chk_show_new_folder_file_list": "Show New Folder Option",
+        "chk_show_new_folder_blank_area": "Show New Folder Option",
+        "chk_show_open_in_explorer_blank_area": "Show Open in Explorer Option",
+        "btn_reset_to_default": "Reset to Default"
     },
     "shortcuts": {
         "返回上级目录": "Go to parent directory",

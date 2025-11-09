@@ -4,6 +4,7 @@ from .base_dialog import BaseSettingsDialog
 from .tabs.general_tab import GeneralTab
 from .tabs.appearance_tab import AppearanceTab
 from .tabs.advanced_tab import AdvancedTab
+from .tabs.context_menu_tab import ContextMenuTab
 
 class SettingsDialog(BaseSettingsDialog):
     """设置对话框主类"""
@@ -23,6 +24,8 @@ class SettingsDialog(BaseSettingsDialog):
                 del self.general_tab
             if hasattr(self, 'appearance_tab'):
                 del self.appearance_tab
+            if hasattr(self, 'context_menu_tab'):
+                del self.context_menu_tab
             if hasattr(self, 'advanced_tab'):
                 del self.advanced_tab
             # 清理控件字典
@@ -55,6 +58,15 @@ class SettingsDialog(BaseSettingsDialog):
             translation=self.translation
         )
         self.tab_widget.addTab(self.appearance_tab, self.translation.get("tab_appearance", "外观"))
+        
+        # 右键菜单设置标签页
+        self.context_menu_tab = ContextMenuTab(
+            parent=self,
+            config=self.config_manager.config if self.config_manager else {},
+            widgets=self.widgets,
+            translation=self.translation
+        )
+        self.tab_widget.addTab(self.context_menu_tab, self.translation.get("tab_context_menu", "右键菜单"))
         
         # 高级设置标签页
         self.advanced_tab = AdvancedTab(
@@ -146,6 +158,19 @@ class SettingsDialog(BaseSettingsDialog):
         # 外观设置
         if hasattr(self.appearance_tab, 'widgets'):
             for key, widget in self.appearance_tab.widgets.items():
+                if key in original_keys:  # 只保存原始配置中存在的设置
+                    if isinstance(widget, QCheckBox):
+                        settings_to_save[key] = widget.isChecked()
+                    elif isinstance(widget, QLineEdit):
+                        settings_to_save[key] = widget.text()
+                    elif isinstance(widget, QSpinBox):
+                        settings_to_save[key] = widget.value()
+                    elif isinstance(widget, QComboBox):
+                        settings_to_save[key] = widget.itemData(widget.currentIndex())
+        
+        # 右键菜单设置
+        if hasattr(self.context_menu_tab, 'widgets'):
+            for key, widget in self.context_menu_tab.widgets.items():
                 if key in original_keys:  # 只保存原始配置中存在的设置
                     if isinstance(widget, QCheckBox):
                         settings_to_save[key] = widget.isChecked()

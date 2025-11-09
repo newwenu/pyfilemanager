@@ -114,7 +114,17 @@
         "dlg_settings_applied": "设置已应用",
         "btn_ok": "确定",
         "btn_cancel": "取消",
-        "btn_apply": "应用"
+        "btn_apply": "应用",
+        "tab_context_menu": "右键菜单",
+        "group_file_list_menu": "文件列表右键菜单",
+        "group_blank_area_menu": "空白区域右键菜单",
+        "chk_show_delete": "显示删除选项",
+        "chk_show_properties": "显示属性选项",
+        "chk_show_open_in_explorer_file_list": "显示在资源管理器打开选项",
+        "chk_show_new_folder_file_list": "显示新建文件夹选项",
+        "chk_show_new_folder_blank_area": "显示新建文件夹选项",
+        "chk_show_open_in_explorer_blank_area": "显示在资源管理器打开选项",
+        "btn_reset_to_default": "重置为默认"
     },
     "shortcuts": {
         "返回上级目录": "返回上级目录",

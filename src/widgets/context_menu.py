@@ -10,22 +10,57 @@ def show_context_menu(main_window, pos):
     """右键菜单显示（独立实现）"""
     item = main_window.file_list.itemAt(pos)
     menu = QMenu(main_window)
+    
+    # 获取配置
+    config = main_window.config_manager.config if hasattr(main_window, 'config_manager') else {}
+
     if item:
-        # 有选中项时显示删除和属性选项
-        delete_action = menu.addAction(main_window.translation.get("delete", "删除"))
-        prop_action = menu.addAction(main_window.translation.get("properties", "属性"))
-        open_in_explorer_action = menu.addAction(main_window.translation.get("open_in_explorer", "在资源管理器打开"))
-        new_folder_action = menu.addAction(main_window.translation.get("new_folder", "新建文件夹"))
-        new_folder_action.triggered.connect(lambda: handle_new_folder(main_window))
-        delete_action.triggered.connect(lambda: handle_delete_file(main_window))
-        prop_action.triggered.connect(lambda: FilePropertiesDialog.show_for_selected_item(main_window))
-        open_in_explorer_action.triggered.connect(lambda: handle_open_in_explorer(main_window))
+        # 有选中项时显示文件列表右键菜单选项
+        actions_added = []
+        
+        if config.get('show_context_menu_delete', True):
+            delete_action = menu.addAction(main_window.translation.get("delete", "删除"))
+            delete_action.triggered.connect(lambda: handle_delete_file(main_window))
+            actions_added.append(delete_action)
+        
+        if config.get('show_context_menu_properties', True):
+            prop_action = menu.addAction(main_window.translation.get("properties", "属性"))
+            prop_action.triggered.connect(lambda: FilePropertiesDialog.show_for_selected_item(main_window))
+            actions_added.append(prop_action)
+        
+        if config.get('show_context_menu_open_explorer', True):
+            open_in_explorer_action = menu.addAction(main_window.translation.get("open_in_explorer", "在资源管理器打开"))
+            open_in_explorer_action.triggered.connect(lambda: handle_open_in_explorer(main_window))
+            actions_added.append(open_in_explorer_action)
+        
+        if config.get('show_context_menu_new_folder', True):
+            new_folder_action = menu.addAction(main_window.translation.get("new_folder", "新建文件夹"))
+            new_folder_action.triggered.connect(lambda: handle_new_folder(main_window))
+            actions_added.append(new_folder_action)
+            
+        # 如果没有启用任何动作，至少显示新建文件夹
+        if not actions_added:
+            new_folder_action = menu.addAction(main_window.translation.get("new_folder", "新建文件夹"))
+            new_folder_action.triggered.connect(lambda: handle_new_folder(main_window))
     else:
-        # 无选中项时显示新建文件夹和打开当前目录选项
-        new_folder_action = menu.addAction(main_window.translation.get("new_folder", "新建文件夹"))
-        open_current_dir_action = menu.addAction(main_window.translation.get("open_in_explorer", "在资源管理器打开"))
-        new_folder_action.triggered.connect(lambda: handle_new_folder(main_window))
-        open_current_dir_action.triggered.connect(lambda: handle_open_current_directory(main_window))
+        # 无选中项时显示空白区域右键菜单选项
+        actions_added = []
+        
+        if config.get('show_blank_menu_new_folder', True):
+            new_folder_action = menu.addAction(main_window.translation.get("new_folder", "新建文件夹"))
+            new_folder_action.triggered.connect(lambda: handle_new_folder(main_window))
+            actions_added.append(new_folder_action)
+        
+        if config.get('show_blank_menu_open_explorer', True):
+            open_current_dir_action = menu.addAction(main_window.translation.get("open_in_explorer", "在资源管理器打开"))
+            open_current_dir_action.triggered.connect(lambda: handle_open_current_directory(main_window))
+            actions_added.append(open_current_dir_action)
+            
+        # 如果没有启用任何动作，至少显示新建文件夹
+        if not actions_added:
+            new_folder_action = menu.addAction(main_window.translation.get("new_folder", "新建文件夹"))
+            new_folder_action.triggered.connect(lambda: handle_new_folder(main_window))
+    
     # 在鼠标位置显示菜单
     menu.exec(main_window.file_list.mapToGlobal(pos))
 
