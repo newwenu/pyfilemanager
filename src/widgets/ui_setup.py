@@ -25,10 +25,13 @@ class UISetup:
         # 初始化系统背景色
         if not main_window.sys_bg:
             main_window.sys_bg = QApplication.palette().color(QPalette.Window)
-            print(f"系统背景颜色: {main_window.sys_bg}")
+            # print(f"系统背景颜色: {main_window.sys_bg}")
         
         # 缓存常用参数，避免重复获取
         self.font_size = self.config.get("font_size", 12)
+        self.status_font_size = self.config.get("status_font_size", int(self.font_size*0.8))
+        self.nav_tree_font_size = self.config.get("nav_tree_font_size", self.font_size)
+        self.file_list_font_size = self.config.get("file_list_font_size", 12)
         self.bg_alpha1 = self.config.get("nav_tree_bg_alpha", 128)
         self.bg_alpha2 = self.config.get("file_list_bg_alpha", 128)
         self.nav_tree_icon_size = self.config.get("nav_tree_icon_size", self.font_size * 2.5)
@@ -235,7 +238,7 @@ class UISetup:
         #     QStatusBar {{
         #         background-color: rgba(0, 0, 0, 128);
         #         color: rgba(255, 255, 255, 200);
-        #         font-size: {self.font_size}pt;
+        #         font-size: {self.status_font_size}pt;
         #     }}
         # """)
         self.main_window.setStatusBar(status_bar)

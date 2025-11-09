@@ -254,9 +254,11 @@ class FileListUpdater:
                 self._handle_folder_size_calculation2(info["path"], item)
         self._update_status_bar(file_count, folder_count)
         # 无文件时显示空提示（使用翻译）
-        if file_count == 0 and folder_count == 0:
+        if file_count == 0 and folder_count == 0 and not self.error_occurred:
             # 替换为翻译文本（默认值"当前目录为空"）
             self.file_list.set_empty_hint(self.translation.get("empty_dir_hint", "当前目录为空"))
+        elif self.error_occurred:
+            self.file_list.set_empty_hint(self.translation.get("error_hint", "发生错误或无权限访问"))
         else:
             self.file_list.set_empty_hint("")
     def _update_filelist_from_sorted(self,filelist2:list):
