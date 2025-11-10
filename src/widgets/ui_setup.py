@@ -21,7 +21,7 @@ class UISetup:
         self.config_manager = config_manager
         self.config = config_manager.config
         self.translation = main_window.translation
-        
+        self.font_family = self.config.get("font_family", "等线")
         # 初始化系统背景色
         if not main_window.sys_bg:
             main_window.sys_bg = QApplication.palette().color(QPalette.Window)
@@ -166,7 +166,7 @@ class UISetup:
         # 修改：使用独立配置的图标大小
         self.main_window.file_list.setIconSize(QSize(self.file_list_icon_size, self.file_list_icon_size))
         # ：使用QFont设置字体大小（替代原样式表中的font-size）
-        file_list_font = QFont('等线')
+        file_list_font = QFont(self.font_family)
         file_list_font.setPointSize(self.config.get("file_list_font_size", 12))  # 从配置中获取字体大小
         self.main_window.file_list.setFont(file_list_font)
         # 保存文件列表的初始样式（关键修改）
