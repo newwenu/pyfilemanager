@@ -10,6 +10,7 @@ from widgets.file_list_updater import FileListUpdater
 from widgets.ui_setup import UISetup 
 from handlers.m_event_handlers import setup_event_bindings
 from image_manager.icon_manager import create_icon_set
+from image_manager.icon_manager_factory import get_icon_manager, switch_to_new_icon_system
 from image_manager.background_manager import BackgroundManager
 from Fileoperater.file_manager2 import FileManager2
 from Fileoperater.file_manager3 import FileManager3
@@ -61,7 +62,22 @@ class FileManager(QMainWindow):
         
         # 初始化日志（通过配置管理器传递参数）
         init_logging(self.config_manager)
-        self.icons, self.icon_paths = create_icon_set("media",self.config_manager.get("file_list_icon_size")*2)  # 使用独立图标管理函数
+        
+        # 尝试切换到新的图标系统
+        try:
+            # print(f"尝试切换到新的图标系统").throw()
+            switch_to_new_icon_system()
+            icon_manager = get_icon_manager()
+            self.icons = icon_manager.icon_cache
+            # 创建图标路径字典
+            self.icon_paths = {}
+            for icon_name in self.icons:
+                self.icon_paths[icon_name] = icon_manager.config_manager.get_icon_path(icon_name)
+        except Exception as e:
+            # 如果新系统失败，回退到旧系统
+            print(f"Failed to initialize new icon system, falling back to old system: {e}")
+            self.icons, self.icon_paths = create_icon_set("media",self.config_manager.get("file_list_icon_size")*2)  # 使用独立图标管理函数
+        
         self.drive_icons,self.icon_paths = create_icon_set("media",self.config_manager.get("drive_icon_size")*2)
         self.folder_size_index = {}  # ：索引库（路径: 大小）
         # ：初始化 SQLite 数据库

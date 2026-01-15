@@ -4,12 +4,15 @@ from PySide6.QtWidgets import QTreeWidgetItem, QTreeWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from utils.file_utils import get_file_type, format_size
+from utils.file_icon_adapter import get_file_properties
 from dbload_manager.database_manager import DatabaseManager
 from threads.file_list_loader import FileListLoaderManager  # 导入
 from handlers.header_sort_handler import HeaderSortHandler  # 新增导入
 from utils.sort_utils import sort_file_list  # 新增：导入排序工具
 # 导入快捷方式图标提取模块
 from image_manager.ink_icon import get_shortcut_icon_pixmap
+# 导入新的图标管理器工厂
+from image_manager.icon_manager_factory import get_icon_manager
 from utils.logging_config import get_logger
 from utils.size_parser import parse_formatted_size
 logger = get_logger(__name__)
@@ -298,7 +301,8 @@ class FileListUpdater:
         item = QTreeWidgetItem(self.file_list, [info["name"], size])
         # 将路径信息存储在项的数据中，用于后续更新
         item.setData(0, Qt.ItemDataRole.UserRole, info["path"])
-    # 特殊处理快捷方式文件
+        
+        # 特殊处理快捷方式文件
         if file_type == 'shortcut' or file_type == 'defaulticon' and not info["is_dir"]:
             from PySide6.QtGui import QIcon
             shortcut_path = info["path"]
@@ -312,10 +316,17 @@ class FileListUpdater:
                 # 回退到默认快捷方式图标
                 item.setIcon(0, self.icons.get(file_type, self.icons['default']))
         else:
-            # 原有逻辑
-            item.setIcon(0, self.icons.get(file_type, self.icons['default']))
+            # 使用新的图标管理器获取图标
+            icon_manager = get_icon_manager()
+            file_path = info["path"]
+            
+            # 获取文件属性，用于更精确的图标匹配
+            file_properties = get_file_properties(file_path)
+            
+            # 获取图标
+            icon = icon_manager.get_icon(file_path, file_properties)
+            item.setIcon(0, icon)
     
-        # item.setIcon(0, self.icons.get(file_type, self.icons['default']))
         item.setToolTip(0, info["name"])
         if self.show_mtime:
             from utils.time_utils import format_mtime_timestamp
