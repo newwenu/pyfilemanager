@@ -28,7 +28,9 @@ class IconManagerFactory:
         # 初始化配置管理器
         config_path = "userdata/file-icon-type/icon-config.json"
         fallback_config_path = "userdata/file-icon-type/file-icon_type.json"
+        extension_config_path = "userdata/file-icon-type/extensions_collection.json"
         self._config_manager = IconConfigManager(config_path, fallback_config_path)
+        self._extension_config_path = extension_config_path
     
     def get_config_manager(self) -> IconConfigManager:
         """获取配置管理器实例"""
@@ -50,7 +52,7 @@ class IconManagerFactory:
         # 如果还没有创建图标管理器，或者需要切换系统
         if self._icon_manager is None:
             if self._use_new_system:
-                self._icon_manager = IconManager(self._config_manager)
+                self._icon_manager = IconManager(self._config_manager, extension_config_path=self._extension_config_path)
             else:
                 # 使用旧系统
                 self._icon_manager = create_icon_set()
@@ -83,6 +85,18 @@ class IconManagerFactory:
         
         # 重置图标管理器
         self._icon_manager = None
+    
+    def refresh_extensions(self) -> bool:
+        """刷新扩展名集合"""
+        if self._use_new_system and self._icon_manager:
+            return self._icon_manager.refresh_extensions()
+        return False
+    
+    def get_extensions_count(self) -> int:
+        """获取扩展名集合中的扩展名数量"""
+        if self._use_new_system and self._icon_manager:
+            return self._icon_manager.get_extensions_count()
+        return 0
 
 # 为了向后兼容，提供全局函数
 def get_icon_manager(use_new_system: Optional[bool] = None) -> object:
@@ -108,3 +122,11 @@ def is_using_new_icon_system() -> bool:
 def refresh_icon_system():
     """刷新图标系统（全局函数）"""
     IconManagerFactory.get_instance().refresh_all()
+
+def refresh_extensions() -> bool:
+    """刷新扩展名集合（全局函数）"""
+    return IconManagerFactory.get_instance().refresh_extensions()
+
+def get_extensions_count() -> int:
+    """获取扩展名集合中的扩展名数量（全局函数）"""
+    return IconManagerFactory.get_instance().get_extensions_count()
