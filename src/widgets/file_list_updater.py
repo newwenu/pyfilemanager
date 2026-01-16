@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QTreeWidgetItem, QTreeWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from utils.file_utils import get_file_type, format_size
-from utils.file_icon_adapter import get_file_properties
+# from utils.file_icon_adapter import get_file_properties
 from dbload_manager.database_manager import DatabaseManager
 from threads.file_list_loader import FileListLoaderManager  # 导入
 from handlers.header_sort_handler import HeaderSortHandler  # 新增导入
@@ -301,7 +301,10 @@ class FileListUpdater:
         item = QTreeWidgetItem(self.file_list, [info["name"], size])
         # 将路径信息存储在项的数据中，用于后续更新
         item.setData(0, Qt.ItemDataRole.UserRole, info["path"])
-        
+         # 优化：直接通过扩展名判断文件类型，避免重复检查
+        file_path = info["path"]
+        file_ext = os.path.splitext(file_path)[1].lower()
+    
         # 特殊处理快捷方式文件
         if file_type == 'shortcut' or file_type == 'defaulticon' and not info["is_dir"]:
             from PySide6.QtGui import QIcon
@@ -318,14 +321,15 @@ class FileListUpdater:
         else:
             # 使用新的图标管理器获取图标
             icon_manager = get_icon_manager()
-            file_path = info["path"]
+            # file_path = info["path"]
             
-            # 获取文件属性，用于更精确的图标匹配
-            file_properties = get_file_properties(file_path)
-            
+            # # 获取文件属性，用于更精确的图标匹配
+            # file_properties = get_file_properties(file_path)
+            # 原有逻辑
+            item.setIcon(0, self.icons.get(file_type, self.icons['default']))
             # 获取图标
-            icon = icon_manager.get_icon(file_path, file_properties)
-            item.setIcon(0, icon)
+            # icon = icon_manager.get_icon(file_path)
+            # item.setIcon(0, icon)
     
         item.setToolTip(0, info["name"])
         if self.show_mtime:

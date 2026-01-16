@@ -219,78 +219,66 @@ class IconConfigManager(QObject):
         
         return default_config
     
-    def _build_lookup_tables(self):
-        """构建快速查找表"""
-        self.ext_to_icon = {}
-        self.filename_to_icon = {}
-        self.property_to_icon = {}  # 文件属性到图标的映射
+    # def _build_lookup_tables(self):
+    #     """构建快速查找表"""
+    #     self.ext_to_icon = {}
+    #     self.filename_to_icon = {}
+    #     self.property_to_icon = {}  # 文件属性到图标的映射
         
-        for mapping in self.icon_mappings:
-            for rule in mapping.match_rules:
-                if rule.type == "extension":
-                    for ext in rule.patterns:
-                        if not ext:  # 跳过空扩展名
-                            continue
-                        ext_key = ext.lower() if not rule.case_sensitive else ext
-                        if ext_key not in self.ext_to_icon or rule.priority > self.ext_to_icon[ext_key][1]:
-                            self.ext_to_icon[ext_key] = (mapping.name, rule.priority)
+    #     for mapping in self.icon_mappings:
+    #         for rule in mapping.match_rules:
+    #             if rule.type == "extension":
+    #                 for ext in rule.patterns:
+    #                     if not ext:  # 跳过空扩展名
+    #                         continue
+    #                     ext_key = ext.lower() if not rule.case_sensitive else ext
+    #                     if ext_key not in self.ext_to_icon or rule.priority > self.ext_to_icon[ext_key][1]:
+    #                         self.ext_to_icon[ext_key] = (mapping.name, rule.priority)
                 
-                elif rule.type == "filename":
-                    for pattern in rule.patterns:
-                        if not pattern:  # 跳过空模式
-                            continue
-                        pattern_key = pattern.lower() if not rule.case_sensitive else pattern
-                        if pattern_key not in self.filename_to_icon or rule.priority > self.filename_to_icon[pattern_key][1]:
-                            self.filename_to_icon[pattern_key] = (mapping.name, rule.priority)
+    #             elif rule.type == "filename":
+    #                 for pattern in rule.patterns:
+    #                     if not pattern:  # 跳过空模式
+    #                         continue
+    #                     pattern_key = pattern.lower() if not rule.case_sensitive else pattern
+    #                     if pattern_key not in self.filename_to_icon or rule.priority > self.filename_to_icon[pattern_key][1]:
+    #                         self.filename_to_icon[pattern_key] = (mapping.name, rule.priority)
                 
-                elif rule.type == "file_property":
-                    if rule.property:
-                        prop_key = (rule.property.lower(), str(rule.value).lower()) if not rule.case_sensitive else (rule.property, str(rule.value))
-                        if prop_key not in self.property_to_icon or rule.priority > self.property_to_icon[prop_key][1]:
-                            self.property_to_icon[prop_key] = (mapping.name, rule.priority)
+    #             elif rule.type == "file_property":
+    #                 if rule.property:
+    #                     prop_key = (rule.property.lower(), str(rule.value).lower()) if not rule.case_sensitive else (rule.property, str(rule.value))
+    #                     if prop_key not in self.property_to_icon or rule.priority > self.property_to_icon[prop_key][1]:
+    #                         self.property_to_icon[prop_key] = (mapping.name, rule.priority)
     
-    def get_icon_for_file(self, file_path: str, file_properties: dict = None) -> str:
-        """根据文件路径获取图标名称"""
-        file_path = Path(file_path)
-        ext = file_path.suffix
-        filename = file_path.stem
+    # def get_icon_for_file(self, file_path: str, file_properties: dict = None) -> str:
+    #     """根据文件路径获取图标名称"""
+    #     file_path = Path(file_path)
+    #     ext = file_path.suffix
+    #     filename = file_path.stem
         
-        # 1. 尝试通过扩展名匹配
-        if ext:
-            ext_key = ext.lower()
-            if ext_key in self.ext_to_icon:
-                return self.ext_to_icon[ext_key][0]
+    #     # 1. 尝试通过扩展名匹配
+    #     if ext:
+    #         ext_key = ext.lower()
+    #         if ext_key in self.ext_to_icon:
+    #             return self.ext_to_icon[ext_key][0]
         
-        # 2. 尝试通过文件名匹配（支持正则表达式）
-        for mapping in self.icon_mappings:
-            for rule in mapping.match_rules:
-                if rule.type == "filename":
-                    for pattern in rule.patterns:
-                        try:
-                            # 尝试作为正则表达式匹配
-                            if re.search(pattern, filename, re.IGNORECASE if not rule.case_sensitive else 0):
-                                return mapping.name
-                        except re.error:
-                            # 如果不是有效的正则表达式，尝试精确匹配
-                            pattern_key = pattern.lower() if not rule.case_sensitive else pattern
-                            filename_key = filename.lower() if not rule.case_sensitive else filename
-                            if pattern_key == filename_key:
-                                return mapping.name
+    #     # # 2. 尝试通过文件名匹配（支持正则表达式）
+    #     # for mapping in self.icon_mappings:
+    #     #     for rule in mapping.match_rules:
+    #     #         if rule.type == "filename":
+    #     #             for pattern in rule.patterns:
+    #     #                 try:
+    #     #                     # 尝试作为正则表达式匹配
+    #     #                     if re.search(pattern, filename, re.IGNORECASE if not rule.case_sensitive else 0):
+    #     #                         return mapping.name
+    #     #                 except re.error:
+    #     #                     # 如果不是有效的正则表达式，尝试精确匹配
+    #     #                     pattern_key = pattern.lower() if not rule.case_sensitive else pattern
+    #     #                     filename_key = filename.lower() if not rule.case_sensitive else filename
+    #     #                     if pattern_key == filename_key:
+    #     #                         return mapping.name
         
-        # 3. 尝试通过文件属性匹配
-        if file_properties:
-            for mapping in self.icon_mappings:
-                for rule in mapping.match_rules:
-                    if rule.type == "file_property" and rule.property in file_properties:
-                        file_value = str(file_properties[rule.property])
-                        target_value = str(rule.value) if rule.value is not None else ""
-                        
-                        if (file_value.lower() == target_value.lower() and not rule.case_sensitive) or \
-                           (file_value == target_value and rule.case_sensitive):
-                            return mapping.name
-        
-        # 4. 返回默认图标
-        return self.default_icon.name
+    #     # 4. 返回默认图标
+    #     return self.default_icon.name
     
     def get_icon_path(self, icon_name: str, theme_name: str = None) -> str:
         """获取图标文件的完整路径"""
@@ -363,12 +351,12 @@ class IconConfigManager(QObject):
                 return True
         return False
     
-    def _rebuild_lookup_tables(self):
-        """重建快速查找表"""
-        self.ext_to_icon.clear()
-        self.filename_to_icon.clear()
-        self.property_to_icon.clear()
-        self._build_lookup_tables()
+    # def _rebuild_lookup_tables(self):
+    #     """重建快速查找表"""
+    #     self.ext_to_icon.clear()
+    #     self.filename_to_icon.clear()
+    #     self.property_to_icon.clear()
+    #     self._build_lookup_tables()
     
     def _save_config(self):
         """保存配置到文件"""

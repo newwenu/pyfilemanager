@@ -87,35 +87,35 @@ class IconManager(QObject):
         """获取文件对应的图标"""
         # 1. 获取图标名称
         icon_name = self.config_manager.get_icon_for_file(file_path, file_properties)
-
-        # 2. 检查是否是默认图标，如果是，尝试从扩展名集合获取系统图标
-        if icon_name == self.config_manager.default_icon.name:
-            # 开始计时
-            import time
-            start_time = time.perf_counter()
+        print(f"获取图标名称: {icon_name}")
+        # # 2. 检查是否是默认图标，如果是，尝试从扩展名集合获取系统图标
+        # if icon_name == self.config_manager.default_icon.name:
+            # # 开始计时
+            # import time
+            # start_time = time.perf_counter()
             
-            # 获取文件扩展名
-            from pathlib import Path
-            file_ext = Path(file_path).suffix.lower()
-            logger.info(f"获取文件扩展名: {file_ext}")
-            # 检查扩展名是否在扩展名集合中
-            is_registered = self.extension_manager.is_extension_registered(file_ext)
-            logger.info(f"扩展名 {file_ext} 是否在扩展名集合中: {is_registered}")
-            if is_registered:
-                # 尝试获取系统图标
-                system_icon = self._get_system_icon(file_ext, file_path)
-                if system_icon:
-                    logger.info(f"成功获取系统图标: {file_ext}")
-                    # 计算并记录执行时间
-                    end_time = time.perf_counter()
-                    execution_time = (end_time - start_time) * 1000  # 转换为毫秒
-                    logger.info(f"92-105行代码执行时间: {execution_time:.4f} 毫秒")
-                    return system_icon
+            # # 获取文件扩展名
+            # from pathlib import Path
+            # file_ext = Path(file_path).suffix.lower()
+            # logger.info(f"获取文件扩展名: {file_ext}")
+            # # 检查扩展名是否在扩展名集合中
+            # is_registered = self.extension_manager.is_extension_registered(file_ext)
+            # logger.info(f"扩展名 {file_ext} 是否在扩展名集合中: {is_registered}")
+            # if is_registered:
+            #     # 尝试获取系统图标
+            #     system_icon = self._get_system_icon(file_ext, file_path)
+            #     if system_icon:
+            #         logger.info(f"成功获取系统图标: {file_ext}")
+            #         # 计算并记录执行时间
+            #         end_time = time.perf_counter()
+            #         execution_time = (end_time - start_time) * 1000  # 转换为毫秒
+            #         logger.info(f"92-105行代码执行时间: {execution_time:.4f} 毫秒")
+            #         return system_icon
             
-            # 即使没有获取到系统图标，也计算执行时间
-            end_time = time.perf_counter()
-            execution_time = (end_time - start_time) * 1000  # 转换为毫秒
-            logger.info(f"92-105行代码执行时间: {execution_time:.4f} 毫秒")
+            # # 即使没有获取到系统图标，也计算执行时间
+            # end_time = time.perf_counter()
+            # execution_time = (end_time - start_time) * 1000  # 转换为毫秒
+            # logger.info(f"92-105行代码执行时间: {execution_time:.4f} 毫秒")
             # print(f"是默认图标: {icon_name}")
         # 3. 尝试从缓存获取图标
         if icon_name in self.icon_cache:
@@ -211,17 +211,18 @@ class IconManager(QObject):
         
         try:
             # 导入ink_icon模块
-            from .ink_icon import get_file_icon
+            # from .ink_icon import get_file_icon
             
             # 尝试获取系统图标，传入图标大小
-            pixmap = get_file_icon(file_path, self.icon_size)
-            if pixmap and not pixmap.isNull():
-                # 将QPixmap转换为QIcon
-                icon = QIcon(pixmap)
-                # 添加到缓存
-                self.system_icon_cache[cache_key] = icon
-                logger.info(f"成功获取系统图标: {file_ext}")
-                return icon
+            # pixmap = get_file_icon(file_path, self.icon_size)
+            # if pixmap and not pixmap.isNull():
+            #     # 将QPixmap转换为QIcon
+            #     icon = QIcon(pixmap)
+            #     # 添加到缓存
+            #     self.system_icon_cache[cache_key] = icon
+            #     logger.info(f"成功获取系统图标: {file_ext}")
+            #     return icon
+            pass
         except ImportError:
             logger.error("无法导入ink_icon模块")
         except Exception as e:
