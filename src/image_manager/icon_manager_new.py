@@ -45,7 +45,7 @@ class IconManager(QObject):
         self._init_icon_cache()
         
         # 初始化扩展名集合（如果需要）
-        self._init_extensions_collection()
+        # self._init_extensions_collection()
 
     def _init_extensions_collection(self):
         """初始化扩展名集合"""
