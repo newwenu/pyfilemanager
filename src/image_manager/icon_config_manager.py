@@ -56,7 +56,7 @@ class IconConfigManager(QObject):
         self._init_icon_mappings()
         
         # 构建快速查找表
-        self._build_lookup_tables()
+        # self._build_lookup_tables()
     
     def _init_themes(self):
         """初始化图标主题"""
