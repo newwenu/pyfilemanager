@@ -2,7 +2,7 @@
 
 ## Simple File Manager
 
-### [enEnglish](README-en.md) | [zh简体中文](README-zh.md)
+### [enEnglish](README-en.md) | [zh简体中文](README.md)
 
 ## Attention
 

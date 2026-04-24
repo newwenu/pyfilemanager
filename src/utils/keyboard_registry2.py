@@ -4,6 +4,11 @@ from PySide6.QtWidgets import QMessageBox
 import json
 from pathlib import Path
 import sys
+import os
+
+# 导入事件总线和配置提供者
+from core import event_bus, config_provider
+
 # 辅助函数：加载用户自定义快捷键配置
 def load_user_shortcuts():
     """加载用户自定义快捷键配置"""
@@ -37,20 +42,20 @@ def parse_modifiers(modifiers_str: str) -> Qt.KeyboardModifier:
             modifiers |= modifier_mapping[part]
     return modifiers
 
-# 新增：定义默认快捷键配置列表（数据接口）
+# 新增：定义默认快捷键配置列表（使用事件总线）
 default_shortcuts = [
     # 高频导航操作（用户最常用）
     {
         "id":"1",
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_Left),
-        "callback": lambda main_window: main_window.navigate_parent_dir,
+        "callback": lambda main_window: lambda: event_bus.navigate_up.emit(),
         "target_widget": None,
         "description": "返回上级目录"
     },
     {
         "id":"2",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_H),
-        "callback": lambda main_window: main_window.navigate_home,
+        "callback": lambda main_window: lambda: event_bus.navigate_home.emit(),
         "target_widget": None,
         "description": "导航到主页"
     },
@@ -58,14 +63,14 @@ default_shortcuts = [
     # 文件核心操作（打开/复制/剪切/粘贴/删除）
     {
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_Return),
-        "callback": lambda main_window: main_window.file_op_handler.open_selected_item,
+        "callback": lambda main_window: lambda: event_bus.file_open_selected.emit(),
         "target_widget": lambda main_window: main_window.file_list,
         "description": "打开选中项（文件列表）"
     },
     {
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_Return),
         "callback": lambda main_window: lambda: (
-            on_tree_select(main_window, main_window.nav_tree.currentItem(), main_window.config_manager.config) 
+            on_tree_select(main_window, main_window.nav_tree.currentItem(), config_provider.get_all()) 
             if main_window.nav_tree.currentItem() else None
         ),
         "target_widget": lambda main_window: main_window.nav_tree,
@@ -74,40 +79,28 @@ default_shortcuts = [
     {
         "id":"3",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_C),
-        "callback": lambda main_window: (
-            lambda: main_window.file_manager3.copy_files(main_window.file_list.selectedItems())
-        ),
+        "callback": lambda main_window: lambda: _emit_copy_event(main_window),
         "target_widget": lambda main_window: main_window.file_list,
         "description": "复制选中文件"
     },
     {
         "id":"4",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_X),
-        "callback": lambda main_window: (
-            lambda: main_window.file_manager3.cut_files(main_window.file_list.selectedItems())
-        ),
+        "callback": lambda main_window: lambda: _emit_cut_event(main_window),
         "target_widget": lambda main_window: main_window.file_list,
         "description": "剪切选中文件"
     },
     {
         "id":"5",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_V),
-        "callback": lambda main_window: main_window.file_manager3.paste_files,
+        "callback": lambda main_window: lambda: event_bus.file_paste.emit(),
         "target_widget": lambda main_window: main_window.file_list,
         "description": "粘贴文件"
     },
     {
         "id":"6",
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_Delete),
-        "callback": lambda main_window: (
-            lambda: main_window.file_manager.delete_files(
-                parent_widget=main_window,
-                current_path=main_window.current_path,
-                selected_items=main_window.file_list.selectedItems(),
-                update_callback=main_window.update_filelist,
-                error_callback=lambda title, msg: QMessageBox.critical(main_window, title, msg)
-            )
-        ),
+        "callback": lambda main_window: lambda: _emit_delete_event(main_window),
         "target_widget": lambda main_window: main_window.file_list,
         "description": "删除选中文件"
     },
@@ -116,23 +109,21 @@ default_shortcuts = [
     {
         "id":"7",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_A),
-        "callback": lambda main_window: main_window.file_list.selectAll,
+        "callback": lambda main_window: lambda: event_bus.select_all.emit(),
         "target_widget": lambda main_window: main_window.file_list,
         "description": "全选文件"
     },
     {
         "id":"8",
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F2),
-        "callback": lambda main_window: (
-            lambda: main_window.file_manager3.rename_item(main_window.file_list.currentItem())
-        ),
+        "callback": lambda main_window: lambda: _emit_rename_event(main_window),
         "target_widget": lambda main_window: main_window.file_list,
         "description": "重命名选中项"
     },
     {
         "id":"9",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_N),
-        "callback": lambda main_window: main_window.btn_new_folder.click,
+        "callback": lambda main_window: lambda: event_bus.file_new_folder.emit(""),
         "target_widget": None,
         "description": "新建文件夹"
     },
@@ -141,21 +132,21 @@ default_shortcuts = [
     {
         "id":"10",
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F5),
-        "callback": lambda main_window: main_window.update_filelist,
+        "callback": lambda main_window: lambda: event_bus.navigate_refresh.emit(),
         "target_widget": None,
         "description": "刷新界面"
     },
     {
         "id":"11",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_F),
-        "callback": lambda main_window: main_window.search_handler._show_search_input,
+        "callback": lambda main_window: lambda: event_bus.focus_search_box.emit(),
         "target_widget": None,
         "description": "显示搜索输入框"
     },
     {
         "id":"12",
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_N),
-        "callback": lambda main_window: lambda: main_window.nav_tree.setFocus(),
+        "callback": lambda main_window: lambda: event_bus.focus_nav_tree.emit(),
         "target_widget": None,
         "target_p": lambda main_window: main_window.nav_tree,
         "is_focus": True,
@@ -164,7 +155,7 @@ default_shortcuts = [
     {
         "id":"13",
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_F),
-        "callback": lambda main_window: lambda: main_window.file_list.setFocus(),
+        "callback": lambda main_window: lambda: event_bus.focus_file_list.emit(),
         "target_widget": None,
         "target_p": lambda main_window: main_window.file_list,
         "is_focus": True,
@@ -173,7 +164,7 @@ default_shortcuts = [
     {
         "id":"14",
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_D),
-        "callback": lambda main_window: lambda: main_window.address_bar.setFocus(),
+        "callback": lambda main_window: lambda: event_bus.focus_address_bar.emit(),
         "target_widget": None,
         "target_p": lambda main_window: main_window.address_bar,
         "is_focus": True,
@@ -182,12 +173,7 @@ default_shortcuts = [
     {
         "id":"15",
         "keys": (Qt.KeyboardModifier.AltModifier, Qt.Key.Key_X),
-        "callback": lambda main_window: (
-            lambda: (
-                setattr(main_window.file_list_updater, "show_mtime", not main_window.file_list_updater.show_mtime),
-                main_window.file_list_updater.update_filelist()
-            )
-        ),
+        "callback": lambda main_window: lambda: event_bus.view_toggle_mtime.emit(),
         "target_widget": None,
         "description": "切换修改时间列显隐"
     },
@@ -196,7 +182,7 @@ default_shortcuts = [
     {
         "id":"16",
         "keys": (Qt.KeyboardModifier.NoModifier, Qt.Key.Key_F1),
-        "callback": lambda main_window: main_window.toggle_shortcut_help_dialog,
+        "callback": lambda main_window: lambda: event_bus.app_show_help.emit(),
         "target_widget": None,
         "description": "打开/关闭快捷键帮助对话框"
     },
@@ -212,11 +198,72 @@ default_shortcuts = [
     {
         "id":"18",
         "keys": (Qt.KeyboardModifier.ControlModifier, Qt.Key.Key_Comma),
-        "callback": lambda main_window: lambda: main_window.show_settings_dialog(),
+        "callback": lambda main_window: lambda: event_bus.app_show_settings.emit(),
         "target_widget": None,
         "description": "打开设置对话框"
     }
 ]
+
+
+# 辅助函数：发射复制事件
+def _emit_copy_event(main_window):
+    """获取选中项并发射复制事件"""
+    selected_items = main_window.file_list.selectedItems()
+    files = []
+    for item in selected_items:
+        file_name = item.text(0)
+        file_path = os.path.join(main_window.current_path, file_name)
+        files.append(file_path)
+    if files:
+        event_bus.file_copy.emit(files)
+
+
+# 辅助函数：发射剪切事件
+def _emit_cut_event(main_window):
+    """获取选中项并发射剪切事件"""
+    selected_items = main_window.file_list.selectedItems()
+    files = []
+    for item in selected_items:
+        file_name = item.text(0)
+        file_path = os.path.join(main_window.current_path, file_name)
+        files.append(file_path)
+    if files:
+        event_bus.file_cut.emit(files)
+
+
+# 辅助函数：发射删除事件
+def _emit_delete_event(main_window):
+    """获取选中项并发射删除事件"""
+    selected_items = main_window.file_list.selectedItems()
+    files = []
+    for item in selected_items:
+        file_name = item.text(0)
+        file_path = os.path.join(main_window.current_path, file_name)
+        files.append(file_path)
+    if files:
+        event_bus.file_delete.emit(files)
+
+
+# 辅助函数：发射重命名事件
+def _emit_rename_event(main_window):
+    """获取当前项并发射重命名事件"""
+    import os
+    current_item = main_window.file_list.currentItem()
+    if current_item:
+        # 获取文件路径
+        file_path = current_item.data(0, Qt.UserRole)
+        if not file_path:
+            file_path = os.path.join(main_window.current_path, current_item.text(0))
+        # 使用事件总线发射重命名事件
+        # 注意：重命名需要用户输入新名称，这里先打开对话框
+        from PySide6.QtWidgets import QInputDialog
+        new_name, ok = QInputDialog.getText(
+            main_window, "重命名", "新名称：", text=current_item.text(0)
+        )
+        if ok and new_name.strip():
+            event_bus.file_rename.emit(file_path, new_name.strip())
+
+
 # 加载用户自定义快捷键并更新默认配置（关键修改）
 user_shortcuts = load_user_shortcuts()
 for user_sc in user_shortcuts:

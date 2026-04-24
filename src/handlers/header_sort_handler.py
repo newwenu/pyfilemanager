@@ -1,9 +1,12 @@
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QRadioButton, QPushButton, QHBoxLayout
 from PySide6.QtCore import Qt
 from utils.sort_utils import sort_file_list  # 新增：导入排序工具
+
+
 class HeaderSortHandler:
     def __init__(self, file_list_updater):
         self.fm = file_list_updater  # 关联文件列表更新器
+        self._main_window = file_list_updater._main_window  # 获取主窗口引用
         # 新增：列索引与排序键的映射（需与文件列表表头顺序一致）
         self.column_to_key = {
             0: "name",   # 第0列：名称
@@ -44,7 +47,7 @@ class HeaderSortHandler:
         if logical_index not in self.column_to_key:
             return
         
-        dialog = QDialog(self.fm.fm)
+        dialog = QDialog(self._main_window)
         dialog.setWindowTitle("选择排序方式")
         layout = QVBoxLayout(dialog)
         
@@ -111,7 +114,7 @@ class HeaderSortHandler:
         except Exception as e:
             # 错误提示（与工程现有错误处理风格一致）
             from handlers.m_event_handlers import show_error
-            show_error(self.fm.fm, "排序失败", str(e))
+            show_error(self._main_window, "排序失败", str(e))
 
     def _update_header_text(self):
         """更新当前排序列的表头文本（如“大小↑”）"""

@@ -11,31 +11,36 @@ from widgets.rounded_button import AntiAliasRoundedButton  # ：导入自定义�
 from PySide6.QtWidgets import QApplication
 from widgets.custom_tree_widget import FileListWidget
 
+# 导入配置
+from core import app_config
+
 
 class UISetup:
     """UI 设置管理类"""
-    
+
     def __init__(self, main_window, config_manager):
         """初始化 UI 设置管理器"""
         self.main_window = main_window
+        # 保留 config_manager 引用，因为设置对话框需要修改配置
         self.config_manager = config_manager
-        self.config = config_manager.config
+        # 使用 app_config 读取配置
+        self.config = app_config.get_all()
         self.translation = main_window.translation
-        self.font_family = self.config.get("font_family", "等线")
+        self.font_family = app_config.font_family
         # 初始化系统背景色
         if not main_window.sys_bg:
             main_window.sys_bg = QApplication.palette().color(QPalette.Window)
             # print(f"系统背景颜色: {main_window.sys_bg}")
-        
+
         # 缓存常用参数，避免重复获取
-        self.font_size = self.config.get("font_size", 12)
-        self.status_font_size = self.config.get("status_font_size", int(self.font_size*0.8))
-        self.nav_tree_font_size = self.config.get("nav_tree_font_size", self.font_size)
-        self.file_list_font_size = self.config.get("file_list_font_size", 12)
-        self.bg_alpha1 = self.config.get("nav_tree_bg_alpha", 128)
-        self.bg_alpha2 = self.config.get("file_list_bg_alpha", 128)
-        self.nav_tree_icon_size = self.config.get("nav_tree_icon_size", self.font_size * 2.5)
-        self.file_list_icon_size = self.config.get("file_list_icon_size", self.font_size * 1.6)
+        self.font_size = app_config.font_size
+        self.status_font_size = app_config.status_font_size
+        self.nav_tree_font_size = app_config.nav_tree_font_size
+        self.file_list_font_size = app_config.file_list_font_size
+        self.bg_alpha1 = app_config.nav_tree_bg_alpha
+        self.bg_alpha2 = app_config.file_list_bg_alpha
+        self.nav_tree_icon_size = app_config.nav_tree_icon_size
+        self.file_list_icon_size = app_config.file_list_icon_size
         
         # 缓存系统背景色RGB值
         r, g, b, _ = self.main_window.sys_bg.getRgb()
@@ -148,8 +153,9 @@ class UISetup:
         splitter.addWidget(right_stack)
         
         # 右侧文件列表（半透明背景）
-        # 主文件列表初始化（关键修改）
-        self.main_window.file_list = FileListWidget()  # 自定义的文件列表控件
+        # 主文件列表初始化（使用FileListWidget）
+        self.main_window.file_list = FileListWidget(self.main_window)
+        # self.main_window.file_list.setObjectName("file_list")
         # main_window.file_list.setHeaderLabels(["名称", "大小"])  
         # 关键修改：使用翻译设置文件列表表头
         self.main_window.file_list.setHeaderLabels([

@@ -3,124 +3,151 @@ import sys
 from PySide6.QtWidgets import QTreeWidgetItem, QTreeWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from utils.file_utils import get_file_type, format_size
-# from utils.file_icon_adapter import get_file_properties
-from dbload_manager.database_manager import DatabaseManager
-from threads.file_list_loader import FileListLoaderManager  # 导入
-from handlers.header_sort_handler import HeaderSortHandler  # 新增导入
-from utils.sort_utils import sort_file_list  # 新增：导入排序工具
-# 导入快捷方式图标提取模块
+from utils.file_utils import get_file_type
+from utils.size_utils import format_size
+from dbload_manager.file_tree_manager import FileTreeManager, CacheValidity
+from threads.file_list_loader import FileListLoaderManager
+from handlers.header_sort_handler import HeaderSortHandler
+from utils.sort_utils import sort_file_list
 from image_manager.ink_icon import get_shortcut_icon_pixmap
-# 导入新的图标管理器工厂
 from image_manager.icon_manager_factory import get_icon_manager
 from utils.logging_config import get_logger
-from utils.size_parser import parse_formatted_size
+
+# 导入事件总线和配置
+from core import event_bus, app_config
+
 logger = get_logger(__name__)
+
+
 class FileListUpdater:
-    def __init__(self, fm):  # 仅传递主窗口实例
-        self.fm = fm  # 持有主窗口引用
-        # 新增：获取翻译字典（假设主窗口已加载翻译）
-        self.translation = self.fm.translation
-        self.folder_threads = {}  # 实例变量：在FileListUpdater内部维护线程字典
-        # ：初始化异步加载管理器
-        self.file_list_loader = FileListLoaderManager(self.fm)
+    """
+    文件列表更新器 - 使用事件总线进行通信
+
+    通过事件总线发送UI更新请求，而不是直接操作主窗口
+    """
+
+    def __init__(self, main_window):
+        """
+        初始化文件列表更新器
+
+        Args:
+            main_window: 主窗口实例（用于获取必要的状态和控件）
+        """
+        self._main_window = main_window
+        self._translation = main_window.translation
+        self.folder_threads = {}
+
+        # 初始化异步加载管理器
+        self.file_list_loader = FileListLoaderManager(main_window)
         self.file_list_loader.list_loaded.connect(self._update_filelist_from_thread)
-        self.file_list_loader.error_occurred.connect(self._handle_scan_error)  # 新增错误处理
-        # 可选：连接进度信号（用于显示加载提示）
-        # self.file_list_loader.progress_updated.connect(self._update_progress)
-        # 新增：初始化排序处理器并连接表头事件
+        self.file_list_loader.error_occurred.connect(self._handle_scan_error)
+
+        # 初始化排序处理器
         self.header_handler = HeaderSortHandler(self)
-        # 新增：缓存文件列表数据（用于排序）
-        self.file_list_data = []  
-        self.show_mtime = self.fm.config_manager.config.get("show_mtime", False)
-        self.last_updated_path = None  # 新增：记录最后一次更新的路径
+
+        # 缓存文件列表数据
+        self.file_list_data = []
+        self.show_mtime = app_config.show_mtime
+        self.last_updated_path = None
         self.error_occurred = False
 
-        
+        # 连接事件总线
+        self._setup_event_bus_connections()
+
+    def _setup_event_bus_connections(self):
+        """设置事件总线连接"""
+        # 监听配置变更事件
+        event_bus.config_changed.connect(self._on_config_changed)
+
+    def _on_config_changed(self, key: str, value):
+        """处理配置变更事件"""
+        if key == "show_mtime":
+            self.show_mtime = value
+
+    # ========== 属性访问（保持向后兼容）==========
+
     @property
     def file_list(self) -> QTreeWidget:
-        """通过主窗口直接获取文件列表控件"""
-        return self.fm.file_list
+        """获取文件列表控件"""
+        return self._main_window.file_list
 
     @property
     def current_path(self) -> str:
-        """通过主窗口直接获取当前路径"""
-        return self.fm.current_path
+        """获取当前路径"""
+        return self._main_window.current_path
 
     @property
     def show_hidden(self) -> bool:
-        """通过主窗口直接获取是否显示隐藏文件"""
-        return self.fm.show_hidden
+        """获取是否显示隐藏文件"""
+        return self._main_window.show_hidden
 
     @property
     def show_all_sizes(self) -> bool:
-        """通过主窗口直接获取是否显示所有大小"""
-        return self.fm.show_all_sizes
+        """获取是否显示所有大小"""
+        return self._main_window.show_all_sizes
 
     @property
     def icons(self) -> dict:
-        """通过主窗口直接获取图标集合"""
-        return self.fm.icons
+        """获取图标集合"""
+        return self._main_window.icons
 
     @property
-    def db(self) -> DatabaseManager:
-        """通过主窗口直接获取数据库实例"""
-        return self.fm.db
+    def file_tree_manager(self) -> FileTreeManager:
+        """获取 FileTreeManager 实例"""
+        return self._main_window.file_tree_manager
+
+    @property
+    def db(self):
+        """获取数据库实例（向后兼容）"""
+        return self._main_window.file_tree_manager
 
     @property
     def folder_size_manager(self):
-        """通过主窗口直接获取文件夹大小管理器"""
-        return self.fm.folder_size_manager
+        """获取文件夹大小管理器"""
+        return self._main_window.folder_size_manager
 
-    # 删除原folder_threads属性（关键修改）
-    # @property
-    # def folder_threads(self) -> dict:
-    #     """通过主窗口直接获取线程存储字典"""
-    #     return self.fm.folder_threads
+    # ========== 核心功能 ==========
 
     def update_filelist(self):
         """更新文件列表（核心功能）"""
-        # self.file_list_loader.stop_all()  # 触发管理器清理
         self._clean_old_threads()
         self.file_list.clear()
-        self._setup_header_layout()  # 设置列布局
-        # 可选：显示加载中的提示（如“加载中...”）
+        self._setup_header_layout()
 
         try:
-            # file_count, folder_count = self._process_directory_entries()  # 处理目录条目
-            # self._update_status_bar(file_count, folder_count)  # 更新状态栏
-            # ：启动异步加载线程
+            # 启动异步加载线程
             self.file_list_loader.start_load(self.current_path, self.show_hidden)
             self.last_updated_path = self.current_path
             self.error_occurred = False
         except Exception as e:
-            # 错误提示
-            # print(f"文件列表更新失败: {str(e)}")
             logger.error(f"文件列表更新失败: {str(e)}")
-            self.fm.status_bar.showMessage(f"文件列表更新失败: {str(e)}", 5000)
+            # 使用事件总线发送错误消息
+            event_bus.ui_update_statusbar.emit(f"文件列表更新失败: {str(e)}", 5000)
 
     def _setup_header_layout(self):
-        """设置文件列表列布局（修改：使用翻译文本）"""
-        if not self.current_path == '此电脑':
-            # 从翻译获取表头文本（默认值为原硬编码）
-            headers = [
-                self.translation.get("name", "名称"),  # 名称列翻译
-                self.translation.get("size", "大小")   # 大小列翻译
-            ]
-            # 根据配置添加时间列（使用翻译）
-            show_mtime = self.show_mtime
-            if show_mtime:
-                headers.append(self.translation.get("mtime", "修改时间"))  # 修改时间列翻译
-            self.file_list.setColumnHidden(2, not show_mtime)  # 隐藏条件不变
-            
-            self.file_list.setHeaderLabels(headers)
-            self.file_list.setColumnWidth(0, 400)
-            self.file_list.setColumnWidth(1, 100)
-            if self.show_mtime:
-                self.file_list.setColumnWidth(2, 150)
+        """设置文件列表列布局"""
+        if self.current_path == '此电脑':
+            return
+
+        # 设置表头
+        headers = [
+            self._translation.get("name", "名称"),
+            self._translation.get("size", "大小")
+        ]
+
+        if self.show_mtime:
+            headers.append(self._translation.get("mtime", "修改时间"))
+
+        self.file_list.setColumnHidden(2, not self.show_mtime)
+        self.file_list.setHeaderLabels(headers)
+        self.file_list.setColumnWidth(0, 400)
+        self.file_list.setColumnWidth(1, 100)
+
+        if self.show_mtime:
+            self.file_list.setColumnWidth(2, 150)
 
     def _clean_old_threads(self):
-        """清理未完成的文件夹大小计算线程（操作内部字典）"""
+        """清理未完成的文件夹大小计算线程"""
         for path, thread in list(self.folder_threads.items()):
             thread.stop()
             thread.wait()
@@ -128,80 +155,75 @@ class FileListUpdater:
             del self.folder_threads[path]
 
     def start_folder_size_thread(self, path, item):
-        """启动文件夹大小计算线程（使用内部字典存储）"""
-        if path in self.folder_threads:  # 避免重复启动
+        """启动文件夹大小计算线程"""
+        if path in self.folder_threads:
             return
         thread = self.folder_size_manager.start_calculate(path, item)
-        if thread is not None:  # ：检查线程是否有效
-            self.folder_threads[path] = thread  # 仅存储有效线程
-    
+        if thread is not None:
+            self.folder_threads[path] = thread
+
     def _apply_hidden_style2(self, item, entry):
         """应用隐藏文件灰色显示样式"""
         try:
             if sys.platform == "win32":
                 import win32api
                 import win32con
-                # Windows系统：使用文件属性判断
                 is_hidden = win32api.GetFileAttributes(entry) & win32con.FILE_ATTRIBUTE_HIDDEN
             else:
-                # Unix-like系统（Linux/macOS）：检查文件名是否以.开头
                 is_hidden = os.path.basename(entry).startswith('.')
-            # is_hidden = win32api.GetFileAttributes(entry) & win32con.FILE_ATTRIBUTE_HIDDEN
-            if is_hidden:
-                # print("隐藏文件")
-                item.setForeground(0, QColor(Qt.GlobalColor.gray))
 
+            if is_hidden:
+                item.setForeground(0, QColor(Qt.GlobalColor.gray))
         except Exception:
             pass
-    def _handle_folder_size_calculation2(self, entry, item):
-        """处理文件夹大小异步计算及缓存"""
-        folder_path = entry
-        db_result = self.db.get_cached_size(folder_path)
 
-        if db_result:
-            cached_size, db_last_modified = db_result
-            try:
-                current_last_modified = os.path.getmtime(folder_path)
-            except Exception:
-                current_last_modified = 0
-            
-            if current_last_modified != db_last_modified:
+    def _handle_folder_size_calculation2(self, entry, item):
+        """处理文件夹大小异步计算及缓存 - 使用 FileTreeManager"""
+        folder_path = entry
+
+        # 使用 FileTreeManager 获取文件夹信息（自动验证缓存有效性）
+        folder_info = self.file_tree_manager.get_folder_info(folder_path)
+
+        if folder_info.cache_status == CacheValidity.VALID:
+            # 缓存有效，直接使用
+            if folder_info.size == 0 and folder_info.formatted_size == "计算中...":
+                # 特殊情况：缓存存在但大小为0，可能是新缓存
                 self.start_folder_size_thread(folder_path, item)
             else:
-                if cached_size == "unaccessable":
-                    item.setText(1, self.translation.get("unaccessable","无法访问"))
-                    # 更新文件列表数据中的display_size字段、size字段
-                    for info in self.file_list_data:
-                        if info["path"] == folder_path:
-                            info["display_size"] = self.translation.get("unaccessable","无法访问")
-                            # 无法访问的文件夹大小设为0
-                            info["size"] = 0
-                            break
-                else:
-                    item.setText(1, cached_size)
-                    # 更新文件列表数据中的display_size字段、size字段
-                    for info in self.file_list_data:
-                        if info["path"] == folder_path:
-                            info["display_size"] = cached_size
-                            # 使用parse_formatted_size函数解析格式化的大小字符串
-                            try:
-                                # 解析格式化大小为字节数
-                                actual_size = parse_formatted_size(cached_size)
-                                info["size"] = actual_size
-                            except Exception:
-                                info["size"] = 0  # 解析失败时设为0
-                            break
+                item.setText(1, folder_info.formatted_size)
+                self._update_file_list_data(folder_path, folder_info.formatted_size, folder_info.size)
+
+                # 如果虚拟列表有更新方法，调用它
+                if hasattr(self.file_list, 'update_folder_size'):
+                    self.file_list.update_folder_size(folder_path, folder_info.formatted_size)
+        elif folder_info.cache_status == CacheValidity.NOT_CACHED:
+            # 无缓存，启动计算线程
+            self.start_folder_size_thread(folder_path, item)
         else:
+            # 缓存失效（修改时间变化、内容变化或过期），重新计算
             self.start_folder_size_thread(folder_path, item)
 
+    def _update_file_list_data(self, folder_path: str, display_size: str, size: int):
+        """更新文件列表数据中的大小信息"""
+        for info in self.file_list_data:
+            if info["path"] == folder_path:
+                info["display_size"] = display_size
+                info["size"] = size
+                break
+
     def _update_status_bar(self, file_count, folder_count):
-        """更新状态栏信息（修改：使用翻译）"""
+        """更新状态栏信息"""
         if self.error_occurred:
             return
+
         total = file_count + folder_count
-        # 从翻译获取状态文本模板（默认值原硬编码）
-        status_template = self.translation.get(
-            "status_text", 
+
+        # 使用标准的 selectedItems() 方法获取选中数量
+        # 虚拟列表已经完全兼容此接口
+        selected_count = len(self.file_list.selectedItems())
+
+        status_template = self._translation.get(
+            "status_text",
             "{current_path} | 总数：{total} | 文件：{file_count} | 文件夹：{folder_count} | 选中：{selected_count}"
         )
         status_text = status_template.format(
@@ -209,12 +231,18 @@ class FileListUpdater:
             total=total,
             file_count=file_count,
             folder_count=folder_count,
-            selected_count=len(self.file_list.selectedItems())
+            selected_count=selected_count
         )
-        self.fm.status_bar.showMessage(status_text)
+        # 使用事件总线更新状态栏
+        event_bus.ui_update_statusbar.emit(status_text, 0)
 
     def filter_files(self, keyword: str):
-        """根据关键词过滤文件列表项，返回匹配数量"""
+        """根据关键词过滤文件列表项"""
+        # 如果虚拟列表有自己的过滤方法，使用它
+        if hasattr(self.file_list, 'filter_files') and callable(getattr(self.file_list, 'filter_files')):
+            return self.file_list.filter_files(keyword)
+
+        # 标准过滤方法
         match_count = 0
         for index in range(self.file_list.topLevelItemCount()):
             item = self.file_list.topLevelItem(index)
@@ -224,123 +252,118 @@ class FileListUpdater:
                 match_count += 1
             else:
                 item.setHidden(True)
-        return match_count  # ：返回匹配的文件数量
+        return match_count
 
     def clear_filter(self):
         """清除过滤，显示所有文件"""
+        # 如果虚拟列表有自己的过滤方法，使用它
+        if hasattr(self.file_list, 'filter_files') and callable(getattr(self.file_list, 'filter_files')):
+            self.file_list.filter_files("")
+            return
+
+        # 标准清除方法
         for index in range(self.file_list.topLevelItemCount()):
             item = self.file_list.topLevelItem(index)
             item.setHidden(False)
 
     def _update_filelist_from_thread(self, file_list: list):
-        """异步扫描完成后更新文件列表（修改：使用翻译）"""
-        self.file_list_data = file_list  # 缓存数据
-        # 初始按默认方式排序（名称升序）
-        sorted_file_list = sort_file_list(
-            file_list,
-            sort_key="name",  # 按名称排序（可选"size"/"mtime"）
-            reverse=False
-        )
-        self.file_list.clear()  # 清除临时提示
-        file_count = folder_count = 0
-        for info in sorted_file_list:
-            # 统计文件/文件夹数量（与原有逻辑一致）
-            if info["is_dir"]:
-                folder_count += 1
-            else:
-                file_count += 1
-            # 创建列表项（复用 _create_list_item 逻辑）
-            item = self._create_list_item_from_info(info)
-            self._apply_hidden_style2(item, info["path"])  # 隐藏文件样式
-            # 处理文件夹大小计算（与原有逻辑一致）
-            if info["is_dir"] and self.show_all_sizes:
-                self._handle_folder_size_calculation2(info["path"], item)
-        self._update_status_bar(file_count, folder_count)
-        # 无文件时显示空提示（使用翻译）
-        if file_count == 0 and folder_count == 0 and not self.error_occurred:
-            # 替换为翻译文本（默认值"当前目录为空"）
-            self.file_list.set_empty_hint(self.translation.get("empty_dir_hint", "当前目录为空"))
-        elif self.error_occurred:
-            self.file_list.set_empty_hint(self.translation.get("error_hint", "发生错误或无权限访问"))
+        """异步扫描完成后更新文件列表"""
+        self.file_list_data = file_list
+
+        # 如果虚拟列表有自己的加载方法，使用它
+        if hasattr(self.file_list, 'load_files') and callable(getattr(self.file_list, 'load_files')):
+            self.file_list.load_files(
+                file_list,
+                self.icons,
+                show_all_sizes=self.show_all_sizes,
+                show_mtime=self.show_mtime
+            )
+            # 统计文件和文件夹数量
+            file_count = sum(1 for info in file_list if not info.get("is_dir", False))
+            folder_count = len(file_list) - file_count
         else:
-            self.file_list.set_empty_hint("")
-    def _update_filelist_from_sorted(self,filelist2:list):
-        """
-        从排序后的文件列表更新UI，用于过滤后的显示。
-        :param filelist2: 已排序的文件列表数据
-        """
-        if filelist2:
-            # self._setup_header_layout()
+            # 标准加载方法
+            sorted_file_list = sort_file_list(file_list, sort_key="name", reverse=False)
+
             self.file_list.clear()
-            for info in filelist2:
-                # 创建列表项（复用 _create_list_item 逻辑）
+            file_count = folder_count = 0
+
+            for info in sorted_file_list:
+                if info["is_dir"]:
+                    folder_count += 1
+                else:
+                    file_count += 1
+
                 item = self._create_list_item_from_info(info)
-                self._apply_hidden_style2(item, info["path"])  # 隐藏文件样式
-                # 新增：处理文件夹大小计算（与_update_filelist_from_thread逻辑一致）
+                self._apply_hidden_style2(item, info["path"])
+
                 if info["is_dir"] and self.show_all_sizes:
                     self._handle_folder_size_calculation2(info["path"], item)
-                # 关键新增：清空旧列表项（避免重复显示）
+
+        self._update_status_bar(file_count, folder_count)
+
+        # 设置空提示
+        if file_count == 0 and folder_count == 0 and not self.error_occurred:
+            self.file_list.set_empty_hint(self._translation.get("empty_dir_hint", "当前目录为空"))
+        elif self.error_occurred:
+            self.file_list.set_empty_hint(self._translation.get("error_hint", "发生错误或无权限访问"))
+        else:
+            self.file_list.set_empty_hint("")
+
+    def _update_filelist_from_sorted(self, filelist2: list):
+        """从排序后的文件列表更新UI"""
+        if filelist2:
+            self.file_list.clear()
+            for info in filelist2:
+                item = self._create_list_item_from_info(info)
+                self._apply_hidden_style2(item, info["path"])
+                if info["is_dir"] and self.show_all_sizes:
+                    self._handle_folder_size_calculation2(info["path"], item)
                 self.file_list.addTopLevelItem(item)
 
     def _create_list_item_from_info(self, info: dict):
-        """适配异步扫描结果的列表项创建（修改：使用翻译）"""
+        """创建列表项"""
         file_type = 'folder' if info["is_dir"] else get_file_type(info["name"])
-        
-        # 使用display_size字段来确定显示的大小
+
         if info["is_dir"]:
             if self.show_all_sizes:
-                # 如果启用了显示所有大小，使用display_size字段
-                size = info.get("display_size", self.translation.get("calculating", "计算中"))
+                size = info.get("display_size", self._translation.get("calculating", "计算中"))
             else:
-                # 否则显示"<文件夹>"
-                size = self.translation.get("folder", "<文件夹>")
+                size = self._translation.get("folder", "<文件夹>")
         else:
-            # 对于文件，使用display_size字段（应该与size字段相同）
             size = format_size(info.get("display_size", info["size"]))
-            
+
         item = QTreeWidgetItem(self.file_list, [info["name"], size])
-        # 将路径信息存储在项的数据中，用于后续更新
         item.setData(0, Qt.ItemDataRole.UserRole, info["path"])
-         # 优化：直接通过扩展名判断文件类型，避免重复检查
+
         file_path = info["path"]
-        file_ext = os.path.splitext(file_path)[1].lower()
-    
+
         # 特殊处理快捷方式文件
-        if file_type == 'shortcut' or file_type == 'defaulticon' and not info["is_dir"]:
+        if file_type == 'shortcut' or (file_type == 'defaulticon' and not info["is_dir"]):
             from PySide6.QtGui import QIcon
-            shortcut_path = info["path"]
-            icon_size = self.fm.config_manager.get("file_list_icon_size", 40)
-            pixmap = get_shortcut_icon_pixmap(shortcut_path, icon_size)
-            
+            icon_size = app_config.file_list_icon_size
+            pixmap = get_shortcut_icon_pixmap(file_path, icon_size)
+
             if pixmap and not pixmap.isNull():
-                # 使用提取的图标
                 item.setIcon(0, QIcon(pixmap))
             else:
-                # 回退到默认快捷方式图标
                 item.setIcon(0, self.icons.get(file_type, self.icons['default']))
         else:
-            # 使用新的图标管理器获取图标
-            icon_manager = get_icon_manager()
-            # file_path = info["path"]
-            
-            # # 获取文件属性，用于更精确的图标匹配
-            # file_properties = get_file_properties(file_path)
-            # 原有逻辑
             item.setIcon(0, self.icons.get(file_type, self.icons['default']))
-            # 获取图标
-            # icon = icon_manager.get_icon(file_path)
-            # item.setIcon(0, icon)
-    
+
         item.setToolTip(0, info["name"])
+
         if self.show_mtime:
             from utils.time_utils import format_mtime_timestamp
             if info["mtime"]:
-                # 格式化时间戳为可读格式（如 "2024-06-01 12:34"）
                 mtime_str = format_mtime_timestamp(info["mtime"])
-                item.setText(2, mtime_str)  # 设置第三列内容
+                item.setText(2, mtime_str)
+
         return item
+
     def _handle_scan_error(self, error_msg):
-        # 显示错误提示（使用翻译）
-        error_text = self.translation.get("scan_error", "当前目录扫描错误：{error_msg}").format(error_msg=error_msg)
-        self.fm.status_bar.showMessage(error_text)
+        """处理扫描错误"""
+        error_text = self._translation.get("scan_error", "当前目录扫描错误：{error_msg}").format(error_msg=error_msg)
+        # 使用事件总线发送错误消息
+        event_bus.ui_update_statusbar.emit(error_text, 5000)
         self.error_occurred = True

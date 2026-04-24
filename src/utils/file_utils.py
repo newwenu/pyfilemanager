@@ -45,15 +45,6 @@ def get_file_type(filename):
     ext = os.path.splitext(filename)[1].lower()
     return EXT_TO_TYPE.get(ext, 'default')  # 直接通过字典查找
 
-def format_size(size):
-    """格式化文件大小"""
-    units = ['B', 'KB', 'MB', 'GB', 'TB']
-    unit_index = 0
-    while size >= 1024 and unit_index < 4:
-        size /= 1024
-        unit_index += 1
-    return f'{size:.2f}{units[unit_index]}'
-
 def create_char_icon(char):
     """生成字符图标"""
     size = 32

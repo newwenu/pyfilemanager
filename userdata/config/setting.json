@@ -16,7 +16,7 @@
     "file_list_font_size": 15,
     "nav_tree_font_size": 15,
     "drive_font_size": 13,
-    "show_hidden_files": false,
+    "show_hidden_files": true,
     "show_all_sizes": false,
     "statusbar_visible": true,
     "language": "zh_CN",
@@ -30,5 +30,6 @@
     "show_context_menu_open_explorer": true,
     "show_context_menu_new_folder": true,
     "show_blank_menu_new_folder": true,
-    "show_blank_menu_open_explorer": true
+    "show_blank_menu_open_explorer": true,
+    "max_threads": 15
 }

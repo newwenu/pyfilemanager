@@ -3,7 +3,7 @@ from PySide6.QtCore import Qt, QSize
 from PySide6.QtGui import QFont
 import sys
 import os
-from utils.file_utils import format_size  # 确保路径正确
+from utils.size_utils import format_size
 if sys.platform == "win32":
     import win32api
 else:

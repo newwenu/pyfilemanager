@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt, QThread, Signal  # 线程相关导入
 from utils.time_utils import get_file_mtime, format_mtime_timestamp_full
 import os
-from utils.file_utils import format_size
+from utils.size_utils import format_size
 from threads.folder_size import FolderSizeThread
 
 # ：异步计算文件夹大小的线程类
