@@ -1,9 +1,11 @@
 import os
+import time
 from PySide6.QtCore import QThread, Signal, QObject
 from utils.file_utils import should_show  # 复用现有过滤函数
 from utils.time_utils import get_file_mtime  # 使用自定义获取文件修改时间方法
-# from utils.logging_config import get_logger
-# logger = get_logger(__name__)
+from utils.logging_config import get_logger, log_exception
+
+logger = get_logger(__name__)
 
 class FileListLoaderThread(QThread):
     """异步扫描目录的线程类"""
@@ -17,7 +19,7 @@ class FileListLoaderThread(QThread):
         
     def run(self):
         """核心：异步扫描目录并收集文件信息"""
-        # print("FileListLoaderThread started.")
+        start_time = time.perf_counter()
         file_list = []
         try:
             with os.scandir(self.path) as entries:
@@ -26,7 +28,7 @@ class FileListLoaderThread(QThread):
                         return
                     if not should_show(entry, self.show_hidden):  # 复用现有过滤逻辑
                         continue
-                    # 收集文件元数据（新增“类型”字段）
+                    # 收集文件元数据（新增"类型"字段）
                     # 对于文件夹，将大小设为0，实际大小会在后续异步计算中更新
                     size = 0 if entry.is_dir() else entry.stat().st_size
                     file_info = {
@@ -37,12 +39,15 @@ class FileListLoaderThread(QThread):
                         "mtime": get_file_mtime(entry.path)  # 使用自定义方法获取文件修改时间
                     }
                     file_list.append(file_info)
+            elapsed = time.perf_counter() - start_time
+            logger.debug(f"扫描目录完成: {self.path}，找到 {len(file_list)} 个文件/文件夹，耗时: {elapsed:.3f}s")
             self.list_loaded.emit(file_list)  # 发送扫描结果到主线程
         except PermissionError as e:
+            logger.warning(f"无权限访问目录: {self.path}")
             self.error_occurred.emit(f"无法访问目录: {self.path}")  # 发射权限错误
-            # print("warn:无权限访问目录:", self.path)
             self.list_loaded.emit([])
         except Exception as e:
+            log_exception(logger, f"加载目录时出错: {self.path}", e)
             self.error_occurred.emit(f"加载目录时出错: {self.path}")  # 异常时发送错误信息
             self.list_loaded.emit([])  # 发送空列表表示加载失败
         

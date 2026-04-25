@@ -29,10 +29,18 @@ class FolderSizeThread(QThread):
     MAX_TOTAL_CACHE_COUNT = 1000  # 总缓存数量限制
     BATCH_CACHE_SIZE = 50  # 每批缓存的子文件夹数量
 
-    # 保护机制参数
-    MAX_CALCULATION_TIME = 30  # 最大计算时间（秒）
-    MAX_FOLDERS_TO_PROCESS = 10000  # 最大处理文件夹数
+    # 保护机制参数（默认不限制超时，让计算自然完成）
+    MAX_CALCULATION_TIME = 0  # 0表示不限制超时（秒）
+    MAX_FOLDERS_TO_PROCESS = 0  # 0表示不限制处理数量
     UI_UPDATE_INTERVAL = 0.05  # UI更新间隔（秒）
+    
+    # 并行计算线程数
+    # 说明：这是单个 FolderSizeThread 内部用于并行计算子文件夹的线程数
+    # FolderSizeManager.max_threads 是管理多个 FolderSizeThread 的线程数（默认10）
+    # 两者是不同层面的并行：
+    #   - max_threads: 同时计算多少个不同文件夹的大小
+    #   - PARALLEL_WORKERS: 计算单个文件夹时，并行计算其子文件夹的线程数
+    PARALLEL_WORKERS = 8  # 默认8个线程
 
     def __init__(self, path, file_tree_manager=None):
         super().__init__()
@@ -100,6 +108,15 @@ class FolderSizeThread(QThread):
                 logger.debug(f"根目录 {path} 无读取权限")
                 return -1
 
+            # 优化：检查根文件夹是否已有有效缓存
+            if self.file_tree_manager:
+                folder_info = self.file_tree_manager.get_folder_info(path)
+                if folder_info.cache_status == CacheValidity.VALID:
+                    logger.debug(f"使用缓存的根文件夹大小: {path} = {folder_info.size} bytes")
+                    self._file_count = folder_info.file_count
+                    self._folder_count = folder_info.folder_count
+                    return folder_info.size
+
             # 重置状态
             self._subfolder_sizes.clear()
             self._cached_count = 0
@@ -114,13 +131,13 @@ class FolderSizeThread(QThread):
             folder_results = {}
 
             while stack and self._is_running and not self._terminate_requested:
-                # 检查超时
-                if time.time() - self._start_time > self.MAX_CALCULATION_TIME:
+                # 检查超时（如果设置了超时时间）
+                if self.MAX_CALCULATION_TIME > 0 and time.time() - self._start_time > self.MAX_CALCULATION_TIME:
                     logger.warning(f"计算超时（>{self.MAX_CALCULATION_TIME}秒），返回部分结果")
                     break
 
-                # 检查数量限制
-                if self._processed_count >= self.MAX_FOLDERS_TO_PROCESS:
+                # 检查数量限制（如果设置了限制）
+                if self.MAX_FOLDERS_TO_PROCESS > 0 and self._processed_count >= self.MAX_FOLDERS_TO_PROCESS:
                     logger.warning(f"达到最大处理数量限制（{self.MAX_FOLDERS_TO_PROCESS}）")
                     break
 
@@ -139,6 +156,7 @@ class FolderSizeThread(QThread):
                         # 计算直接文件大小
                         current_files_size = 0
                         current_file_count = len(files)
+                        current_folder_count = 0  # 初始化文件夹计数
 
                         for entry in files:
                             try:
@@ -157,21 +175,90 @@ class FolderSizeThread(QThread):
                         )
 
                         if stop_deeper:
-                            # 停止深入：需要计算子文件夹的大小并累加
+                            # 停止深入：使用线程池并行计算子文件夹的大小
+                            # 先分离有缓存和需要计算的子文件夹
+                            dirs_to_calculate = []
+                            
                             for dir_entry in dirs:
-                                if self._is_running and not self._terminate_requested:
-                                    try:
-                                        sub_size = self._quick_calculate_folder_size(dir_entry.path)
-                                        if sub_size >= 0:
-                                            current_files_size += sub_size
-                                            current_file_count += 1  # 简化为计数文件夹
-                                    except Exception as e:
-                                        logger.debug(f"快速计算子文件夹失败 {dir_entry.path}: {e}")
+                                if not self._is_running or self._terminate_requested:
+                                    break
+                                    
+                                # 先检查缓存
+                                if self.file_tree_manager:
+                                    sub_info = self.file_tree_manager.get_folder_info(dir_entry.path)
+                                    if sub_info.cache_status == CacheValidity.VALID:
+                                        current_files_size += sub_info.size
+                                        current_file_count += sub_info.file_count
+                                        current_folder_count += 1 + sub_info.folder_count
+                                        continue
+                                
+                                # 需要计算
+                                dirs_to_calculate.append(dir_entry)
+                            
+                            # 使用线程池并行计算未缓存的子文件夹（不限制超时）
+                            if dirs_to_calculate and self._is_running and not self._terminate_requested:
+                                max_workers = min(self.PARALLEL_WORKERS, len(dirs_to_calculate))
+                                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                                    # 提交所有任务
+                                    future_to_dir = {
+                                        executor.submit(self._quick_calculate_folder_size, d.path): d 
+                                        for d in dirs_to_calculate
+                                    }
+                                    
+                                    # 收集结果（不限制等待时间）
+                                    for future in future_to_dir:
+                                        if not self._is_running or self._terminate_requested:
+                                            break
+                                        try:
+                                            dir_entry = future_to_dir[future]
+                                            sub_size = future.result()  # 不设置超时，等待完成
+                                            
+                                            if sub_size >= 0:
+                                                current_files_size += sub_size
+                                                current_file_count += 1
+                                                current_folder_count += 1
+                                        except Exception as e:
+                                            logger.debug(f"计算子文件夹失败: {e}")
+                            
                             # 更新栈顶信息（包含子文件夹大小）
                             stack[-1] = (current_path, 1, current_files_size, current_file_count, [])
                         else:
                             # 不停止深入：将子文件夹压入栈继续处理
-                            for dir_entry in reversed(dirs):  # 反转保持顺序
+                            # 优化：先检查子文件夹是否有缓存，有则直接使用
+                            cached_subfolders = []
+                            uncached_dirs = []
+                            
+                            for dir_entry in dirs:
+                                if self._is_running and not self._terminate_requested:
+                                    if self.file_tree_manager:
+                                        sub_info = self.file_tree_manager.get_folder_info(dir_entry.path)
+                                        if sub_info.cache_status == CacheValidity.VALID:
+                                            # 子文件夹有缓存，直接使用
+                                            cached_subfolders.append({
+                                                'path': dir_entry.path,
+                                                'size': sub_info.size,
+                                                'file_count': sub_info.file_count,
+                                                'folder_count': sub_info.folder_count
+                                            })
+                                            logger.debug(f"使用缓存的子文件夹: {dir_entry.path} = {sub_info.size} bytes")
+                                            continue
+                                    # 没有缓存，需要遍历计算
+                                    uncached_dirs.append(dir_entry)
+                            
+                            # 累加已缓存的子文件夹大小
+                            for cached in cached_subfolders:
+                                current_files_size += cached['size']
+                                current_file_count += cached['file_count']
+                                current_folder_count += cached['folder_count']
+                                # 将缓存的子文件夹直接加入结果
+                                folder_results[cached['path']] = (cached['size'], cached['file_count'], cached['folder_count'])
+                            
+                            # 更新栈顶信息（包含已缓存的子文件夹）
+                            stack[-1] = (current_path, 1, current_files_size, current_file_count,
+                                       [d.path for d in uncached_dirs])
+                            
+                            # 只将未缓存的子文件夹压入栈继续处理
+                            for dir_entry in reversed(uncached_dirs):
                                 if self._is_running and not self._terminate_requested:
                                     stack.append((dir_entry.path, 0, 0, 0, []))
 
@@ -232,11 +319,11 @@ class FolderSizeThread(QThread):
 
             # 记录统计信息
             elapsed = time.time() - self._start_time
-            if self._failed_folders:
-                logger.info(f"文件夹计算完成: {path}, "
-                          f"处理 {self._processed_count} 个文件夹, "
-                          f"失败 {len(self._failed_folders)} 个, "
-                          f"耗时 {elapsed:.2f}s")
+            logger.info(f"文件夹计算完成: {path}, "
+                      f"处理 {self._processed_count} 个文件夹, "
+                      f"失败 {len(self._failed_folders)} 个, "
+                      f"总大小 {total_size} bytes, "
+                      f"耗时 {elapsed:.2f}s")
 
             return total_size
 
@@ -269,8 +356,10 @@ class FolderSizeThread(QThread):
             文件夹大小（字节），-1 表示无法访问
         """
         total_size = 0
+        file_count = 0
         try:
             for current_path, dirs, files in os.walk(path, followlinks=False):
+                # 检查终止请求
                 if self._terminate_requested or not self._is_running:
                     return 0
 
@@ -280,12 +369,12 @@ class FolderSizeThread(QThread):
                         if sys.platform == "win32" and not file_path.startswith("\\\\?\\") and len(file_path) > 255:
                             file_path = f"\\\\?\\{file_path}"
                         total_size += max(os.path.getsize(file_path), 0)
+                        file_count += 1
                     except (PermissionError, OSError):
                         pass
 
-                # 让出时间片
-                if len(files) > 100:  # 只有文件较多时才让出
-                    QThread.msleep(0)
+                # 让出时间片（统一使用 _yield_if_needed 机制）
+                self._yield_if_needed()
 
             return total_size
         except Exception as e:
@@ -417,6 +506,9 @@ class FolderSizeTreeThread(QThread):
     # 发送每个子文件夹的大小信息
     tree_size_updated = Signal(str, object, str, int, int)  # (路径, 大小, 格式化大小, 文件数, 文件夹数)
     tree_calculation_finished = Signal(str, int)  # (根路径, 总文件夹数)
+    
+    # UI更新间隔
+    UI_UPDATE_INTERVAL = 0.05  # UI更新间隔（秒）
 
     def __init__(self, root_path: str):
         super().__init__()
@@ -424,6 +516,7 @@ class FolderSizeTreeThread(QThread):
         self._is_running = True
         self._terminate_requested = False
         self._folder_count = 0
+        self._last_update_time = 0
 
     def run(self):
         """递归计算整个树的大小"""
@@ -469,14 +562,25 @@ class FolderSizeTreeThread(QThread):
 
                 folder_count += 1
 
-                # 每处理10个文件夹让出时间片
-                if folder_count % 10 == 0:
-                    QThread.msleep(1)
+                # 让出时间片（统一使用 _yield_if_needed 机制）
+                self._yield_if_needed()
 
         except Exception as e:
             logger.error(f"计算树大小时出错 {path}: {e}")
 
         return folder_count
+
+    def _yield_if_needed(self):
+        """
+        根据需要让出时间片，避免阻塞UI
+
+        基于时间间隔决定是否让出时间片，比基于计数器更精确
+        """
+        current_time = time.time()
+        if current_time - self._last_update_time >= self.UI_UPDATE_INTERVAL:
+            from PySide6.QtCore import QThread
+            QThread.msleep(1)  # 让出1毫秒
+            self._last_update_time = current_time
 
     def stop(self):
         """停止线程"""

@@ -194,13 +194,21 @@ class OptimizedFileList(VirtualFileList):
             item = QTreeWidgetItem([name, size, mtime])
             item.setData(0, Qt.ItemDataRole.UserRole, path)
             
+            # 检查是否使用系统图标（按扩展名或default类型）
+            from image_manager.icon_settings_manager import get_icon_settings_manager
+            icon_settings = get_icon_settings_manager()
+            file_ext = os.path.splitext(name)[1].lower()
+            use_system_icon_by_ext = icon_settings.is_use_system_icon(file_ext)
+            use_system_icon_by_default = (file_type == 'default' and icon_settings.is_use_system_icon_for_default())
+            use_system_icon = use_system_icon_by_ext or use_system_icon_by_default
+
             # 设置图标（先设置默认图标）
             icon = self._icons.get(file_type, self._icons.get('default'))
             if icon:
                 item.setIcon(0, icon)
-            
-            # 特殊处理快捷方式和需要异步加载的图标
-            if file_type == 'shortcut' or file_type == 'defaulticon':
+
+            # 特殊处理快捷方式和使用系统图标的扩展名/default类型
+            if file_type == 'shortcut' or use_system_icon:
                 async_icon_paths.append(path)
                 item.setData(0, Qt.ItemDataRole.UserRole + 1, True)  # 标记需要异步加载
             

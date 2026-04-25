@@ -136,9 +136,18 @@ class BaseSettingsDialog(QDialog):
             # 保存设置
             self._save_settings()
             
+            # 重新加载图标设置以确保立即生效
+            from image_manager.icon_settings_manager import get_icon_settings_manager
+            icon_settings_manager = get_icon_settings_manager()
+            icon_settings_manager.reload_settings()
+            
             # 发出设置已更改信号
             if self.config_manager:
                 self.settings_changed.emit(self.config_manager.config)
+                
+            # 更新原始配置值（用于修改指示器比较）
+            if self.config_manager:
+                self._original_config = self.config_manager.config.copy()
                 
             # 隐藏所有修改指示器
             for key in self.widgets.keys():

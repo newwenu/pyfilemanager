@@ -1,6 +1,17 @@
 from PySide6.QtWidgets import QFileIconProvider
 from PySide6.QtCore import QFileInfo
 
+# 全局 QFileIconProvider 实例缓存
+_icon_provider = None
+
+def _get_icon_provider():
+    """获取全局 QFileIconProvider 实例（单例模式）"""
+    global _icon_provider
+    if _icon_provider is None:
+        _icon_provider = QFileIconProvider()
+    return _icon_provider
+
+
 def get_file_icon(file_path, icon_size=None):
     """
     获取文件图标
@@ -8,13 +19,13 @@ def get_file_icon(file_path, icon_size=None):
     :param icon_size: 图标大小
     :return: QPixmap对象或None
     """
-    provider = QFileIconProvider()
+    provider = _get_icon_provider()
     file_info = QFileInfo(file_path)
     icon = provider.icon(file_info)
-    
+
     if icon.isNull():
         return None
-    
+
     # 获取合适的图标大小
     if icon_size:
         pixmap = icon.pixmap(icon_size, icon_size)
@@ -25,7 +36,7 @@ def get_file_icon(file_path, icon_size=None):
             return None
         max_size = max(sizes, key=lambda s: s.width() * s.height())
         pixmap = icon.pixmap(max_size)
-    
+
     return pixmap
 
 def get_shortcut_icon_pixmap(shortcut_path, icon_size=None):
@@ -35,9 +46,9 @@ def get_shortcut_icon_pixmap(shortcut_path, icon_size=None):
     :param icon_size: 图标大小
     :return: QPixmap对象或None
     """
-    
+
     pixmap = get_file_icon(shortcut_path, icon_size)
-    
+
     if pixmap:
         return pixmap
     return None

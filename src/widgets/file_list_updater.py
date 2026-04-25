@@ -1,7 +1,7 @@
 import os
 import sys
 from PySide6.QtWidgets import QTreeWidgetItem, QTreeWidget
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QFileSystemWatcher
 from PySide6.QtGui import QColor
 from utils.file_utils import get_file_type
 from utils.size_utils import format_size
@@ -10,8 +10,7 @@ from threads.file_list_loader import FileListLoaderManager
 from handlers.header_sort_handler import HeaderSortHandler
 from utils.sort_utils import sort_file_list
 from image_manager.ink_icon import get_shortcut_icon_pixmap
-from image_manager.icon_manager_factory import get_icon_manager
-from utils.logging_config import get_logger
+from utils.logging_config import get_logger, log_performance, log_exception, LogContext
 
 # 导入事件总线和配置
 from core import event_bus, app_config
@@ -50,6 +49,12 @@ class FileListUpdater:
         self.show_mtime = app_config.show_mtime
         self.last_updated_path = None
         self.error_occurred = False
+
+        # 初始化文件夹监控（低开销，只监控当前目录）
+        # 使用 main_window 作为 parent（QFileSystemWatcher 需要 QObject parent）
+        self._folder_watcher = QFileSystemWatcher(main_window)
+        self._folder_watcher.directoryChanged.connect(self._on_folder_changed)
+        self._watched_path = None
 
         # 连接事件总线
         self._setup_event_bus_connections()
@@ -108,11 +113,15 @@ class FileListUpdater:
 
     # ========== 核心功能 ==========
 
+    @log_performance(logger, "更新文件列表")
     def update_filelist(self):
         """更新文件列表（核心功能）"""
         self._clean_old_threads()
         self.file_list.clear()
         self._setup_header_layout()
+
+        # 切换文件夹监控到当前目录
+        self._switch_folder_watcher(self.current_path)
 
         try:
             # 启动异步加载线程
@@ -120,9 +129,56 @@ class FileListUpdater:
             self.last_updated_path = self.current_path
             self.error_occurred = False
         except Exception as e:
-            logger.error(f"文件列表更新失败: {str(e)}")
+            log_exception(logger, "文件列表更新失败", e)
             # 使用事件总线发送错误消息
             event_bus.ui_update_statusbar.emit(f"文件列表更新失败: {str(e)}", 5000)
+
+    def _switch_folder_watcher(self, path: str):
+        """
+        切换文件夹监控到指定路径
+
+        只监控当前浏览的目录，开销极小（~10KB内存）
+        """
+        # 移除旧监控
+        if self._watched_path and self._watched_path in self._folder_watcher.directories():
+            self._folder_watcher.removePath(self._watched_path)
+            logger.debug(f"停止监控: {self._watched_path}")
+
+        # 添加新监控（只监控有效目录）
+        if path and os.path.isdir(path) and path not in ['此电脑', '']:
+            if self._folder_watcher.addPath(path):
+                self._watched_path = path
+                logger.debug(f"开始监控当前目录: {path}")
+            else:
+                logger.warning(f"无法监控目录（可能无权限）: {path}")
+                self._watched_path = None
+        else:
+            self._watched_path = None
+
+    def _on_folder_changed(self, path: str):
+        """
+        检测到当前目录变化时的回调
+
+        触发文件列表刷新和文件夹大小重新计算
+        """
+        logger.info(f"检测到目录变化: {path}")
+
+        # 标记相关缓存失效
+        if self.file_tree_manager:
+            self.file_tree_manager.invalidate_cache(path)
+
+        # 发送状态栏提示
+        event_bus.ui_update_statusbar.emit("检测到文件夹变化，正在刷新...", 3000)
+
+        # 延迟刷新（避免频繁变化导致频繁刷新）
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(500, self._refresh_after_change)
+
+    def _refresh_after_change(self):
+        """变化后刷新文件列表"""
+        if self._watched_path and os.path.exists(self._watched_path):
+            logger.debug(f"刷新文件列表: {self._watched_path}")
+            self.update_filelist()
 
     def _setup_header_layout(self):
         """设置文件列表列布局"""
@@ -338,8 +394,16 @@ class FileListUpdater:
 
         file_path = info["path"]
 
-        # 特殊处理快捷方式文件
-        if file_type == 'shortcut' or (file_type == 'defaulticon' and not info["is_dir"]):
+        # 检查是否使用系统图标（按扩展名或default类型）
+        from image_manager.icon_settings_manager import get_icon_settings_manager
+        icon_settings = get_icon_settings_manager()
+        file_ext = os.path.splitext(info["name"])[1].lower()
+        use_system_icon_by_ext = icon_settings.is_use_system_icon(file_ext)
+        use_system_icon_by_default = (file_type == 'default' and icon_settings.is_use_system_icon_for_default())
+        use_system_icon = use_system_icon_by_ext or use_system_icon_by_default
+
+        # 特殊处理快捷方式文件或使用系统图标的扩展名/default类型
+        if file_type == 'shortcut' or (use_system_icon and not info["is_dir"]):
             from PySide6.QtGui import QIcon
             icon_size = app_config.file_list_icon_size
             pixmap = get_shortcut_icon_pixmap(file_path, icon_size)

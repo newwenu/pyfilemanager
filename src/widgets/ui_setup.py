@@ -7,7 +7,6 @@ from PySide6.QtCore import Qt, QSize
 from utils.file_utils import create_char_icon
 from widgets.navigation_tree import init_navigation_tree
 from widgets.focus_style_filter import install_focus_style_filter  # 导入
-from widgets.rounded_button import AntiAliasRoundedButton  # ：导入自定义按钮类
 from PySide6.QtWidgets import QApplication
 from widgets.custom_tree_widget import FileListWidget
 
@@ -254,52 +253,3 @@ class UISetup:
         # 创建工具栏（若未创建）
         if not hasattr(self.main_window, 'toolbar'):
             self.main_window.toolbar = self.main_window.addToolBar("主工具栏")
-
-    def setup_settings_button(self):
-        """独立方法：初始化设置按钮（齿轮图标）及其交互逻辑"""
-        # 使用自定义抗锯齿按钮类
-        self.main_window.settings_btn = AntiAliasRoundedButton(self.main_window)
-        self.main_window.settings_btn.setText("⚙")  # 齿轮图标
-        self.main_window.settings_btn.setFixedSize(48, 48)  # 固定尺寸
-        self.main_window.settings_btn.setCursor(Qt.PointingHandCursor)  # 手型光标
-        
-        # 设置字体和文字颜色
-        btn_font = QFont()
-        btn_font.setPointSize(24)
-        self.main_window.settings_btn.setFont(btn_font)
-        
-        palette = self.main_window.settings_btn.palette()
-        text_color = QColor(255, 255, 255, 220)
-        palette.setColor(QPalette.ButtonText, text_color)
-        self.main_window.settings_btn.setPalette(palette)
-
-        # 设置模糊效果（增强质感）
-        blur_effect = QGraphicsBlurEffect()
-        blur_effect.setBlurRadius(8)
-        blur_effect.setBlurHints(QGraphicsBlurEffect.QualityHint)
-        self.main_window.settings_btn.setGraphicsEffect(blur_effect)
-
-        # 初始位置（后续通过resizeEvent调整）
-        self.main_window.settings_btn.move(self.main_window.width() - 60, self.main_window.height() - 60)
-        self.main_window.settings_btn.raise_()  # 确保显示在最上层
-
-
-        # 拖动功能实现
-        def mouse_press(event):
-            if event.button() == Qt.LeftButton:
-                self.main_window.settings_btn.drag_offset = event.globalPos() - self.main_window.settings_btn.pos()
-                self.main_window.settings_btn.setCursor(Qt.ClosedHandCursor)
-
-        def mouse_move(event):
-            if hasattr(self.main_window.settings_btn, 'drag_offset'):
-                new_pos = event.globalPos() - self.main_window.settings_btn.drag_offset
-                window_rect = self.main_window.rect()
-                btn_rect = self.main_window.settings_btn.rect()
-                new_x = max(0, min(new_pos.x(), window_rect.width() - btn_rect.width()))
-                new_y = max(0, min(new_pos.y(), window_rect.height() - btn_rect.height()))
-                self.main_window.settings_btn.move(new_x, new_y)
-
-        def mouse_release(event):
-            if hasattr(self.main_window.settings_btn, 'drag_offset'):
-                del self.main_window.settings_btn.drag_offset
-                self.main_window.settings_btn.setCursor(Qt.PointingHandCursor)

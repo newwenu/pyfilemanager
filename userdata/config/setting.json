@@ -31,5 +31,11 @@
     "show_context_menu_new_folder": true,
     "show_blank_menu_new_folder": true,
     "show_blank_menu_open_explorer": true,
-    "max_threads": 15
+    "max_threads": 15,
+    "use_system_icons_for": [],
+    "use_system_icons_for_extensions": [
+        ".exe",
+        ".vhdx"
+    ],
+    "use_system_icons_for_default": true
 }

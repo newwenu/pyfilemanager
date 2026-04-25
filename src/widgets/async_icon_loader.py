@@ -12,6 +12,15 @@ from typing import Dict, List, Optional, Callable, Set
 from collections import deque
 import os
 
+# 全局图标缓存（由主窗口初始化时设置）
+_global_icon_cache: Optional[Dict[str, QIcon]] = None
+
+
+def set_global_icon_cache(icon_cache: Dict[str, QIcon]):
+    """设置全局图标缓存"""
+    global _global_icon_cache
+    _global_icon_cache = icon_cache
+
 
 class IconLoadTask:
     """图标加载任务"""
@@ -97,10 +106,8 @@ class AsyncIconLoaderThread(QThread):
     def _load_icon(self, file_path: str) -> Optional[QIcon]:
         """加载单个图标"""
         try:
-            from image_manager.icon_manager_factory import get_icon_manager
             from image_manager.ink_icon import get_shortcut_icon_pixmap
-            
-            icon_manager = get_icon_manager()
+            from utils.file_utils import get_file_type
             
             # 特殊处理快捷方式
             if file_path.endswith('.lnk'):
@@ -108,11 +115,12 @@ class AsyncIconLoaderThread(QThread):
                 if pixmap and not pixmap.isNull():
                     return QIcon(pixmap)
             
-            # 普通文件
-            ext = os.path.splitext(file_path)[1].lower()
-            icon = icon_manager.get_icon(ext)
-            if icon:
-                return icon
+            # 普通文件 - 使用旧版图标系统
+            file_type = get_file_type(file_path)
+            # 从全局图标字典获取（由主窗口设置）
+            global _global_icon_cache
+            if _global_icon_cache and file_type in _global_icon_cache:
+                return _global_icon_cache[file_type]
             
             return None
         except Exception:

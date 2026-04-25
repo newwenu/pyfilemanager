@@ -198,9 +198,6 @@ class PagedFileList(QTreeWidget):
         from utils.file_utils import get_file_type
         from utils.size_utils import format_size
         from utils.time_utils import format_mtime_timestamp
-        from image_manager.icon_manager_factory import get_icon_manager
-        
-        icon_manager = get_icon_manager()
         
         for info in page_files:
             name = info['name']

@@ -371,8 +371,16 @@ class VirtualFileList(QTreeWidget):
         # 设置图标
         file_type = 'folder' if is_dir else get_file_type(name)
 
-        # 特殊处理快捷方式
-        if file_type == 'shortcut' or (file_type == 'defaulticon' and not is_dir):
+        # 检查是否使用系统图标（按扩展名或default类型）
+        from image_manager.icon_settings_manager import get_icon_settings_manager
+        icon_settings = get_icon_settings_manager()
+        file_ext = os.path.splitext(name)[1].lower()
+        use_system_icon_by_ext = icon_settings.is_use_system_icon(file_ext)
+        use_system_icon_by_default = (file_type == 'default' and icon_settings.is_use_system_icon_for_default())
+        use_system_icon = use_system_icon_by_ext or use_system_icon_by_default
+
+        # 特殊处理快捷方式或使用系统图标的扩展名/default类型
+        if file_type == 'shortcut' or (use_system_icon and not is_dir):
             try:
                 icon_size = app_config.file_list_icon_size
                 pixmap = get_shortcut_icon_pixmap(path, icon_size)

@@ -60,6 +60,10 @@ class AppInitializer:
             main_window: 主窗口实例
             config_manager: 配置管理器
         """
+        # 首先初始化日志系统（确保后续所有日志都能正确记录）
+        from utils.logging_config import init_logging
+        init_logging(config_manager)
+        
         self.main_window = main_window
         self.config_manager = config_manager
         self.phases: Dict[str, InitPhase] = {}
@@ -126,6 +130,11 @@ class AppInitializer:
         ServiceLocator.register("config_provider", config_provider)
         ServiceLocator.register("event_bus", event_bus)
         
+        # 初始化图标设置管理器
+        from image_manager.icon_settings_manager import get_icon_settings_manager
+        icon_settings_manager = get_icon_settings_manager()
+        icon_settings_manager.set_config_manager(self.config_manager)
+        
         # 初始化语言
         from language_manager.language_manager import LanguageManager
         language_manager = LanguageManager(self.main_window, self.config_manager)
@@ -159,9 +168,7 @@ class AppInitializer:
     
     def _init_core_services(self) -> None:
         """初始化核心服务"""
-        # 初始化日志
-        from utils.logging_config import init_logging
-        init_logging()
+        # 日志已在 __init__ 中初始化，此处无需重复初始化
         
         # 初始化主题管理器
         from theme_manager.theme_manager import ThemeManager
@@ -187,26 +194,17 @@ class AppInitializer:
     
     def _init_icon_system(self) -> None:
         """初始化图标系统"""
-        from image_manager.icon_manager_factory import (
-            get_icon_manager, switch_to_new_icon_system
-        )
         from image_manager.icon_manager import create_icon_set
+        from widgets.async_icon_loader import set_global_icon_cache
         
-        try:
-            switch_to_new_icon_system()
-            icon_manager = get_icon_manager()
-            self.main_window.icons = icon_manager.icon_cache
-            self.main_window.icon_paths = {}
-            for icon_name in self.main_window.icons:
-                self.main_window.icon_paths[icon_name] = (
-                    icon_manager.config_manager.get_icon_path(icon_name)
-                )
-        except Exception as e:
-            logger.warning(f"新图标系统初始化失败，使用旧系统: {e}")
-            self.main_window.icons, self.main_window.icon_paths = create_icon_set(
-                "media",
-                app_config.file_list_icon_size * 2
-            )
+        # 使用旧版图标系统
+        self.main_window.icons, self.main_window.icon_paths = create_icon_set(
+            "media",
+            app_config.file_list_icon_size * 2
+        )
+        
+        # 设置全局图标缓存供异步加载器使用
+        set_global_icon_cache(self.main_window.icons)
 
         self.main_window.drive_icons, _ = create_icon_set(
             "media",

@@ -8,10 +8,10 @@
     "music": [".mp3", ".wav", ".flac", ".aac", ".ogg"],
     "pdf": [".pdf"],
     "archive": [".zip", ".rar", ".7z", ".tar", ".gz"],
-    "exe":[""],
+    "exe":[".exe",".msi",".bat",".cmd",".com"],
     "shortcut": [".lnk"],
     "config": [".ini", ".cfg", ".conf"],
     "code": [".py", ".js", ".html", ".css", ".json", ".xml", ".cpp", ".c"],
-    "defaulticon": [".exe","*",".dll",".vhdx",".bat",".cmd",".lib",".h"]
+    "defaulticon": ["*",".dll",".vhdx",".lib",".h"]
   }
 }
