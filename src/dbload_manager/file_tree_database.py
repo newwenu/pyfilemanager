@@ -457,31 +457,40 @@ class FileTreeDatabase:
             for row in cursor.fetchall()
         }
     
-    def has_children_changed(self, parent_path: str, 
-                            current_children: List[Tuple[str, float]]) -> bool:
+    def has_children_changed(self, parent_path: str,
+                            current_children: List[Tuple[str, float, int]]) -> bool:
         """
         快速检查子文件夹是否发生变化
-        
+
         Args:
             parent_path: 父文件夹路径
-            current_children: [(child_name, child_mtime), ...]
-        
+            current_children: [(child_name, child_mtime, child_size), ...]
+                                                增加 child_size 用于更精确的变化检测
+
         Returns:
             True if any child has changed
         """
         cached = self.get_child_modifications(parent_path)
-        
+
         # 检查数量是否变化
         if len(cached) != len(current_children):
             return True
-        
+
         # 检查每个子文件夹
-        for name, mtime in current_children:
+        for name, mtime, size in current_children:
             if name not in cached:
                 return True  # 新增子文件夹
-            if cached[name]['mtime'] != mtime:
-                return True  # 修改时间变化
-        
+
+            cached_child = cached[name]
+
+            # 检查修改时间
+            if cached_child['mtime'] != mtime:
+                return True
+
+            # 检查大小变化（更精确地检测内容变化）
+            if cached_child.get('child_size') != size:
+                return True
+
         return False
     
     # ==================== 统计和搜索 ====================

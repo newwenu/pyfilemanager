@@ -202,7 +202,11 @@ class FileTreeManager:
             
             # 更新子文件夹修改时间信息（用于父文件夹快速检测）
             self._update_child_modifications(folder_path)
-            
+
+            # 级联使父文件夹缓存失效
+            # 当子文件夹大小更新时，所有祖先文件夹的缓存都应该失效
+            self._invalidate_parent_caches(folder_path)
+
             logger.debug(f"更新缓存: {folder_path} = {size} bytes")
             return True
             
@@ -220,64 +224,66 @@ class FileTreeManager:
     
     # ==================== 变化检测策略 ====================
     
-    def _check_cache_validity(self, folder_path: str, 
+    def _check_cache_validity(self, folder_path: str,
                               cached_data: Dict) -> CacheValidity:
         """
         检查缓存有效性
-        
-        策略优先级：
+
+        策略优先级（调整后的顺序）：
         1. 检查缓存是否过期
-        2. 检查修改时间
-        3. 检查内容哈希（如果启用）
-        4. 检查子文件夹修改时间
+        2. 检查子文件夹修改时间（优先检查，因为父文件夹mtime不会随子文件夹变化）
+        3. 检查修改时间
+        4. 检查内容哈希（如果启用）
         """
         # 1. 检查过期时间
         cache_age = time.time() - cached_data.get('updated_at', 0)
         if cache_age > self._cache_max_age:
             return CacheValidity.STALE
-        
+
+        # 2. 快速子文件夹检查（移到前面，优先执行）
+        # 原因：在Windows等系统中，子文件夹内容变化不会更新父文件夹的mtime
+        if self._has_children_changed_quick(folder_path):
+            return CacheValidity.CONTENT_CHANGED
+
         try:
             current_mtime = os.path.getmtime(folder_path)
         except OSError:
             return CacheValidity.NOT_CACHED  # 文件夹已不存在
-        
-        # 2. 检查修改时间
+
+        # 3. 检查修改时间（自身mtime变化）
         if cached_data.get('mtime') != current_mtime:
             return CacheValidity.MTIME_CHANGED
-        
-        # 3. 检查内容哈希（如果启用且存在）
+
+        # 4. 检查内容哈希（如果启用且存在）
         if self._check_content_hash and cached_data.get('content_hash'):
             current_hash = self._compute_folder_hash(folder_path)
             if current_hash != cached_data['content_hash']:
                 return CacheValidity.CONTENT_CHANGED
-        
-        # 4. 快速子文件夹检查
-        if self._has_children_changed_quick(folder_path):
-            return CacheValidity.CONTENT_CHANGED
-        
+
         return CacheValidity.VALID
     
     def _has_children_changed_quick(self, folder_path: str) -> bool:
         """
         快速检查子文件夹是否变化（不遍历内容）
-        
+
         利用预先存储的子文件夹修改时间信息
         """
         try:
-            # 获取当前子文件夹列表
+            # 获取当前子文件夹列表（包含大小信息）
             current_children = []
             with os.scandir(folder_path) as it:
                 for entry in it:
                     if entry.is_dir(follow_symlinks=False):
                         try:
                             stat = entry.stat(follow_symlinks=False)
-                            current_children.append((entry.name, stat.st_mtime))
+                            # 同时传递修改时间和大小，用于更精确的变化检测
+                            current_children.append((entry.name, stat.st_mtime, stat.st_size))
                         except (OSError, PermissionError):
                             pass
-            
+
             # 使用数据库快速比较
             return self.db.has_children_changed(folder_path, current_children)
-            
+
         except (OSError, PermissionError):
             return True  # 无法访问，假设已变化
     
@@ -519,11 +525,33 @@ class FileTreeManager:
                             children_info.append((entry.name, stat.st_mtime, stat.st_size))
                         except (OSError, PermissionError):
                             pass
-            
+
             self.db.update_child_modifications(parent_path, children_info)
-            
+
         except (OSError, PermissionError):
             pass
+
+    def _invalidate_parent_caches(self, folder_path: str):
+        """
+        级联使父文件夹缓存失效
+
+        当子文件夹大小更新时，所有祖先文件夹的缓存都应该失效，
+        因为它们的大小包含了子文件夹的大小。
+        """
+        current = folder_path
+        while True:
+            parent = os.path.dirname(current)
+            if not parent or parent == current:
+                break
+
+            # 从内存缓存中移除父文件夹
+            with self._memory_cache_lock:
+                if parent in self._memory_cache:
+                    self._memory_cache.pop(parent, None)
+                    self._access_count.pop(parent, None)
+                    logger.debug(f"级联失效父文件夹缓存: {parent}")
+
+            current = parent
     
     # ==================== 内存缓存管理 ====================
     
