@@ -1,136 +1,257 @@
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QRadioButton, QPushButton, QHBoxLayout
-from PySide6.QtCore import Qt
-from utils.sort_utils import sort_file_list  # 新增：导入排序工具
+from PySide6.QtWidgets import (
+    QDialog, QVBoxLayout, QRadioButton, QPushButton, 
+    QHBoxLayout, QCheckBox, QMenu
+)
+from PySide6.QtCore import Qt, QTimer
+
+from core.sort_index_mapper import sort_file_list
+from core.sort_state_manager import SortStateManager, SortState
 
 
 class HeaderSortHandler:
+    """
+    表头排序处理器 - 优化防抖版
+    
+    优化点：
+    1. 立即执行排序，不给用户延迟感
+    2. 智能防抖：快速连续点击时只执行最后一次
+    3. 排序过程中禁用表头点击，避免冲突
+    4. 右键菜单弹出排序选项
+    """
+    
     def __init__(self, file_list_updater):
-        self.fm = file_list_updater  # 关联文件列表更新器
-        self._main_window = file_list_updater._main_window  # 获取主窗口引用
-        # 新增：列索引与排序键的映射（需与文件列表表头顺序一致）
+        self.fm = file_list_updater
+        self._main_window = file_list_updater._main_window
+        
+        # 列索引与排序键的映射
         self.column_to_key = {
-            0: "name",   # 第0列：名称
-            1: "size",   # 第1列：大小
-            2: "mtime"   # 第2列：修改时间
+            0: "name",
+            1: "size", 
+            2: "mtime"
         }
-        self.current_sort_column = 0  # 默认排序列（第0列）
-        self.current_sort_key = "name"  # 默认排序键（与列映射同步）
-        self.current_reverse = False   # 默认升序
+        self.key_to_column = {v: k for k, v in self.column_to_key.items()}
         
-        # 绑定表头事件（自动获取文件列表表头）
+        # 获取排序状态管理器（单例）
+        self._sort_manager = SortStateManager()
+        self._sort_manager.state_changed.connect(self._on_sort_state_changed)
+        
+        # 绑定表头事件
         self.file_list_header = self.fm.file_list.header()
-        # print("Header sections:", self.file_list_header.count())
-        # print("SectionsClickable:", self.file_list_header.sectionsClickable())
         self.file_list_header.sectionClicked.connect(self.on_header_clicked)
-        self.file_list_header.sectionDoubleClicked.connect(self.on_header_double_clicked)
-
+        
+        # 右键菜单 - 确保表头启用上下文菜单
+        self.file_list_header.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.file_list_header.customContextMenuRequested.connect(self.on_header_context_menu)
+        # 确保表头可交互
+        self.file_list_header.setSectionsClickable(True)
+        
+        # 防抖定时器 - 用于快速连续点击时只执行最后一次
+        self._debounce_timer = QTimer(self._main_window)
+        self._debounce_timer.setSingleShot(True)
+        self._debounce_timer.timeout.connect(self._execute_sort)
+        
+        # 待执行的排序请求
+        self._pending_request = None
+        
+        # 是否正在排序中
+        self._is_sorting = False
+        
+        # 缓存原始表头标题
+        self._original_headers = []
+        self._cache_headers()
+    
+    def _cache_headers(self):
+        """缓存原始表头标题"""
+        count = self.file_list_header.count()
+        self._original_headers = [
+            self.file_list_header.model().headerData(i, Qt.Horizontal) or f"列{i}"
+            for i in range(count)
+        ]
+    
     def on_header_clicked(self, logical_index):
-        """单击表头时切换排序顺序（支持所有列）"""
-        # print(f"点击了第{logical_index}列")
-        # 校验列是否在映射中（避免无效列）
-        if logical_index not in self.column_to_key:
-            # print("无效的排序列")
-            return
-        # print(f"当前列：{self.current_sort_column}，当前键：{self.current_sort_key}，当前方向：{self.current_reverse}")
-        # 更新当前排序列和键
-        self.current_sort_column = logical_index
-        self.current_sort_key = self.column_to_key[logical_index]
-        # print(f"点击了第{logical_index}列，排序键：{self.current_sort_key}")
-        # 切换排序方向
-        self.current_reverse = not self.current_reverse
-        # 触发排序并更新表头
-        self._update_header_text()
-        self._update_sorted_list()
+        """
+        单击表头 - 切换排序
         
-    def on_header_double_clicked(self, logical_index):
-        """双击表头时显示排序方式选择对话框（支持所有列）"""
+        如果点击的是当前排序列，切换排序方向
+        如果点击的是其他列，切换到该列并使用升序
+        """
         if logical_index not in self.column_to_key:
             return
         
-        dialog = QDialog(self._main_window)
-        dialog.setWindowTitle("选择排序方式")
-        layout = QVBoxLayout(dialog)
+        # 如果正在排序，忽略点击（避免冲突）
+        if self._is_sorting:
+            return
         
-        # 单选按钮：根据当前列动态显示可选排序方式（示例固定为名称/大小/修改时间）
-        rb_name = QRadioButton("按名称排序", dialog)
-        rb_size = QRadioButton("按大小排序", dialog)
-        rb_mtime = QRadioButton("按修改时间排序", dialog)
-        # 关联当前排序键
-        rb_name.setChecked(self.current_sort_key == "name")
-        rb_size.setChecked(self.current_sort_key == "size")
-        rb_mtime.setChecked(self.current_sort_key == "mtime")
-        layout.addWidget(rb_name)
-        layout.addWidget(rb_size)
-        layout.addWidget(rb_mtime)
+        key = self.column_to_key[logical_index]
         
-        # 按钮布局（确定+取消）
-        btn_layout = QHBoxLayout()
-        btn_ok = QPushButton("确定", dialog)
-        btn_cancel = QPushButton("取消", dialog)
-        btn_ok.clicked.connect(lambda: self._on_sort_selected(dialog, rb_name, rb_size, rb_mtime))
-        btn_cancel.clicked.connect(dialog.close)
-        btn_layout.addWidget(btn_ok)
-        btn_layout.addWidget(btn_cancel)
-        layout.addLayout(btn_layout)
+        # 保存排序请求
+        self._pending_request = {
+            'column': logical_index,
+            'key': key
+        }
         
-        dialog.exec()
-
-    def _on_sort_selected(self, dialog, rb_name, rb_size, rb_mtime):
-        """用户选择排序方式后的处理（同步更新列和键）"""
-        if rb_name.isChecked():
-            self.current_sort_key = "name"
-            self.current_sort_column = 0  # 名称对应第0列
-        elif rb_size.isChecked():
-            self.current_sort_key = "size"
-            self.current_sort_column = 1  # 大小对应第1列
-        elif rb_mtime.isChecked():
-            self.current_sort_key = "mtime"
-            self.current_sort_column = 2  # 修改时间对应第2列
-        dialog.close()
-
-        # print(f"选择了{self.current_sort_column}列，排序键：{self.current_sort_key}，排序方向：{self.current_reverse}")
-        self._update_header_text()
-        self._update_sorted_list()
-        # self.on_header_clicked(self.current_sort_column)
-
+        # 停止之前的防抖定时器
+        self._debounce_timer.stop()
         
-
-    def _update_sorted_list(self):
-        """调用排序逻辑并刷新文件列表（增加数据校验）"""
+        # 立即执行排序（不给用户延迟感）
+        self._execute_sort()
+    
+    def _execute_sort(self):
+        """执行排序（立即执行）"""
+        if self._pending_request is None:
+            return
+        
+        # 标记正在排序
+        self._is_sorting = True
+        
+        try:
+            column = self._pending_request['column']
+            key = self._pending_request['key']
+            
+            # 更新排序状态（这会触发 state_changed 信号）
+            self._sort_manager.set_sort_column(column, key)
+            
+        finally:
+            self._is_sorting = False
+            self._pending_request = None
+    
+    def _on_sort_state_changed(self, state: SortState):
+        """
+        排序状态变化回调 - 立即执行排序
+        
+        注意：这里不做防抖，因为状态变化应该立即反映到UI
+        """
+        # 立即更新表头显示
+        self._update_header_text(state)
+        
+        # 立即执行排序（不延迟）
         try:
             current_file_list = self.fm.file_list_data
-            # 校验数据是否存在（避免空列表或字段缺失）
-            if not current_file_list or self.current_sort_key not in current_file_list[0]:
-                raise ValueError(f"无效排序键：{self.current_sort_key} 或文件列表数据为空")
+            if not current_file_list:
+                return
             
             sorted_list = sort_file_list(
                 current_file_list,
-                sort_key=self.current_sort_key,
-                reverse=self.current_reverse
+                sort_key=state.key,
+                reverse=state.reverse,
+                folders_grouped=state.folders_grouped,
+                folders_before=state.folders_before
             )
-            # print(self.current_reverse)
+            
+            # 更新UI
             self.fm._update_filelist_from_sorted(sorted_list)
-            # self.fm._update_filelist_from_thread(sorted_list)
+            
         except Exception as e:
-            # 错误提示（与工程现有错误处理风格一致）
             from handlers.m_event_handlers import show_error
             show_error(self._main_window, "排序失败", str(e))
-
-    def _update_header_text(self):
-        """更新当前排序列的表头文本（如“大小↑”）"""
-        # self.fm.update_filelist()
-        self.fm._setup_header_layout()
-        direction = "↑" if not self.current_reverse else "↓"
-        # 获取原始标题（假设self.original_header_titles是原始标题列表）
-        if not hasattr(self, 'original_header_titles'):
-            self.original_header_titles = [self.file_list_header.model().headerData(i, Qt.Horizontal) for i in range(self.file_list_header.count())]
-
-        if self.current_sort_column < len(self.column_to_key):
-            # print(f"当前排序列：{self.current_sort_column}, 原始标题：{self.original_header_titles}")
-            # print(f"更新表头：{direction}, 当前列索引：{self.current_sort_column}")
-            original_title = self.original_header_titles[self.current_sort_column]
-            
-        else:
-            original_title = "未知列"  # 兜底处理越界情况
-        # 仅使用原始标题 + 当前方向符号
-        self.fm.file_list.headerItem().setText(self.current_sort_column, f"{original_title}{direction}")
+    
+    def on_header_context_menu(self, position):
+        """右键表头 - 显示排序选项菜单"""
+        # 获取点击的列索引
+        logical_index = self.file_list_header.logicalIndexAt(position)
+        if logical_index not in self.column_to_key:
+            return
+        
+        # 创建右键菜单
+        menu = QMenu(self._main_window)
+        menu.setWindowTitle("排序选项")
+        
+        current_state = self._sort_manager.state
+        
+        # 添加排序方式选项
+        action_name = menu.addAction("按名称排序")
+        action_name.setCheckable(True)
+        action_name.setChecked(current_state.key == "name")
+        action_name.triggered.connect(lambda: self._set_sort_key("name", 0))
+        
+        action_size = menu.addAction("按大小排序")
+        action_size.setCheckable(True)
+        action_size.setChecked(current_state.key == "size")
+        action_size.triggered.connect(lambda: self._set_sort_key("size", 1))
+        
+        action_mtime = menu.addAction("按修改时间排序")
+        action_mtime.setCheckable(True)
+        action_mtime.setChecked(current_state.key == "mtime")
+        action_mtime.triggered.connect(lambda: self._set_sort_key("mtime", 2))
+        
+        menu.addSeparator()
+        
+        # 添加排序方向选项
+        action_asc = menu.addAction("升序 ↑")
+        action_asc.setCheckable(True)
+        action_asc.setChecked(not current_state.reverse)
+        action_asc.triggered.connect(lambda: self._set_sort_order(False))
+        
+        action_desc = menu.addAction("降序 ↓")
+        action_desc.setCheckable(True)
+        action_desc.setChecked(current_state.reverse)
+        action_desc.triggered.connect(lambda: self._set_sort_order(True))
+        
+        menu.addSeparator()
+        
+        # 添加文件夹归并选项
+        action_folders_grouped = menu.addAction("文件夹归并")
+        action_folders_grouped.setCheckable(True)
+        action_folders_grouped.setChecked(current_state.folders_grouped)
+        action_folders_grouped.triggered.connect(self._toggle_folders_grouped)
+        
+        # 添加文件夹在前选项
+        action_folders_before = menu.addAction("文件夹在前")
+        action_folders_before.setCheckable(True)
+        action_folders_before.setChecked(current_state.folders_before)
+        action_folders_before.triggered.connect(self._toggle_folders_before)
+        
+        # 显示菜单
+        menu.exec(self.file_list_header.mapToGlobal(position))
+    
+    def _set_sort_key(self, key, column):
+        """设置排序键"""
+        new_state = SortState(
+            column=column,
+            key=key,
+            reverse=self._sort_manager.state.reverse,
+            folders_grouped=self._sort_manager.state.folders_grouped,
+            folders_before=self._sort_manager.state.folders_before
+        )
+        self._sort_manager._set_state(new_state)
+    
+    def _set_sort_order(self, reverse):
+        """设置排序方向"""
+        self._sort_manager.set_sort_order(reverse)
+    
+    def _toggle_folders_grouped(self):
+        """切换文件夹归并"""
+        self._sort_manager.toggle_folders_grouped()
+    
+    def _toggle_folders_before(self):
+        """切换文件夹在前"""
+        self._sort_manager.toggle_folders_before()
+    
+    def _update_header_text(self, state: SortState):
+        """更新表头文本显示排序状态"""
+        # 重置所有表头为原始标题
+        for i, title in enumerate(self._original_headers):
+            self.fm.file_list.headerItem().setText(i, title)
+        
+        # 添加排序方向指示器
+        direction = "↓" if state.reverse else "↑"
+        if state.column < len(self._original_headers):
+            title = self._original_headers[state.column]
+            self.fm.file_list.headerItem().setText(
+                state.column, 
+                f"{title}{direction}"
+            )
+    
+    def reset(self):
+        """重置排序状态"""
+        self._sort_manager.reset()
+        self._cache_headers()
+    
+    def get_current_state(self):
+        """获取当前排序状态"""
+        return self._sort_manager.state
+    
+    def undo_sort(self):
+        """撤销上一次排序"""
+        if self._sort_manager.can_undo():
+            self._sort_manager.undo()

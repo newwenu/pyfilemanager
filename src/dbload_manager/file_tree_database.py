@@ -412,31 +412,48 @@ class FileTreeDatabase:
     
     # ==================== 子文件夹修改时间追踪 ====================
     
-    def update_child_modifications(self, parent_path: str, 
+    def update_child_modifications(self, parent_path: str,
                                    children_info: List[Tuple[str, float, int]]):
         """
         更新子文件夹修改时间信息
-        
+
         Args:
             parent_path: 父文件夹路径
             children_info: [(child_name, child_mtime, child_size), ...]
         """
-        if not children_info:
-            return
-        
         conn = self._get_conn()
         current_time = time.time()
-        
-        data = [
-            (parent_path, name, mtime, size, current_time)
-            for name, mtime, size in children_info
-        ]
-        
-        conn.executemany("""
-            INSERT OR REPLACE INTO child_modifications
-            (parent_path, child_name, child_mtime, child_size, updated_at)
-            VALUES (?, ?, ?, ?, ?)
-        """, data)
+
+        # 获取当前子文件夹名称集合
+        current_child_names = {name for name, _, _ in children_info}
+
+        # 获取数据库中已有的子文件夹记录
+        cached_children = self.get_child_modifications(parent_path)
+
+        # 删除已经不存在的子文件夹记录
+        for cached_name in cached_children:
+            if cached_name not in current_child_names:
+                conn.execute(
+                    "DELETE FROM child_modifications WHERE parent_path = ? AND child_name = ?",
+                    (parent_path, cached_name)
+                )
+                import logging
+                logger = logging.getLogger(__name__)
+                # logger.debug(f"[DB-删除子文件夹记录] {parent_path}/{cached_name}")
+
+        # 更新或插入当前子文件夹记录
+        if children_info:
+            data = [
+                (parent_path, name, mtime, size, current_time)
+                for name, mtime, size in children_info
+            ]
+
+            conn.executemany("""
+                INSERT OR REPLACE INTO child_modifications
+                (parent_path, child_name, child_mtime, child_size, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+            """, data)
+
         conn.commit()
     
     def get_child_modifications(self, parent_path: str) -> Dict[str, Dict]:
@@ -472,25 +489,34 @@ class FileTreeDatabase:
         """
         cached = self.get_child_modifications(parent_path)
 
+        # import logging
+        # logger = logging.getLogger(__name__)
+
         # 检查数量是否变化
         if len(cached) != len(current_children):
+            # logger.warning(f"[DB-子文件夹数量变化] {parent_path}: 缓存={len(cached)}, 当前={len(current_children)}")
             return True
 
         # 检查每个子文件夹
         for name, mtime, size in current_children:
             if name not in cached:
+                # logger.warning(f"[DB-新增子文件夹] {parent_path}: {name}")
                 return True  # 新增子文件夹
 
             cached_child = cached[name]
 
-            # 检查修改时间
+            # 检查修改时间（主要检测手段）
             if cached_child['mtime'] != mtime:
+                # logger.warning(f"[DB-子文件夹mtime变化] {parent_path}/{name}: 缓存={cached_child['mtime']}, 当前={mtime}")
                 return True
 
-            # 检查大小变化（更精确地检测内容变化）
-            if cached_child.get('child_size') != size:
+            # 检查大小变化（仅当缓存中存在child_size时才检查，避免初始None值导致误判）
+            cached_size = cached_child.get('child_size')
+            if cached_size is not None and cached_size != size:
+                # logger.warning(f"[DB-子文件夹大小变化] {parent_path}/{name}: 缓存={cached_size}, 当前={size}")
                 return True
 
+        # logger.info(f"[DB-子文件夹未变化] {parent_path}: {len(current_children)}个子文件夹")
         return False
     
     # ==================== 统计和搜索 ====================

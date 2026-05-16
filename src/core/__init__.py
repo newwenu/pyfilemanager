@@ -14,6 +14,7 @@ from .event_decorators import (
     EventMixin,
 )
 from .interfaces import FileManagerInterface, ConfigProviderInterface
+from .sort_state_manager import SortStateManager, SortState
 from .shortcut_actions import (
     ShortcutAction,
     ShortcutActionRegistry,
@@ -73,6 +74,9 @@ __all__ = [
     # 接口
     'FileManagerInterface',
     'ConfigProviderInterface',
+    # 排序状态管理
+    'SortStateManager',
+    'SortState',
     # 动作上下文
     'ActionContext',
     'FileSelection',

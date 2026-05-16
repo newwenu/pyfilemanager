@@ -113,6 +113,7 @@ class FileTreeManager:
         if not force_rescan:
             mem_cached = self._get_from_memory_cache(folder_path)
             if mem_cached:
+                # logger.info(f"[缓存命中-内存] {folder_path}")
                 self._stats['cache_hits'] += 1
                 return self._create_folder_info(mem_cached, CacheValidity.VALID)
         
@@ -128,6 +129,7 @@ class FileTreeManager:
                 if validity == CacheValidity.VALID:
                     # 更新内存缓存
                     self._add_to_memory_cache(folder_path, db_cached)
+                    # logger.info(f"[缓存命中-数据库] {folder_path}")
                     self._stats['cache_hits'] += 1
                     return self._create_folder_info(db_cached, validity)
                 else:
@@ -137,6 +139,7 @@ class FileTreeManager:
         
         # 3. 无有效缓存
         self._stats['cache_misses'] += 1
+        logger.debug(f"[缓存未命中] {folder_path}，需要重新计算")
         return FolderInfo(
             path=folder_path,
             name=os.path.basename(folder_path),
@@ -238,28 +241,38 @@ class FileTreeManager:
         # 1. 检查过期时间
         cache_age = time.time() - cached_data.get('updated_at', 0)
         if cache_age > self._cache_max_age:
+            # logger.warning(f"[缓存失效原因-过期] {folder_path}, 年龄: {cache_age/86400:.1f}天")
             return CacheValidity.STALE
 
         # 2. 快速子文件夹检查（移到前面，优先执行）
         # 原因：在Windows等系统中，子文件夹内容变化不会更新父文件夹的mtime
         if self._has_children_changed_quick(folder_path):
+            # logger.warning(f"[缓存失效原因-子文件夹变化] {folder_path}")
             return CacheValidity.CONTENT_CHANGED
 
         try:
             current_mtime = os.path.getmtime(folder_path)
         except OSError:
+            # logger.warning(f"[缓存失效原因-文件夹不存在] {folder_path}")
             return CacheValidity.NOT_CACHED  # 文件夹已不存在
 
         # 3. 检查修改时间（自身mtime变化）
-        if cached_data.get('mtime') != current_mtime:
+        cached_mtime = cached_data.get('mtime', 0)
+        mtime_diff = abs(cached_mtime - current_mtime)
+        if mtime_diff > 0.001:  # 允许1毫秒误差
+            # logger.warning(f"[缓存失效原因-mtime变化] {folder_path}, 缓存: {cached_mtime}, 当前: {current_mtime}, 差值: {mtime_diff:.6f}秒")
             return CacheValidity.MTIME_CHANGED
+        elif cached_mtime != current_mtime:
+            logger.debug(f"[mtime微小变化忽略] {folder_path}, 差值: {mtime_diff:.6f}秒")
 
         # 4. 检查内容哈希（如果启用且存在）
         if self._check_content_hash and cached_data.get('content_hash'):
             current_hash = self._compute_folder_hash(folder_path)
             if current_hash != cached_data['content_hash']:
+                # logger.warning(f"[缓存失效原因-哈希变化] {folder_path}")
                 return CacheValidity.CONTENT_CHANGED
 
+        # logger.info(f"[缓存有效] {folder_path}")
         return CacheValidity.VALID
     
     def _has_children_changed_quick(self, folder_path: str) -> bool:
@@ -271,6 +284,7 @@ class FileTreeManager:
         try:
             # 获取当前子文件夹列表（包含大小信息）
             current_children = []
+            access_errors = 0
             with os.scandir(folder_path) as it:
                 for entry in it:
                     if entry.is_dir(follow_symlinks=False):
@@ -279,13 +293,24 @@ class FileTreeManager:
                             # 同时传递修改时间和大小，用于更精确的变化检测
                             current_children.append((entry.name, stat.st_mtime, stat.st_size))
                         except (OSError, PermissionError):
+                            access_errors += 1
                             pass
 
-            # 使用数据库快速比较
-            return self.db.has_children_changed(folder_path, current_children)
+            # 如果存在访问错误，说明无法完整获取子文件夹列表
+            # 此时跳过子文件夹变化检查，依赖 mtime 检查来判断缓存有效性
+            if access_errors > 0:
+                logger.debug(f"[子文件夹检查-部分无法访问] {folder_path}: 成功={len(current_children)}, 失败={access_errors}, 跳过子文件夹变化检查")
+                return False  # 跳过子文件夹检查，不因此失效缓存
 
-        except (OSError, PermissionError):
-            return True  # 无法访问，假设已变化
+            # 使用数据库快速比较
+            has_changed = self.db.has_children_changed(folder_path, current_children)
+            # if has_changed:
+            #     logger.warning(f"[子文件夹变化检查] {folder_path}: 当前子文件夹数={len(current_children)}")
+            return has_changed
+
+        except (OSError, PermissionError) as e:
+            # logger.warning(f"[子文件夹变化检查-无法访问] {folder_path}: {e}")
+            return False  # 完全无法访问时，不因此失效缓存（依赖 mtime 检查）
     
     def _compute_folder_hash(self, folder_path: str) -> Optional[str]:
         """计算文件夹内容哈希"""
@@ -551,7 +576,27 @@ class FileTreeManager:
                     self._access_count.pop(parent, None)
                     logger.debug(f"级联失效父文件夹缓存: {parent}")
 
+            # 更新父文件夹的子文件夹修改时间记录
+            # 这确保父文件夹的 child_modifications 表中有当前文件夹的记录
+            self._update_parent_child_modifications(parent, current)
+
             current = parent
+
+    def _update_parent_child_modifications(self, parent_path: str, child_path: str):
+        """
+        更新父文件夹中特定子文件夹的修改时间记录
+
+        当子文件夹更新时，需要确保父文件夹的 child_modifications 表中有该子文件夹的最新记录，
+        避免下次检查父文件夹缓存时被误判为"子文件夹变化"。
+        """
+        try:
+            child_name = os.path.basename(child_path)
+            stat = os.stat(child_path)
+            # 更新父文件夹的子文件夹记录
+            self.db.update_child_modifications(parent_path, [(child_name, stat.st_mtime, stat.st_size)])
+            logger.debug(f"更新父文件夹子文件夹记录: {parent_path}/{child_name}")
+        except (OSError, PermissionError) as e:
+            logger.debug(f"更新父文件夹子文件夹记录失败 {parent_path}/{child_path}: {e}")
     
     # ==================== 内存缓存管理 ====================
     

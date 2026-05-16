@@ -8,7 +8,7 @@ from utils.size_utils import format_size
 from dbload_manager.file_tree_manager import FileTreeManager, CacheValidity
 from threads.file_list_loader import FileListLoaderManager
 from handlers.header_sort_handler import HeaderSortHandler
-from utils.sort_utils import sort_file_list
+from core.sort_index_mapper import sort_file_list
 from image_manager.ink_icon import get_shortcut_icon_pixmap
 from utils.logging_config import get_logger, log_performance, log_exception, LogContext
 
@@ -338,8 +338,21 @@ class FileListUpdater:
             file_count = sum(1 for info in file_list if not info.get("is_dir", False))
             folder_count = len(file_list) - file_count
         else:
-            # 标准加载方法
-            sorted_file_list = sort_file_list(file_list, sort_key="name", reverse=False)
+            # 标准加载方法 - 应用当前排序状态
+            from core.sort_state_manager import SortStateManager
+            sort_manager = SortStateManager()
+            current_state = sort_manager.state
+            
+            sorted_file_list = sort_file_list(
+                file_list, 
+                sort_key=current_state.key, 
+                reverse=current_state.reverse,
+                folders_grouped=current_state.folders_grouped,
+                folders_before=current_state.folders_before
+            )
+            
+            # 更新表头显示以反映当前排序状态
+            self.header_handler._update_header_text(current_state)
 
             self.file_list.clear()
             file_count = folder_count = 0
@@ -368,7 +381,16 @@ class FileListUpdater:
 
     def _update_filelist_from_sorted(self, filelist2: list):
         """从排序后的文件列表更新UI"""
-        if filelist2:
+        if not filelist2:
+            return
+        
+        # 更新缓存的数据为排序后的顺序
+        self.file_list_data = filelist2
+        
+        # 批量操作优化：禁用UI更新和重绘，减少闪烁
+        self.file_list.setUpdatesEnabled(False)
+        
+        try:
             self.file_list.clear()
             for info in filelist2:
                 item = self._create_list_item_from_info(info)
@@ -376,6 +398,10 @@ class FileListUpdater:
                 if info["is_dir"] and self.show_all_sizes:
                     self._handle_folder_size_calculation2(info["path"], item)
                 self.file_list.addTopLevelItem(item)
+        finally:
+            # 恢复UI更新
+            self.file_list.setUpdatesEnabled(True)
+            self.file_list.viewport().update()
 
     def _create_list_item_from_info(self, info: dict):
         """创建列表项"""

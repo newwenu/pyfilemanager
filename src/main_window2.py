@@ -109,16 +109,12 @@ class FileManager(QMainWindow, EventMixin):
     def _setup_icon_system(self) -> None:
         """初始化图标系统"""
         from image_manager.icon_manager import create_icon_set
-        from widgets.async_icon_loader import set_global_icon_cache
-        
+
         # 使用旧版图标系统
         self.icons, self.icon_paths = create_icon_set(
             "media",
             app_config.file_list_icon_size * 2
         )
-        
-        # 设置全局图标缓存供异步加载器使用
-        set_global_icon_cache(self.icons)
         
         self.drive_icons, self.icon_paths = create_icon_set(
             "media",
