@@ -70,6 +70,8 @@ class FileManager(QMainWindow, EventMixin):
         self.subscribe("ui_update_statusbar", self.ui_handler.on_update_statusbar)
         self.subscribe("ui_show_error", self.ui_handler.on_show_error)
         self.subscribe("ui_show_message", self.ui_handler.on_show_message)
+        self.subscribe("ui_close_all_tips", self.ui_handler.on_close_all_tips)
+        self.subscribe("ui_close_tip_by_id", self.ui_handler.on_close_tip_by_id)
         
         # 视图切换事件
         self.subscribe("view_toggle_hidden", self.ui_handler.on_toggle_hidden)

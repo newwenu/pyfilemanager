@@ -11,6 +11,7 @@ from PySide6.QtCore import QRect
 
 # ：导入配置管理器
 from config_manager.config_manager import ConfigManager
+from core.service_locator import ServiceLocator
 
 
 # 初始化配置管理器（使用默认路径或自定义路径）
@@ -64,8 +65,45 @@ def create_char_icon(char):
     painter.end()
     return QIcon(QPixmap.fromImage(image))
 
+def get_scan_excludes():
+    """获取扫描排除配置"""
+    try:
+        config_manager = ServiceLocator.get("config_manager")
+        if not config_manager:
+            return [], []
+        
+        # 获取系统关键文件排除列表
+        system_excludes = config_manager.get("scan_exclude_system", [])
+        system_names = [
+            item["name"] for item in system_excludes 
+            if item.get("checked", True)
+        ]
+        
+        # 获取自定义排除列表
+        custom_excludes = config_manager.get("scan_exclude_custom", [])
+        
+        return system_names, custom_excludes
+    except Exception:
+        return [], []
+
 def should_show(entry, show_hidden):
     """判断是否显示文件"""
+    # 首先检查扫描排除配置
+    system_excludes, custom_excludes = get_scan_excludes()
+    
+    # 检查是否在系统排除列表中（按名称匹配）
+    entry_name = entry.name
+    if entry_name in system_excludes:
+        return False
+    
+    # 检查是否在自定义排除列表中（支持完整路径匹配和部分路径匹配）
+    entry_path = entry.path
+    for exclude_path in custom_excludes:
+        # 完全匹配或作为父目录匹配
+        if entry_path == exclude_path or entry_path.startswith(exclude_path + os.sep):
+            return False
+    
+    # 原有的隐藏文件检查逻辑
     if show_hidden:
         return True
     try:

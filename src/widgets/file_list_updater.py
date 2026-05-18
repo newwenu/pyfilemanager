@@ -1,7 +1,7 @@
 import os
 import sys
 from PySide6.QtWidgets import QTreeWidgetItem, QTreeWidget
-from PySide6.QtCore import Qt, QFileSystemWatcher
+from PySide6.QtCore import Qt, QFileSystemWatcher, QTimer
 from PySide6.QtGui import QColor
 from utils.file_utils import get_file_type
 from utils.size_utils import format_size
@@ -49,6 +49,12 @@ class FileListUpdater:
         self.show_mtime = app_config.show_mtime
         self.last_updated_path = None
         self.error_occurred = False
+
+        # 文件夹大小计算防抖定时器（用于排序刷新）
+        self._sort_refresh_timer = QTimer(self._main_window)
+        self._sort_refresh_timer.setSingleShot(True)
+        self._sort_refresh_timer.timeout.connect(self._refresh_sort_after_size_calc)
+        self._pending_sort_refresh = False  # 标记是否有待执行的排序刷新
 
         # 初始化文件夹监控（低开销，只监控当前目录）
         # 使用 main_window 作为 parent（QFileSystemWatcher 需要 QObject parent）
@@ -326,48 +332,54 @@ class FileListUpdater:
         """异步扫描完成后更新文件列表"""
         self.file_list_data = file_list
 
-        # 如果虚拟列表有自己的加载方法，使用它
-        if hasattr(self.file_list, 'load_files') and callable(getattr(self.file_list, 'load_files')):
-            self.file_list.load_files(
-                file_list,
-                self.icons,
-                show_all_sizes=self.show_all_sizes,
-                show_mtime=self.show_mtime
-            )
-            # 统计文件和文件夹数量
-            file_count = sum(1 for info in file_list if not info.get("is_dir", False))
-            folder_count = len(file_list) - file_count
-        else:
-            # 标准加载方法 - 应用当前排序状态
-            from core.sort_state_manager import SortStateManager
-            sort_manager = SortStateManager()
-            current_state = sort_manager.state
+        # 应用当前排序状态
+        from core.sort_state_manager import SortStateManager
+        sort_manager = SortStateManager()
+        current_state = sort_manager.state
+        
+        # 如果按大小排序，先尝试从缓存获取文件夹大小
+        self._pending_sort_refresh = False
+        if current_state.key == "size":
+            uncached_folders = 0
+            for info in file_list:
+                if info.get("is_dir", False):
+                    folder_info = self.file_tree_manager.get_folder_info(info["path"])
+                    if folder_info.cache_status == CacheValidity.VALID:
+                        info["size"] = folder_info.size
+                        info["display_size"] = folder_info.formatted_size
+                    else:
+                        uncached_folders += 1
             
-            sorted_file_list = sort_file_list(
-                file_list, 
-                sort_key=current_state.key, 
-                reverse=current_state.reverse,
-                folders_grouped=current_state.folders_grouped,
-                folders_before=current_state.folders_before
-            )
-            
-            # 更新表头显示以反映当前排序状态
-            self.header_handler._update_header_text(current_state)
+            # 如果有无缓存的文件夹，标记需要刷新（不显示开始提示，避免与完成提示重叠）
+            if uncached_folders > 0:
+                self._pending_sort_refresh = True
+                logger.debug(f"按大小排序，{uncached_folders} 个文件夹大小待计算，将在完成后自动刷新排序")
+        
+        sorted_file_list = sort_file_list(
+            file_list, 
+            sort_key=current_state.key, 
+            reverse=current_state.reverse,
+            folders_grouped=current_state.folders_grouped,
+            folders_before=current_state.folders_before
+        )
+        
+        # 更新表头显示以反映当前排序状态
+        self.header_handler._update_header_text(current_state)
 
-            self.file_list.clear()
-            file_count = folder_count = 0
+        self.file_list.clear()
+        file_count = folder_count = 0
 
-            for info in sorted_file_list:
-                if info["is_dir"]:
-                    folder_count += 1
-                else:
-                    file_count += 1
+        for info in sorted_file_list:
+            if info["is_dir"]:
+                folder_count += 1
+            else:
+                file_count += 1
 
-                item = self._create_list_item_from_info(info)
-                self._apply_hidden_style2(item, info["path"])
+            item = self._create_list_item_from_info(info)
+            self._apply_hidden_style2(item, info["path"])
 
-                if info["is_dir"] and self.show_all_sizes:
-                    self._handle_folder_size_calculation2(info["path"], item)
+            if info["is_dir"] and self.show_all_sizes:
+                self._handle_folder_size_calculation2(info["path"], item)
 
         self._update_status_bar(file_count, folder_count)
 
@@ -378,6 +390,51 @@ class FileListUpdater:
             self.file_list.set_empty_hint(self._translation.get("error_hint", "发生错误或无权限访问"))
         else:
             self.file_list.set_empty_hint("")
+
+    def trigger_sort_refresh(self):
+        """触发排序刷新（供文件夹大小计算完成后调用，带防抖）"""
+        if not self._pending_sort_refresh:
+            return
+        
+        # 重置定时器（防抖：500ms内多次调用只执行最后一次）
+        self._sort_refresh_timer.stop()
+        self._sort_refresh_timer.start(500)
+    
+    def _refresh_sort_after_size_calc(self):
+        """文件夹大小计算完成后刷新排序"""
+        if not self._pending_sort_refresh:
+            return
+        
+        # 检查是否还有正在计算的文件夹
+        active_threads = getattr(self._main_window.folder_size_manager, 'threads', {})
+        if active_threads:
+            # 还有计算中的文件夹，继续等待
+            self._sort_refresh_timer.start(500)
+            return
+        
+        # 所有文件夹大小计算完成，执行重新排序
+        self._pending_sort_refresh = False
+        
+        # 获取当前排序状态
+        from core.sort_state_manager import SortStateManager
+        sort_manager = SortStateManager()
+        current_state = sort_manager.state
+        
+        # 重新排序
+        sorted_list = sort_file_list(
+            self.file_list_data,
+            sort_key=current_state.key,
+            reverse=current_state.reverse,
+            folders_grouped=current_state.folders_grouped,
+            folders_before=current_state.folders_before
+        )
+        
+        # 更新UI
+        self._update_filelist_from_sorted(sorted_list)
+        
+        # 显示完成提示（通过事件总线，使用tip_id便于管理）
+        event_bus.ui_show_message.emit("success", "文件夹大小计算完成，排序已刷新", "sort_refresh_complete")
+        logger.debug("文件夹大小计算完成，自动刷新排序")
 
     def _update_filelist_from_sorted(self, filelist2: list):
         """从排序后的文件列表更新UI"""

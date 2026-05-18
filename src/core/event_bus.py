@@ -41,9 +41,11 @@ class EventBus(QObject):
     ui_update_filelist = Signal()  # 更新文件列表
     ui_update_navtree = Signal()  # 更新导航树
     ui_update_statusbar = Signal(str, int)  # 更新状态栏（消息，持续时间ms）
-    ui_show_message = Signal(str, str)  # 显示消息（类型，消息）
+    ui_show_message = Signal(str, str, str)  # 显示消息（类型，消息，tip_id可选）
     ui_show_error = Signal(str, str)  # 显示错误（标题，消息）
     ui_show_confirm = Signal(str, str, object)  # 显示确认对话框（标题，消息，回调）
+    ui_close_all_tips = Signal()  # 关闭所有提示
+    ui_close_tip_by_id = Signal(str)  # 关闭指定id的提示（tip_id）
     
     # ========== 视图切换事件 ==========
     view_show_drives = Signal()  # 显示驱动器列表

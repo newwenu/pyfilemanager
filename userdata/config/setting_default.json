@@ -20,5 +20,13 @@
     "start_path": "X:\\",
     "log_level": "info",
     "start_random": false,
-    "show_mtime": false
+    "show_mtime": false,
+    "scan_exclude_system": [
+        {"name": "pagefile.sys", "desc": "Windows 页面文件", "checked": true},
+        {"name": "hiberfil.sys", "desc": "Windows 休眠文件", "checked": true},
+        {"name": "$RECYCLE.BIN", "desc": "回收站", "checked": true},
+        {"name": "System Volume Information", "desc": "系统卷标信息", "checked": true},
+        {"name": "swapfile.sys", "desc": "交换文件", "checked": true}
+    ],
+    "scan_exclude_custom": []
 }

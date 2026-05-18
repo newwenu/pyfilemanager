@@ -6,6 +6,7 @@ from .tabs.appearance_tab import AppearanceTab
 from .tabs.advanced_tab import AdvancedTab
 from .tabs.context_menu_tab import ContextMenuTab
 from .tabs.icon_manager_tab import IconManagerTab
+from .tabs.scan_exclude_tab import ScanExcludeTab
 
 class SettingsDialog(BaseSettingsDialog):
     """设置对话框主类"""
@@ -86,6 +87,15 @@ class SettingsDialog(BaseSettingsDialog):
             translation=self.translation
         )
         self.tab_widget.addTab(self.icon_manager_tab, self.translation.get("tab_icon_manager", "图标管理"))
+
+        # 扫描排除标签页
+        self.scan_exclude_tab = ScanExcludeTab(
+            parent=self,
+            config=self.config_manager.config if self.config_manager else {},
+            widgets=self.widgets,
+            translation=self.translation
+        )
+        self.tab_widget.addTab(self.scan_exclude_tab, self.translation.get("tab_scan_exclude", "扫描排除"))
     
     def _connect_signals(self):
         """连接信号 - 标签页内部已处理"""
@@ -207,6 +217,12 @@ class SettingsDialog(BaseSettingsDialog):
         # 图标管理设置
         if hasattr(self, 'icon_manager_tab'):
             self.icon_manager_tab.save_settings()
+
+        # 扫描排除设置
+        if hasattr(self, 'scan_exclude_tab'):
+            exclude_settings = self.scan_exclude_tab.get_exclude_settings()
+            for key, value in exclude_settings.items():
+                self.config_manager.set_setting(key, value)
 
         # 保存到配置管理器
         for key, value in settings_to_save.items():

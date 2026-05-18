@@ -47,20 +47,43 @@ class UIHandler:
             # 使用非侵入式错误提示
             self._error_manager.error(message)
 
-    def on_show_message(self, msg_type: str, message: str) -> None:
+    def on_show_message(self, msg_type: str, message: str, tip_id: str = None) -> None:
         """处理显示消息事件
         
         根据消息类型选择合适的提示方式：
         - error: 非侵入式错误提示
         - warning: 非侵入式警告提示
+        - success: 非侵入式成功提示
         - info: 状态栏提示
+        
+        Args:
+            msg_type: 消息类型
+            message: 消息内容
+            tip_id: 提示的唯一标识（可选），用于后续关闭该提示
         """
         if msg_type == "error":
             self._error_manager.error(message)
         elif msg_type == "warning":
             self._error_manager.warning(message)
+        elif msg_type == "success":
+            from tip_manager.tip_manager_proxy import show_success
+            show_success(self.file_manager, message, 2500, tip_id)
         else:
             self.file_manager.status_bar.showMessage(message, 3000)
+    
+    def on_close_all_tips(self) -> None:
+        """处理关闭所有提示事件"""
+        from tip_manager.tip_manager_proxy import close_all_tips
+        close_all_tips()
+    
+    def on_close_tip_by_id(self, tip_id: str) -> None:
+        """处理关闭指定id提示事件
+        
+        Args:
+            tip_id: 提示的唯一标识
+        """
+        from tip_manager.tip_manager_proxy import close_tip_by_id
+        close_tip_by_id(tip_id)
 
     def on_toggle_hidden(self, state: bool) -> None:
         """处理切换隐藏文件显示事件"""

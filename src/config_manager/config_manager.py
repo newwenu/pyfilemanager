@@ -39,7 +39,15 @@ class ConfigManager:
                 "start_path": os.path.expanduser('~'),  # 新增：启动路径配置
                 "log_level": "info",
                 "start_random": False,
-                "show_mtime": True
+                "show_mtime": True,
+                "scan_exclude_system": [
+                    {"name": "pagefile.sys", "desc": "Windows 页面文件", "checked": True},
+                    {"name": "hiberfil.sys", "desc": "Windows 休眠文件", "checked": True},
+                    {"name": "$RECYCLE.BIN", "desc": "回收站", "checked": True},
+                    {"name": "System Volume Information", "desc": "系统卷标信息", "checked": True},
+                    {"name": "swapfile.sys", "desc": "交换文件", "checked": True}
+                ],
+                "scan_exclude_custom": []
             }
             # 创建配置文件目录（如果不存在）
             config_dir = os.path.dirname(self.config_path)

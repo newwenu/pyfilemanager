@@ -8,30 +8,42 @@ class TipWidget(QLabel):
     """非侵入式提示组件
     
     使用示例:
-        tip = TipWidget(self)
+        tip = TipWidget(self, "unique_id")
+        tip.set_tip_style("success")  # 设置样式
         tip.show_tip("设置已保存", 2000)  # 显示2秒
     """
     
-    def __init__(self, parent=None):
+    # 预定义的样式配置
+    STYLES = {
+        "success": {
+            "background": "rgba(76, 175, 80, 240)",
+            "color": "white",
+        },
+        "error": {
+            "background": "rgba(244, 67, 54, 240)",
+            "color": "white",
+        },
+        "warning": {
+            "background": "rgba(255, 152, 0, 240)",
+            "color": "white",
+        },
+        "info": {
+            "background": "rgba(33, 150, 243, 240)",
+            "color": "white",
+        },
+    }
+    
+    def __init__(self, parent=None, tip_id: str = None):
         super().__init__(parent)
         self.parent_widget = parent
+        self.tip_id = tip_id  # 唯一标识
         self._opacity = 1.0
+        self._current_style = "success"  # 默认样式
         self._setup_ui()
         self._setup_animation()
         
     def _setup_ui(self):
         """设置UI样式"""
-        self.setStyleSheet("""
-            QLabel {
-                background-color: rgba(76, 175, 80, 240);
-                color: white;
-                border-radius: 8px;
-                padding: 12px 20px;
-                font-size: 14px;
-                font-weight: 500;
-                border: 1px solid rgba(255, 255, 255, 50);
-            }
-        """)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
@@ -41,6 +53,31 @@ class TipWidget(QLabel):
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         
         self.hide()
+        
+    def _apply_style(self):
+        """应用当前样式"""
+        style_config = self.STYLES.get(self._current_style, self.STYLES["success"])
+        self.setStyleSheet(f"""
+            QLabel {{
+                background-color: {style_config['background']};
+                color: {style_config['color']};
+                border-radius: 8px;
+                padding: 12px 20px;
+                font-size: 14px;
+                font-weight: 500;
+                border: none;
+            }}
+        """)
+
+    def set_tip_style(self, style_type: str):
+        """设置提示样式
+        
+        Args:
+            style_type: 样式类型("success", "error", "warning", "info")
+        """
+        if style_type in self.STYLES:
+            self._current_style = style_type
+            self._apply_style()
         
     def _setup_animation(self):
         """设置淡入淡出动画"""
@@ -56,13 +93,21 @@ class TipWidget(QLabel):
         self.geometry_animation = QPropertyAnimation(self, b"geometry")
         self.geometry_animation.setDuration(300)
         
-    def show_tip(self, text, duration=2000):
+    def show_tip(self, text, duration=2000, style_type: str = None):
         """显示提示
         
         Args:
             text: 提示文本
             duration: 显示时长(毫秒),默认2000毫秒
+            style_type: 可选，临时指定样式类型
         """
+        # 如果指定了样式，先应用
+        if style_type:
+            self.set_tip_style(style_type)
+        else:
+            # 确保已应用当前样式
+            self._apply_style()
+        
         # 确保组件状态正常
         if not self.parent_widget or not isdeleted(self):
             return
@@ -142,123 +187,11 @@ class TipWidget(QLabel):
     opacity = Property(float, get_opacity, set_opacity)
 
 
-class TipManager:
-    """提示管理器 - 管理多个提示组件"""
-    
-    def __init__(self):
-        self.tips = []
-        
-    def show_tip(self, parent, text, duration=2000, tip_type="success"):
-        """显示提示
-        
-        Args:
-            parent: 父窗口
-            text: 提示文本
-            duration: 显示时长(毫秒)
-            tip_type: 提示类型("success", "error", "warning", "info")
-        """
-        # 清理已销毁的提示组件
-        self._cleanup_destroyed_tips()
-        
-        # 如果父窗口有顶级窗口，使用顶级窗口作为父窗口
-        # 这样可以确保提示显示在最上层，不会被对话框挡住
-        if hasattr(parent, 'window'):
-            top_level_window = parent.window()
-        elif hasattr(parent, 'topLevelWidget'):
-            top_level_window = parent.topLevelWidget()
-        else:
-            top_level_window = parent
-            
-        # 确保父窗口有效
-        if not top_level_window or not isdeleted(top_level_window):
-            return
-            
-        tip = TipWidget(top_level_window)
-        
-        # 根据类型设置样式
-        if tip_type == "success":
-            tip.setStyleSheet("""
-                QLabel {
-                    background-color: rgba(76, 175, 80, 240);
-                    color: white;
-                    border-radius: 8px;
-                    padding: 12px 20px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    border: 1px solid rgba(255, 255, 255, 50);
-                }
-            """)
-        elif tip_type == "error":
-            tip.setStyleSheet("""
-                QLabel {
-                    background-color: rgba(244, 67, 54, 240);
-                    color: white;
-                    border-radius: 8px;
-                    padding: 12px 20px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    border: 1px solid rgba(255, 255, 255, 50);
-                }
-            """)
-        elif tip_type == "warning":
-            tip.setStyleSheet("""
-                QLabel {
-                    background-color: rgba(255, 152, 0, 240);
-                    color: white;
-                    border-radius: 8px;
-                    padding: 12px 20px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    border: 1px solid rgba(255, 255, 255, 50);
-                }
-            """)
-        elif tip_type == "info":
-            tip.setStyleSheet("""
-                QLabel {
-                    background-color: rgba(33, 150, 243, 240);
-                    color: white;
-                    border-radius: 8px;
-                    padding: 12px 20px;
-                    font-size: 14px;
-                    font-weight: 500;
-                    border: 1px solid rgba(255, 255, 255, 50);
-                }
-            """)
-        
-        tip.show_tip(text, duration)
-        self.tips.append(tip)
-        
-        # 清理已隐藏的提示
-        QTimer.singleShot(duration + 500, lambda: self._cleanup_tip(tip))
-    
-    def _cleanup_tip(self, tip):
-        """清理已隐藏的提示"""
-        if tip in self.tips:
-            try:
-                tip.deleteLater()
-            except:
-                pass
-            self.tips.remove(tip)
-    
-    def _cleanup_destroyed_tips(self):
-        """清理已销毁的提示组件"""
-        # 清理列表中已销毁的提示组件
-        valid_tips = []
-        for tip in self.tips:
-            try:
-                # 检查组件是否还存在
-                if tip and not isdeleted(tip):
-                    valid_tips.append(tip)
-                else:
-                    # 如果组件已销毁，跳过
-                    pass
-            except:
-                # 如果检查过程中出错，说明组件已无效
-                pass
-        
-        # 更新列表，只保留有效的组件
-        self.tips = valid_tips
-
-
-# 全局提示管理器实例
-tip_manager = TipManager()
+# 为了保持向后兼容，从 manager 模块导入 TipManager
+# 注意：这不会导致循环导入，因为 manager 延迟导入 TipWidget
+try:
+    from tip_manager.manager import TipManager, tip_manager
+except ImportError:
+    # 如果 manager 模块还没准备好，提供占位符
+    TipManager = None
+    tip_manager = None
