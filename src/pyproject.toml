@@ -3,6 +3,5 @@ name = "pyfilemanager"  # 项目名称
 version = "0.1.0"       # 项目版本
 dependencies = [
     "PySide6>=6.9.0",          # 图形界面框架（跨平台）
-    "send2trash>=1.8.3",       # 文件删除到回收站（跨平台）
     "pywin32>=306; sys_platform == 'win32'",  # Windows API 支持（仅 Windows 需要）
 ]

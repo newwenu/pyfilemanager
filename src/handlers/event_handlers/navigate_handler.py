@@ -26,10 +26,13 @@ class NavigateHandler:
 
     def on_navigate_to(self, path: str) -> None:
         """处理导航到指定路径事件"""
+        # 更新面包屑地址栏（如果存在）
+        if hasattr(self.file_manager, 'breadcrumb_bar'):
+            self.file_manager.breadcrumb_bar.set_path(path)
+        
         if path == '此电脑':
             # 处理此电脑导航
             self.file_manager.current_path = '此电脑'
-            self.file_manager.address_bar.setText("此电脑")
             self.file_manager.last_updated_path = '此电脑'
             # 切换到驱动器列表视图
             if self.file_manager.right_stack and self.file_manager.drive_list:
@@ -46,7 +49,6 @@ class NavigateHandler:
         elif os.path.exists(path):
             # 处理普通路径导航
             self.file_manager.current_path = path
-            self.file_manager.address_bar.setText(path)
             self.file_manager.last_updated_path = path
             # 切换到文件列表视图
             if self.file_manager.right_stack and self.file_manager.file_list:
@@ -67,5 +69,7 @@ class NavigateHandler:
         parent_path = os.path.dirname(self.file_manager.current_path)
         if parent_path != self.file_manager.current_path:
             self.file_manager.current_path = parent_path
-            self.file_manager.address_bar.setText(self.file_manager.current_path)
+            # 更新面包屑地址栏（如果存在）
+            if hasattr(self.file_manager, 'breadcrumb_bar'):
+                self.file_manager.breadcrumb_bar.set_path(self.file_manager.current_path)
             self.file_manager.update_filelist()

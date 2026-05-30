@@ -1,32 +1,25 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, 
-                               QGroupBox, QScrollArea, QPushButton, QListWidget, 
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QCheckBox,
+                               QGroupBox, QScrollArea, QPushButton, QListWidget,
                                QListWidgetItem, QLineEdit, QLabel, QFileDialog,
                                QMessageBox)
 from PySide6.QtCore import Qt
+from src.widgets.settings.setting_item_group import SettingItemGroup
 
 
 class ScanExcludeTab(QWidget):
     """扫描排除设置标签页"""
-    
-    # 系统关键文件默认列表
-    DEFAULT_SYSTEM_EXCLUDES = [
-        {"name": "pagefile.sys", "desc": "Windows 页面文件", "checked": True},
-        {"name": "hiberfil.sys", "desc": "Windows 休眠文件", "checked": True},
-        {"name": "$RECYCLE.BIN", "desc": "回收站", "checked": True},
-        {"name": "System Volume Information", "desc": "系统卷标信息", "checked": True},
-        {"name": "swapfile.sys", "desc": "交换文件", "checked": True}
-    ]
     
     def __init__(self, parent=None, config=None, widgets=None, translation=None):
         super().__init__(parent)
         self.config = config or {}
         self.widgets = widgets or {}
         self.translation = translation or {}
-        
+        self._items = SettingItemGroup(self)
+
         # 从配置加载数据
-        self.system_excludes = self.config.get("scan_exclude_system", self.DEFAULT_SYSTEM_EXCLUDES.copy())
+        self.hide_system_protected = self.config.get("scan_exclude_system_protected", False)
         self.custom_excludes = self.config.get("scan_exclude_custom", [])
-        
+
         self._setup_ui()
         self._connect_signals()
     
@@ -49,23 +42,26 @@ class ScanExcludeTab(QWidget):
         
         settings_dialog = self._get_settings_dialog()
         
-        # ===== 系统关键文件区域 =====
-        system_group = QGroupBox(self.translation.get("group_system_excludes", "系统关键文件（扫描时排除）"))
+        # ===== 系统保护文件区域 =====
+        system_group = QGroupBox(self.translation.get("group_system_protected", "系统保护文件"))
         system_layout = QVBoxLayout(system_group)
+
+        # 系统保护文件复选框
+        self.chk_system_protected = self._items.add_checkbox(
+            system_layout, 'scan_exclude_system_protected',
+            self.translation.get("chk_system_protected", "排除受系统保护的文件（按属性识别）"),
+            default_value=False
+        )
         
-        # 全选/取消全选按钮
-        select_all_layout = QHBoxLayout()
-        self.btn_select_all_system = QPushButton(self.translation.get("btn_select_all", "全选"))
-        self.btn_deselect_all_system = QPushButton(self.translation.get("btn_deselect_all", "取消全选"))
-        select_all_layout.addWidget(self.btn_select_all_system)
-        select_all_layout.addWidget(self.btn_deselect_all_system)
-        select_all_layout.addStretch()
-        system_layout.addLayout(select_all_layout)
-        
-        # 系统文件列表
-        self.system_list_widget = QListWidget()
-        self._load_system_excludes()
-        system_layout.addWidget(self.system_list_widget)
+        # 说明标签
+        desc_label = QLabel(
+            self.translation.get("desc_system_protected", 
+                "Windows: 排除具有系统属性(S)的文件和目录，如 pagefile.sys、hiberfil.sys 等\n"
+                "Linux/macOS: 排除系统关键文件")
+        )
+        desc_label.setWordWrap(True)
+        desc_label.setStyleSheet("color: gray; font-size: 12px;")
+        system_layout.addWidget(desc_label)
         
         system_group.setLayout(system_layout)
         scroll_layout.addWidget(system_group)
@@ -109,23 +105,7 @@ class ScanExcludeTab(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(scroll_area)
         
-        # 存储控件引用
-        self.widgets['scan_exclude_system'] = self.system_list_widget
-        self.widgets['scan_exclude_custom'] = self.custom_list_widget
-    
-    def _load_system_excludes(self):
-        """加载系统关键文件列表"""
-        self.system_list_widget.clear()
-        for item_data in self.system_excludes:
-            item = QListWidgetItem()
-            checkbox = QCheckBox(f"{item_data['name']} - {item_data.get('desc', '')}")
-            checkbox.setChecked(item_data.get('checked', True))
-            checkbox.stateChanged.connect(self._on_system_exclude_changed)
-            
-            self.system_list_widget.addItem(item)
-            self.system_list_widget.setItemWidget(item, checkbox)
-            # 存储数据到item
-            item.setData(Qt.UserRole, item_data['name'])
+
     
     def _load_custom_excludes(self):
         """加载自定义排除列表"""
@@ -142,9 +122,8 @@ class ScanExcludeTab(QWidget):
     
     def _connect_signals(self):
         """连接信号"""
-        # 系统文件全选/取消全选
-        self.btn_select_all_system.clicked.connect(self._select_all_system)
-        self.btn_deselect_all_system.clicked.connect(self._deselect_all_system)
+        # 系统保护文件复选框
+        self.chk_system_protected.stateChanged.connect(self._on_system_protected_changed)
         
         # 自定义排除操作
         self.btn_browse_custom.clicked.connect(self._browse_custom_path)
@@ -153,37 +132,14 @@ class ScanExcludeTab(QWidget):
         self.btn_delete_custom.clicked.connect(self._delete_custom_exclude)
         self.btn_clear_custom.clicked.connect(self._clear_custom_excludes)
     
-    def _on_system_exclude_changed(self):
-        """系统排除项状态改变"""
+    def _on_system_protected_changed(self):
+        """系统保护文件选项改变"""
         settings_dialog = self._get_settings_dialog()
         if settings_dialog:
-            settings_dialog._on_setting_changed('scan_exclude_system', self.get_system_excludes_data())
-    
-    def _select_all_system(self):
-        """全选系统关键文件"""
-        for i in range(self.system_list_widget.count()):
-            item = self.system_list_widget.item(i)
-            checkbox = self.system_list_widget.itemWidget(item)
-            if isinstance(checkbox, QCheckBox):
-                checkbox.setChecked(True)
-        self._on_system_exclude_changed()
-    
-    def _deselect_all_system(self):
-        """取消全选系统关键文件"""
-        for i in range(self.system_list_widget.count()):
-            item = self.system_list_widget.item(i)
-            checkbox = self.system_list_widget.itemWidget(item)
-            if isinstance(checkbox, QCheckBox):
-                checkbox.setChecked(False)
-        self._on_system_exclude_changed()
+            settings_dialog._on_setting_changed('scan_exclude_system_protected', self.chk_system_protected.isChecked())
     
     def _browse_custom_path(self):
         """浏览选择自定义排除路径"""
-        dialog = QFileDialog(self)
-        dialog.setFileMode(QFileDialog.FileMode.AnyFile)
-        dialog.setViewMode(QFileDialog.ViewMode.Detail)
-        
-        # 创建自定义对话框，允许选择文件或文件夹
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle(self.translation.get("select_type", "选择类型"))
         msg_box.setText(self.translation.get("select_file_or_folder", "请选择要排除的是文件还是文件夹？"))
@@ -277,24 +233,6 @@ class ScanExcludeTab(QWidget):
             if settings_dialog:
                 settings_dialog._on_setting_changed('scan_exclude_custom', [])
     
-    def get_system_excludes_data(self):
-        """获取系统排除项数据"""
-        data = []
-        for i in range(self.system_list_widget.count()):
-            item = self.system_list_widget.item(i)
-            checkbox = self.system_list_widget.itemWidget(item)
-            name = item.data(Qt.UserRole)
-            if isinstance(checkbox, QCheckBox):
-                # 从checkbox文本中提取描述
-                text = checkbox.text()
-                desc = text.split(" - ")[1] if " - " in text else ""
-                data.append({
-                    "name": name,
-                    "desc": desc,
-                    "checked": checkbox.isChecked()
-                })
-        return data
-    
     def get_custom_excludes(self):
         """获取自定义排除项列表"""
         excludes = []
@@ -307,6 +245,6 @@ class ScanExcludeTab(QWidget):
     def get_exclude_settings(self):
         """获取所有排除设置数据"""
         return {
-            'scan_exclude_system': self.get_system_excludes_data(),
+            'scan_exclude_system_protected': self.chk_system_protected.isChecked(),
             'scan_exclude_custom': self.get_custom_excludes()
         }

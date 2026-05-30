@@ -69,11 +69,18 @@ class FileListUpdater:
         """设置事件总线连接"""
         # 监听配置变更事件
         event_bus.config_changed.connect(self._on_config_changed)
+        # 监听文件列表更新事件
+        event_bus.ui_update_filelist.connect(self.update_filelist)
 
     def _on_config_changed(self, key: str, value):
         """处理配置变更事件"""
         if key == "show_mtime":
             self.show_mtime = value
+        elif key in ("scan_exclude_system_protected", "scan_exclude_custom"):
+            # 扫描排除配置变更，清除过滤器缓存并刷新文件列表
+            from utils.file_filter import get_file_filter
+            get_file_filter().clear_cache()
+            self.update_filelist()
 
     # ========== 属性访问（保持向后兼容）==========
 

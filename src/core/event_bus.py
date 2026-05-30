@@ -20,6 +20,7 @@ class EventBus(QObject):
     navigate_up = Signal()  # 返回上级目录
     navigate_home = Signal()  # 导航到主页
     navigate_refresh = Signal()  # 刷新当前目录
+    refresh = Signal()  # 通用刷新信号（别名，与 navigate_refresh 等价）
     
     # ========== 文件操作事件 ==========
     file_open = Signal(str)  # 打开文件/文件夹
@@ -69,7 +70,7 @@ class EventBus(QObject):
     config_reload = Signal()  # 重新加载配置
     
     # ========== 主题事件 ==========
-    theme_changed = Signal(str)  # 主题改变（主题名称）
+    theme_changed = Signal(str, tuple)  # 主题改变（主题名称，系统背景色RGB元组）
     
     # ========== 语言事件 ==========
     language_changed = Signal(str)  # 语言改变（语言代码）

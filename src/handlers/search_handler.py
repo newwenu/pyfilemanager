@@ -37,12 +37,13 @@ class SearchHandler:
     
     def _setup_event_bus_connections(self):
         """设置事件总线连接"""
-        # 监听聚焦搜索框事件
-        event_bus.focus_search_box.connect(self._on_focus_search)
-        # 监听搜索开始事件
-        event_bus.search_start.connect(self.start_search)
-        # 监听清除搜索事件
-        event_bus.search_clear.connect(self.clear_search)
+        # 注意：新版本的 SearchBox 组件已直接处理这些事件
+        # 这里保留方法但不绑定，避免与新的 SearchBox 冲突
+        # 如果需要使用旧的工具栏搜索功能，可以取消下面的注释
+        # event_bus.focus_search_box.connect(self._on_focus_search)
+        # event_bus.search_start.connect(self.start_search)
+        # event_bus.search_clear.connect(self.clear_search)
+        pass
     
     def _on_focus_search(self):
         """处理聚焦搜索框事件（事件总线回调）"""

@@ -3,6 +3,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
                                QPushButton, QMessageBox, QLineEdit, QGridLayout,
                                QFrame)
 from PySide6.QtCore import Qt
+from core.config_provider import config_provider
+from src.widgets.settings.setting_item_group import SettingItemGroup
 import os
 import json
 
@@ -16,6 +18,7 @@ class IconManagerTab(QWidget):
         self.widgets = widgets or {}
         self.translation = translation or {}
         self._icon_type_file = os.path.join("userdata", "file-icon_type", "file-icon_type.json")
+        self._items = SettingItemGroup(self)
         self._setup_ui()
 
     def _get_settings_dialog(self):
@@ -71,14 +74,11 @@ class IconManagerTab(QWidget):
         return self.config.get("use_system_icons_for_default", True)
 
     def _save_to_config(self, extensions=None, use_for_default=None):
-        """保存到主配置"""
-        settings_dialog = self._get_settings_dialog()
-        if settings_dialog and settings_dialog.config_manager:
-            if extensions is not None:
-                settings_dialog.config_manager.config["use_system_icons_for_extensions"] = extensions
-            if use_for_default is not None:
-                settings_dialog.config_manager.config["use_system_icons_for_default"] = use_for_default
-            settings_dialog.config_manager.save_config()
+        """保存到主配置（会话期间不落盘，由 ConfigProvider 会话机制统一管理）"""
+        if extensions is not None:
+            config_provider.set("use_system_icons_for_extensions", extensions, emit_event=False)
+        if use_for_default is not None:
+            config_provider.set("use_system_icons_for_default", use_for_default, emit_event=False)
 
     def _setup_ui(self):
         """设置图标管理标签页UI"""
@@ -103,18 +103,12 @@ class IconManagerTab(QWidget):
         )
         default_layout = QHBoxLayout(default_group)
 
-        self.default_checkbox = QCheckBox(
-            self.translation.get("chk_use_system_for_default", "对default类型（无匹配扩展名）使用系统图标")
+        self.default_checkbox = self._items.add_checkbox(
+            default_layout, 'use_system_icons_for_default',
+            self.translation.get("chk_use_system_for_default", "对default类型（无匹配扩展名）使用系统图标"),
+            default_value=True
         )
-        self.default_checkbox.setChecked(self._get_config_default())
         self.default_checkbox.stateChanged.connect(self._on_default_checkbox_changed)
-        default_layout.addWidget(self.default_checkbox)
-
-        # 将复选框添加到 widgets 字典（用于修改指示器循环）
-        settings_dialog = self._get_settings_dialog()
-        if settings_dialog:
-            settings_dialog.widgets['use_system_icons_for_default'] = self.default_checkbox
-            default_layout.addWidget(settings_dialog._create_modified_indicator('use_system_icons_for_default'))
         default_layout.addStretch()
 
         scroll_layout.addWidget(default_group)

@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QTimer
+from core.config_provider import config_provider
 import sys
 import os
 import subprocess
@@ -14,8 +15,7 @@ class LanguageManager:
 
     def set_language(self, lang: str):
         """修改语言配置并重启应用"""
-        self.config_manager.config["language"] = lang
-        self.config_manager.save_config()
+        config_provider.set("language", lang)
         self._restart_app()
 
     def get_translation(self):

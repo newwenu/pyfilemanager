@@ -1,38 +1,15 @@
 """
-剪贴板管理模块
-
-管理复制/剪切操作的状态
+文件剪贴板实现
 """
 import os
 import shutil
 from typing import List
-from dataclasses import dataclass, field
-from enum import Enum, auto
 
-from .interfaces import IClipboard, OperationResult, OperationType
-from .exceptions import FileNotFoundError, FileExistsError
-
-
-class ClipboardAction(Enum):
-    """剪贴板动作类型"""
-    COPY = auto()
-    CUT = auto()
-
-
-@dataclass
-class ClipboardContent:
-    """剪贴板内容"""
-    action: ClipboardAction
-    paths: List[str] = field(default_factory=list)
-    
-    def is_valid(self) -> bool:
-        """检查剪贴板内容是否有效"""
-        return len(self.paths) > 0 and all(os.path.exists(p) for p in self.paths)
-    
-    def clear(self):
-        """清空内容"""
-        self.paths.clear()
-        self.action = None
+from ..core import IClipboard, OperationResult
+from ..core.exceptions import FileNotFoundError as FileOpNotFoundError, FileExistsError as FileOpExistsError
+from ..operations.path_utils import PathUtils
+from .clipboard_action import ClipboardAction
+from .clipboard_content import ClipboardContent
 
 
 class FileClipboard(IClipboard):
@@ -40,12 +17,13 @@ class FileClipboard(IClipboard):
     
     def __init__(self):
         self._content = ClipboardContent(action=None, paths=[])
+        self._path_utils = PathUtils()
     
     def copy(self, paths: List[str]) -> None:
         """复制文件到剪贴板"""
         valid_paths = [p for p in paths if os.path.exists(p)]
         if not valid_paths:
-            raise FileNotFoundError("没有有效的文件路径")
+            raise FileOpNotFoundError("没有有效的文件路径")
         
         self._content = ClipboardContent(
             action=ClipboardAction.COPY,
@@ -56,7 +34,7 @@ class FileClipboard(IClipboard):
         """剪切文件到剪贴板"""
         valid_paths = [p for p in paths if os.path.exists(p)]
         if not valid_paths:
-            raise FileNotFoundError("没有有效的文件路径")
+            raise FileOpNotFoundError("没有有效的文件路径")
         
         self._content = ClipboardContent(
             action=ClipboardAction.CUT,
@@ -116,12 +94,7 @@ class FileClipboard(IClipboard):
         dest_path = os.path.join(dest_dir, filename)
         
         # 处理重名
-        counter = 1
-        base, ext = os.path.splitext(filename)
-        while os.path.exists(dest_path):
-            new_name = f"{base} ({counter}){ext}"
-            dest_path = os.path.join(dest_dir, new_name)
-            counter += 1
+        dest_path = self._path_utils.generate_unique_path(dest_path)
         
         # 执行复制或移动
         if self._content.action == ClipboardAction.COPY:

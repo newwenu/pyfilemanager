@@ -11,7 +11,6 @@ from PySide6.QtCore import QRect
 
 # ：导入配置管理器
 from config_manager.config_manager import ConfigManager
-from core.service_locator import ServiceLocator
 
 
 # 初始化配置管理器（使用默认路径或自定义路径）
@@ -65,57 +64,16 @@ def create_char_icon(char):
     painter.end()
     return QIcon(QPixmap.fromImage(image))
 
-def get_scan_excludes():
-    """获取扫描排除配置"""
-    try:
-        config_manager = ServiceLocator.get("config_manager")
-        if not config_manager:
-            return [], []
-        
-        # 获取系统关键文件排除列表
-        system_excludes = config_manager.get("scan_exclude_system", [])
-        system_names = [
-            item["name"] for item in system_excludes 
-            if item.get("checked", True)
-        ]
-        
-        # 获取自定义排除列表
-        custom_excludes = config_manager.get("scan_exclude_custom", [])
-        
-        return system_names, custom_excludes
-    except Exception:
-        return [], []
-
 def should_show(entry, show_hidden):
-    """判断是否显示文件"""
-    # 首先检查扫描排除配置
-    system_excludes, custom_excludes = get_scan_excludes()
+    """
+    判断是否显示文件
     
-    # 检查是否在系统排除列表中（按名称匹配）
-    entry_name = entry.name
-    if entry_name in system_excludes:
-        return False
-    
-    # 检查是否在自定义排除列表中（支持完整路径匹配和部分路径匹配）
-    entry_path = entry.path
-    for exclude_path in custom_excludes:
-        # 完全匹配或作为父目录匹配
-        if entry_path == exclude_path or entry_path.startswith(exclude_path + os.sep):
-            return False
-    
-    # 原有的隐藏文件检查逻辑
-    if show_hidden:
-        return True
-    try:
-        if sys.platform == "win32":
-            # Windows：使用 win32api 检测隐藏属性
-            is_hidden = win32api.GetFileAttributes(entry.path) & win32con.FILE_ATTRIBUTE_HIDDEN
-        else:
-            # Unix-like（macOS/Linux）：检测文件名是否以 . 开头
-            is_hidden = entry.name.startswith('.')
-        return not (entry.name.startswith('.') or is_hidden)  # 保留原逻辑中的 . 开头判断（兼容所有平台）
-    except:
-        return False
+    注意：此函数现在委托给 file_filter 模块处理
+    为了保持向后兼容性，保留此函数
+    """
+    # 导入新的过滤器模块
+    from utils.file_filter import should_show as filter_should_show
+    return filter_should_show(entry, show_hidden)
 
 def get_icon_char(file_type):
     """为未找到媒体图标的类型生成字符图标（备用方案）"""
@@ -139,3 +97,6 @@ def get_icon_char(file_type):
         'default': '📄'
     }
     return char_map.get(file_type, '?')
+
+# 为了向后兼容，保留这些函数导入
+from utils.file_filter import get_scan_excludes, is_system_protected

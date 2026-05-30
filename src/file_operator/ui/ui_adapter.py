@@ -4,12 +4,13 @@
 将 FileOperator 与 Qt UI 解耦，提供对话框交互支持
 使用非侵入式提示替代模态对话框
 """
+import os
 from typing import List, Callable, Optional
 from PySide6.QtWidgets import QMessageBox, QInputDialog, QWidget
-from PySide6.QtCore import Qt
 
-from .file_operator import FileOperator
-from .interfaces import OperationResult
+from ..operations import FileOperator
+from ..core import OperationResult
+from .tip_helper import TipHelper
 
 
 class FileOperatorUIAdapter:
@@ -25,16 +26,7 @@ class FileOperatorUIAdapter:
         self._operator = file_operator
         self._parent = parent_widget
         self._translation = getattr(parent_widget, 'translation', {})
-        
-        # 延迟导入 tip_manager 避免循环导入
-        self._tip_manager = None
-    
-    def _get_tip_manager(self):
-        """延迟获取 tip_manager"""
-        if self._tip_manager is None:
-            from tip_manager.tip_manager_proxy import TipManagerProxy
-            self._tip_manager = TipManagerProxy()
-        return self._tip_manager
+        self._tip_helper = TipHelper(parent_widget)
     
     def _tr(self, key: str, default: str = "") -> str:
         """获取翻译文本"""
@@ -108,7 +100,7 @@ class FileOperatorUIAdapter:
         
         # 特殊处理：名称已存在时显示警告而非错误
         if not result.success and "已存在" in result.message:
-            self._show_warning(result.message)
+            self._tip_helper.show_warning(result.message)
         else:
             self._handle_result(result, on_success)
     
@@ -136,48 +128,11 @@ class FileOperatorUIAdapter:
                        on_success: Optional[Callable] = None) -> None:
         """处理操作结果"""
         if result.success:
-            self._show_success(result.message)
+            self._tip_helper.show_success(result.message)
             if on_success:
                 on_success()
         else:
-            self._show_error(result.message)
-    
-    def _show_success(self, message: str, duration: int = 2000) -> None:
-        """显示成功提示（非侵入式）"""
-        try:
-            from tip_manager.tip_manager_proxy import show_success
-            show_success(self._parent, message, duration)
-        except ImportError:
-            # 回退到状态栏
-            self._show_status_message(message, duration)
-    
-    def _show_error(self, message: str, duration: int = 3000) -> None:
-        """显示错误提示（非侵入式）"""
-        try:
-            from tip_manager.tip_manager_proxy import show_error
-            show_error(self._parent, message, duration)
-        except ImportError:
-            # 回退到状态栏
-            self._show_status_message(message, duration)
-    
-    def _show_warning(self, message: str, duration: int = 2500) -> None:
-        """显示警告提示（非侵入式）"""
-        try:
-            from tip_manager.tip_manager_proxy import show_warning
-            show_warning(self._parent, message, duration)
-        except ImportError:
-            # 回退到状态栏
-            self._show_status_message(message, duration)
-    
-    def _show_status_message(self, message: str, duration: int = 3000) -> None:
-        """显示状态栏消息（通过事件总线）"""
-        try:
-            from core import event_bus
-            event_bus.ui_update_statusbar.emit(message, duration)
-        except ImportError:
-            # 回退到直接设置状态栏
-            if hasattr(self._parent, 'status_bar'):
-                self._parent.status_bar.showMessage(message, duration)
+            self._tip_helper.show_error(result.message)
     
     # ========== 属性访问 ==========
     
@@ -185,6 +140,3 @@ class FileOperatorUIAdapter:
     def operator(self) -> FileOperator:
         """获取底层文件操作器"""
         return self._operator
-
-
-import os

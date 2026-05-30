@@ -5,6 +5,7 @@
 import os
 import json
 from typing import List, Set, Optional
+from core.config_provider import config_provider
 
 
 class IconSettingsManager:
@@ -78,13 +79,11 @@ class IconSettingsManager:
                 self._settings = default_settings
 
     def _save_to_config(self, settings):
-        """保存到主配置"""
-        if self._config_manager and hasattr(self._config_manager, 'config'):
-            self._config_manager.config.update(settings)
-            if hasattr(self._config_manager, 'save_config'):
-                self._config_manager.save_config()
-            # 重新加载设置以确保立即生效
-            self._load_settings()
+        """保存到主配置（自动落盘）"""
+        for key, value in settings.items():
+            config_provider.set(key, value, emit_event=False)
+        # 重新加载设置以确保立即生效
+        self._load_settings()
 
     def _save_settings(self):
         """保存设置 - 保存到主配置"""

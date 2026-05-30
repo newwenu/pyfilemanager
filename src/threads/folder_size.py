@@ -7,7 +7,6 @@ from PySide6.QtWidgets import QTreeWidgetItem
 from utils.logging_config import get_logger
 from utils.size_utils import format_size
 from dbload_manager.file_tree_manager import CacheValidity
-from utils.file_utils import get_scan_excludes
 
 logger = get_logger(__name__)
 
@@ -131,9 +130,6 @@ class FolderSizeThread(QThread):
             # 存储子文件夹信息的临时字典
             folder_results = {}
 
-            # 获取扫描排除配置
-            system_excludes, custom_excludes = get_scan_excludes()
-            
             while stack and self._is_running and not self._terminate_requested:
                 # 检查超时（如果设置了超时时间）
                 if self.MAX_CALCULATION_TIME > 0 and time.time() - self._start_time > self.MAX_CALCULATION_TIME:
@@ -154,29 +150,8 @@ class FolderSizeThread(QThread):
                     try:
                         # 获取目录内容
                         entries = list(os.scandir(current_path))
-                        
-                        # 应用扫描排除过滤
-                        filtered_entries = []
-                        for entry in entries:
-                            entry_name = entry.name
-                            entry_path = entry.path
-                            
-                            # 检查系统排除列表
-                            if entry_name in system_excludes:
-                                continue
-                            
-                            # 检查自定义排除列表
-                            is_excluded = False
-                            for exclude_path in custom_excludes:
-                                if entry_path == exclude_path or entry_path.startswith(exclude_path + os.sep):
-                                    is_excluded = True
-                                    break
-                            
-                            if not is_excluded:
-                                filtered_entries.append(entry)
-                        
-                        dirs = [e for e in filtered_entries if e.is_dir(follow_symlinks=False)]
-                        files = [e for e in filtered_entries if e.is_file(follow_symlinks=False)]
+                        dirs = [e for e in entries if e.is_dir(follow_symlinks=False)]
+                        files = [e for e in entries if e.is_file(follow_symlinks=False)]
 
                         # 计算直接文件大小
                         current_files_size = 0
@@ -383,36 +358,13 @@ class FolderSizeThread(QThread):
         total_size = 0
         file_count = 0
         
-        # 获取扫描排除配置
-        system_excludes, custom_excludes = get_scan_excludes()
-        
         try:
             for current_path, dirs, files in os.walk(path, followlinks=False):
                 # 检查终止请求
                 if self._terminate_requested or not self._is_running:
                     return 0
-                
-                # 应用扫描排除：过滤掉被排除的目录
-                dirs[:] = [
-                    d for d in dirs 
-                    if d not in system_excludes and not any(
-                        os.path.join(current_path, d) == ep or 
-                        os.path.join(current_path, d).startswith(ep + os.sep)
-                        for ep in custom_excludes
-                    )
-                ]
-                
-                # 过滤掉被排除的文件
-                filtered_files = [
-                    f for f in files
-                    if f not in system_excludes and not any(
-                        os.path.join(current_path, f) == ep or 
-                        os.path.join(current_path, f).startswith(ep + os.sep)
-                        for ep in custom_excludes
-                    )
-                ]
 
-                for file in filtered_files:
+                for file in files:
                     try:
                         file_path = os.path.join(current_path, file)
                         if sys.platform == "win32" and not file_path.startswith("\\\\?\\") and len(file_path) > 255:

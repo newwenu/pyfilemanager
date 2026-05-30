@@ -5,13 +5,49 @@
 ```
 pyfilemanager/
 ├── main.pyw                              # 入口
-├── userdata/                             # 配置文件目录
-│   ├── config/setting.json
-│   ├── languages/{zh_CN,en_US}.json
-│   └── db/file_tree.db
-└── src/
+├── home/                                 # 主页内容
+│   └── nocontent.txt
+├── media/                                # 图标和背景图片资源
+│   ├── {archive,code,doc,...}.png        # 文件类型图标
+│   └── webpic/background*.webp           # 网络背景图缓存
+├── logs/                                 # 日志文件
+│   ├── app.log / core.log / database.log
+│   ├── file_ops.log / handlers.log / image.log
+│   ├── threads.log / ui.log
+│   └── *.log.YYYY-MM-DD                  # 轮转日志
+├── userdata/                             # 用户数据
+│   ├── config/
+│   │   ├── setting.json                  # 应用配置文件
+│   │   ├── default.json                  # 默认配置
+│   │   ├── setting_default.json          # 设置默认值
+│   │   ├── shortcutslinux.json           # Linux快捷键配置
+│   │   ├── shortcutswindows.json         # Windows快捷键配置
+│   │   ├── tu.ini                        # 翻译工具配置
+│   │   └── url.ini                       # URL配置
+│   ├── languages/
+│   │   ├── zh_CN.json                    # 中文翻译
+│   │   └── en_US.json                    # 英文翻译
+│   ├── db/
+│   │   ├── file_tree.db                  # 文件树数据库
+│   │   ├── folder_size.db                # 文件夹大小缓存
+│   │   └── folder_size copy.db           # 备份
+│   └── file-icon_type/
+│       └── file-icon_type.json           # 文件类型图标映射
+├── temp/                                 # 临时测试文件
+├── test/                                 # 测试文件
+├── .gitignore                            # Git 忽略规则
+├── environment.yml                       # Conda 环境配置
+├── .vscode/
+│   ├── .gitignore
+│   └── settings.json
+├── {readme, README.md, README-en.md}     # 说明文档
+├── 使用说明书.md / User_Manual.md         # 用户手册
+├── LICENSE                               # 许可证
+└── src/                                  # 源代码
     ├── __init__.py                       # 空
     ├── main_window2.py                   # FileManager 主窗口
+    ├── pyproject.toml                    # 项目配置
+    ├── requirements.txt                  # 依赖清单
     │
     ├── core/                             # 核心模块
     │   ├── __init__.py                   # 导出所有核心类
@@ -33,7 +69,7 @@ pyfilemanager/
     │   │   ├── __init__.py               # 导出 NavigateHandler/FileOperationHandler/UIHandler
     │   │   ├── navigate_handler.py       # 导航事件
     │   │   ├── file_operation_handler.py # 文件操作事件
-    │   │   └── ui_handler.py             # UI 更新事件
+    │   │   └── ui_handler.py             # UI 更新事件（新增: 提示控制事件）
     │   ├── keyboard_handler.py           # 键盘事件
     │   ├── search_handler.py             # 搜索功能
     │   ├── file_operation.py             # 文件操作（打开等）
@@ -41,42 +77,43 @@ pyfilemanager/
     │   ├── help_dialog_handler.py        # 帮助对话框
     │   ├── drag_drop_handler.py          # 拖放处理
     │   ├── m_event_handlers.py           # 鼠标/UI 事件绑定
-    │   └── header_sort_handler.py        # 表头排序
+    │   └── header_sort_handler.py        # 表头排序（重写~343行）
     │
     ├── widgets/                          # UI 组件
-    │   ├── __init__.py                   # 导出 TipWidget/TipManager/tip_manager
+    │   ├── __init__.py                   # 导出 TipWidget/TipManager/Manage/快捷函数
     │   ├── ui_setup.py                   # UISetup（UI 布局初始化）
-    │   ├── file_list_updater.py          # FileListUpdater（文件列表更新）
+    │   ├── file_list_updater.py          # FileListUpdater（文件列表更新，~523行）
     │   ├── navigation_tree.py            # init_navigation_tree()
     │   ├── drive_list_manager.py         # DriveListManager
     │   ├── context_menu.py               # 右键菜单
     │   ├── properties_dialog.py          # 文件属性对话框
     │   ├── help_dialog.py                # 快捷键帮助对话框
     │   ├── error_manager.py              # 错误提示管理
-    │   ├── tip_widget.py                 # 非侵入式提示组件
+    │   ├── tip_widget.py                 # TipWidget（重写~197行，支持ID管理）
     │   ├── shortcut_tip.py               # 快捷键提示小控件
     │   ├── collapsible_section.py        # 可折叠区域
     │   ├── focus_style_filter.py         # 焦点样式过滤器
     │   ├── custom_tree_widget.py         # FileListWidget
-    │   ├── async_icon_loader.py          # 异步图标加载
+    │   ├── async_icon_loader.py          # 异步图标加载（仅 set_global_icon_cache 被使用）
     │   ├── settings_dialog_model.py      # 设置对话框兼容层
-    │   ├── paged_file_list.py            # （未使用）分页文件列表
-    │   ├── simple_virtual_list.py        # （未使用）虚拟列表
+    │   ├── breadcrumb_bar.py             # BreadcrumbBar（面包屑地址栏，新增）
+    │   ├── more_options_button.py        # MoreOptionsButton（三点菜单按钮，新增）
+    │   ├── search_box.py                 # SearchBox（搜索框组件，新增）
+    │   ├── theme_aware_widget.py         # 主题感知组件支持（新增）
     │   └── settings/                     # 设置对话框
     │       ├── __init__.py
     │       ├── base_dialog.py            # BaseSettingsDialog
     │       ├── settings_dialog.py        # SettingsDialog
     │       ├── settings_manager.py       # SettingsDialogManager
-    │       ├── utils/
-    │       │   ├── __init__.py
-    │       │   └── settings_utils.py     # （未使用）设置工具
+    │       ├── value_slider.py           # ValueSlider（数值滑块，新增）
     │       └── tabs/
     │           ├── __init__.py
     │           ├── general_tab.py        # GeneralTab
     │           ├── appearance_tab.py     # AppearanceTab
     │           ├── icon_manager_tab.py   # IconManagerTab
     │           ├── context_menu_tab.py   # ContextMenuTab
-    │           └── advanced_tab.py       # AdvancedTab
+    │           ├── advanced_tab.py       # AdvancedTab
+    │           └── scan_exclude_tab.py   # ScanExcludeTab（扫描排除，新增~250行）
     │
     ├── file_operator/                    # 文件操作模块
     │   ├── __init__.py                   # 导出所有接口和实现
@@ -103,21 +140,19 @@ pyfilemanager/
     │   ├── drive_utils.py                # 驱动器检测
     │   ├── logging_config.py             # 日志配置
     │   ├── keyboard_registry2.py         # 快捷键注册
-    │   ├── allocation_size_utils.py      # （未使用）磁盘分配大小
-    │   └── cache_manager.py              # （未使用）SQLite缓存
+    │   ├── file_filter.py                # FileFilter（文件过滤逻辑，新增~334行）
+    │   └── allocation_size_utils.py      # （未使用）磁盘分配大小
     │
     ├── threads/                          # 线程模块
     │   ├── __init__.py                   # 空
     │   ├── file_list_loader.py           # 文件列表异步加载
-    │   ├── folder_size.py                # 文件夹大小计算
+    │   ├── folder_size.py                # 文件夹大小计算（含扫描排除支持）
     │   └── webpic_loader.py              # 网络图片加载
     │
     ├── dbload_manager/                   # 数据库加载管理
     │   ├── __init__.py                   # 导出 FileTreeDatabase/FileTreeManager
     │   ├── file_tree_database.py         # FileTreeDatabase
     │   ├── file_tree_manager.py          # FileTreeManager
-    │   ├── database_manager.py           # （未使用）旧版DatabaseManager
-    │   ├── get_pic_ignore.py             # （未使用）独立脚本
     │   └── db_tool/
     │       ├── db_tool.py                # （未使用）CLI工具
     │       └── db_tool2.py               # （未使用）CLI工具
@@ -129,20 +164,30 @@ pyfilemanager/
     │   └── language_manager.py           # LanguageManager
     │
     ├── theme_manager/
-    │   ├── __init__.py
-    │   └── theme_manager.py              # ThemeManager
+    │   ├── __init__.py                   # 导出 ThemeManager/ThemePalettes/ThemeStyles
+    │   ├── theme_manager.py              # ThemeManager
+    │   ├── theme_palettes.py             # ThemePalettes（调色板定义，新增~178行）
+    │   └── theme_styles.py               # ThemeStyles（QSS样式表生成，新增~317行）
     │
-    ├── tip_manager/
-    │   ├── __init__.py                   # 导出 TipManagerProxy
-    │   └── tip_manager_proxy.py          # TipManagerProxy
+    ├── tip_manager/                      # 提示管理器模块（新增）
+    │   ├── __init__.py                   # 导出 TipManager/tip_manager/TipManagerProxy/快捷函数
+    │   ├── manager.py                    # TipManager（核心管理类，~117行）
+    │   └── tip_manager_proxy.py          # TipManagerProxy（代理接口，~138行）
+    │
+    ├── toolbox/                          # 工具箱
+    │   └── Everythingsearch/             # Windows Everything搜索集成
+    │       ├── Everything.db
+    │       ├── everything.exe
+    │       └── Everything.ini
     │
     └── widget_manager/
         └── __init__.py                   # 空
+
 ```
 
 ***
 
-## USED 文件代码结构
+## 已使用文件代码结构
 
 > 标注了每个文件的类/函数及被引用情况
 
@@ -155,8 +200,10 @@ pyfilemanager/
 ### `src/core/event_bus.py`
 
 - **`EventBus`** (QObject): 导航/文件/选择/UI/视图/焦点/搜索/配置/主题/语言/应用 事件信号定义
+  - 新增信号: `refresh`, `ui_close_all_tips`, `ui_close_tip_by_id`, `search_start`, `search_clear`, `language_changed`, `app_show_settings`, `app_show_help`
+  - 方法: `emit_navigate_to()`, `emit_status_message()`, `emit_error()`, `emit_config_changed()`
 - **`event_bus`**: 全局单例
-- 被引用: `core.__init__`, `app_initializer`, `config_provider`, `event_decorators`, `shortcut_actions`, 多处 handlers
+- 被引用: `core.__init__`, `app_initializer`, `config_provider`, `event_decorators`, `shortcut_actions`, 多处 handlers, `theme_aware_widget`
 
 ### `src/core/app_initializer.py`
 
@@ -251,7 +298,7 @@ pyfilemanager/
 ### `src/handlers/event_handlers/ui_handler.py`
 
 - **`UIHandler`**:
-  - `on_update_statusbar()`, `on_show_error()`, `on_show_message()`, `on_toggle_hidden()`, `on_toggle_sizes()`, `on_toggle_mtime()`, `on_search_start()`, `on_search_clear()`, `toggle_shortcut_help_dialog()`, `show_settings_dialog()`
+  - `on_update_statusbar()`, `on_show_error()`, `on_show_message()`, `on_toggle_hidden()`, `on_toggle_sizes()`, `on_toggle_mtime()`, `on_search_start()`, `on_search_clear()`, `toggle_shortcut_help_dialog()`, `show_settings_dialog()`, `on_close_all_tips()`, `on_close_tip_by_id()`
 - 被引用: `event_handlers.__init__`
 
 ### `src/handlers/keyboard_handler.py`
@@ -296,7 +343,7 @@ pyfilemanager/
 
 ### `src/handlers/header_sort_handler.py`
 
-- **`HeaderSortHandler`**: 表头排序(防抖)
+- **`HeaderSortHandler`**: 表头排序(防抖)，已重写~343行
 - 被引用: `file_list_updater`
 
 ### `src/widgets/ui_setup.py`
@@ -306,7 +353,9 @@ pyfilemanager/
 
 ### `src/widgets/file_list_updater.py`
 
-- **`FileListUpdater`**: `update_filelist()`, `filter_files()`, `clear_filter()`, `_update_filelist_from_thread()`, `_update_filelist_from_sorted()`, `_create_list_item_from_info()`
+- **`FileListUpdater`**: `update_filelist()`, `filter_files()`, `clear_filter()`, `_update_filelist_from_thread()`, `_update_filelist_from_sorted()`, `_create_list_item_from_info()`, `_handle_scan_error()`, `_refresh_sort_after_size_calc()`
+  - 新增: 文件夹监控、排序防抖刷新、扫描错误处理
+  - 约523行
 - 被引用: `app_initializer`
 
 ### `src/widgets/navigation_tree.py`
@@ -346,10 +395,9 @@ pyfilemanager/
 
 ### `src/widgets/tip_widget.py`
 
-- **`TipWidget`** (QLabel): 非侵入式提示
-- **`TipManager`**: 管理多个提示
-- **`tip_manager`**: 全局实例
-- 被引用: `widgets.__init__`
+- **`TipWidget`** (QLabel): 重写~197行，支持ID管理、4种样式(success/error/warning/info)、工具提示窗口模式
+  - 方法: `show_tip()`, `set_tip_style()`, `close()`, `fade_out()`
+- 被引用: `tip_manager.manager`
 
 ### `src/widgets/shortcut_tip.py`
 
@@ -379,6 +427,37 @@ pyfilemanager/
 - **`get_async_icon_loader()`**, **`init_async_icon_loader()`**, **`shutdown_async_icon_loader()`**: (未使用)
 - 被引用(仅`set_global_icon_cache()`): `app_initializer`
 
+### `src/widgets/breadcrumb_bar.py` (新增)
+
+- **`BreadcrumbBar`** (QWidget): 面包屑地址栏，支持点击路径段导航和可编辑路径输入
+  - 信号: `path_clicked(str)`, `path_edited(str)`
+  - 方法: `set_path()`, `start_edit()`, `finish_edit()`, `_setup_ui()`
+  - 约309行
+- 被引用: `ui_setup`
+
+### `src/widgets/more_options_button.py` (新增)
+
+- **`MoreOptionsButton`** (QPushButton): 三点菜单按钮，包含显示隐藏文件/显示大小/刷新
+  - 信号: `toggle_hidden_files(bool)`, `toggle_show_sizes(bool)`, `refresh_requested()`
+  - 方法: `_setup_menu()`, `_on_button_clicked()`
+  - 约140行
+- 被引用: `ui_setup`
+
+### `src/widgets/search_box.py` (新增)
+
+- **`SearchBox`** (QWidget): 动画搜索框组件
+  - 信号: `search_text_changed(str)`, `search_confirmed(str)`, `search_closed()`
+  - 方法: `show_search()`, `hide_search()`, `_on_text_changed()`, `_on_search_confirmed()`
+  - 约167行
+- 被引用: `ui_setup`
+
+### `src/widgets/theme_aware_widget.py` (新增)
+
+- **`setup_theme_aware_widget(widget, update_style_callback)`**: 函数式主题感知设置
+- **`setup_tree_widget_theme(widget, bg_alpha, icon_size)`**: 树控件主题感知
+- **`ThemeAwareWidget`** (QWidget): 主题感知基类（注释中提及）
+- 被引用: `ui_setup`
+
 ### `src/widgets/settings_dialog_model.py`
 
 - 兼容层，导出 `SettingsDialog`
@@ -391,13 +470,21 @@ pyfilemanager/
 
 ### `src/widgets/settings/settings_dialog.py`
 
-- **`SettingsDialog`** (BaseSettingsDialog): 含5个标签页
+- **`SettingsDialog`** (BaseSettingsDialog): 含6个标签页(新增ScanExcludeTab)
 - 被引用: `settings_dialog_model`
 
 ### `src/widgets/settings/settings_manager.py`
 
 - **`SettingsDialogManager`** (QObject): 单例管理设置对话框
 - 被引用: `app_initializer`
+
+### `src/widgets/settings/value_slider.py` (新增)
+
+- **`ValueSlider`** (QWidget): 数值滑块组件，替代QSpinBox
+  - 信号: `valueChanged(int)`
+  - 支持预设按钮、步长调节、实时数值显示
+  - 约208行
+- 被引用: `appearance_tab`, `general_tab`
 
 ### `src/widgets/settings/tabs/general_tab.py`
 
@@ -422,6 +509,13 @@ pyfilemanager/
 ### `src/widgets/settings/tabs/advanced_tab.py`
 
 - **`AdvancedTab`** (QWidget): 高级设置
+- 被引用: `settings_dialog`
+
+### `src/widgets/settings/tabs/scan_exclude_tab.py` (新增)
+
+- **`ScanExcludeTab`** (QWidget): 扫描排除规则设置标签页
+  - 功能: 系统保护文件排除复选框 + 自定义排除路径列表管理
+  - 约250行
 - 被引用: `settings_dialog`
 
 ### `src/file_operator/interfaces.py`
@@ -449,7 +543,7 @@ pyfilemanager/
 
 ### `src/file_operator/exceptions.py`
 
-- **`FileOperatorError`**, **`FileNotFoundError`**, **`PermissionDeniedError`**, **`FileExistsError`**, **`OperationCancelledError`**, **`DiskFullError`**, \*\*`PathTooLongError**`
+- **`FileOperatorError`**, **`FileNotFoundError`**, **`PermissionDeniedError`**, **`FileExistsError`**, **`OperationCancelledError`**, **`DiskFullError`**, **`PathTooLongError`**
 - 被引用: `file_operator.__init__`, `file_operator`, `clipboard`
 
 ### `src/file_operator/error_messages.py`
@@ -525,20 +619,31 @@ pyfilemanager/
 - **`register_app_shortcuts()`**: 注册快捷键
 - 被引用: `app_initializer`, `help_dialog_handler`
 
+### `src/utils/file_filter.py` (新增)
+
+- **`FileFilter`**: 统一的文件过滤逻辑
+  - 方法: `get_scan_excludes()`, `should_exclude()`, `_get_file_attributes_from_direntry()`, `is_system_protected()`, `_check_custom_exclude()`
+  - 支持: 系统保护文件排除/自定义路径排除/隐藏文件处理/跨平台适配
+  - 约334行
+- 被引用: `folder_size` (folder_size线程中使用)
+
 ### `src/threads/file_list_loader.py`
 
 - **`FileListLoaderThread`** (QThread): 异步扫描目录
 - **`FileListLoaderManager`** (QObject): 管理扫描线程
+  - 信号: `list_loaded`, `error_occurred`
 - 被引用: `file_list_updater`
 
 ### `src/threads/folder_size.py`
 
-- **`FolderSizeThread`** (QThread): 文件夹大小计算
+- **`FolderSizeThread`** (QThread): 文件夹大小计算（支持扫描排除）
+- **`FolderSizeManager`** (QObject): 管理大小计算线程
+  - 方法: `start_calculation()`, `set_max_threads()`, `stop_all_threads()`
+  - 使用 `FileFilter` 进行排除过滤
+- 被引用: `app_initializer`
 - **`FolderSizeTreeThread`** (QThread): (未使用) 树结构大小计算
 - **`FolderSizeSmartTreeThread`** (QThread): (未使用) 智能树计算
 - **`DatabaseCacheWorker`** (QRunnable): 后台缓存写入
-- **`FolderSizeManager`** (QObject): 管理大小计算线程
-- 被引用: `app_initializer`, (FolderSizeTreeThread/SmartTreeThread 未使用)
 
 ### `src/threads/webpic_loader.py`
 
@@ -549,6 +654,7 @@ pyfilemanager/
 
 - **`FileNode`** (dataclass): 文件节点
 - **`FileTreeDatabase`**: SQLite文件树存储
+  - 新增: 文件夹变化检测优化、级联缓存失效
 - 被引用: `dbload_manager.__init__`, `file_tree_manager`
 
 ### `src/dbload_manager/file_tree_manager.py`
@@ -556,47 +662,82 @@ pyfilemanager/
 - **`CacheValidity`** (Enum): 缓存有效性
 - **`FolderInfo`** (dataclass): 文件夹信息
 - **`FileTreeManager`**: 业务逻辑层
+  - 新增: 级联缓存失效、文件夹变化检测优化
 - 被引用: `dbload_manager.__init__`, `app_initializer`, `file_list_updater`, `folder_size`
 
 ### `src/config_manager/config_manager.py`
 
 - **`ConfigManager`**: JSON配置管理
+  - 新增: `scan_exclude_system_protected`, `scan_exclude_custom` 配置项支持
 - 被引用: `main.pyw`, `file_utils.py`
 
 ### `src/language_manager/language_manager.py`
 
 - **`LanguageManager`**: 多语言支持
+  - 新增: 扫描排除相关翻译 (zh_CN/en_US)
 - 被引用: `app_initializer`
 
 ### `src/theme_manager/theme_manager.py`
 
 - **`ThemeManager`** (QObject): 主题管理
+  - 方法: `apply_theme()`, `get_actual_theme()`, `toggle_theme()`
 - 被引用: `app_initializer`
 
-### `src/tip_manager/tip_manager_proxy.py`
+### `src/theme_manager/theme_palettes.py` (新增)
 
-- **`TipManagerProxy`** (QObject): 提示代理
-- **`TipManager`**: 全局实例
-- **`show_success()`**, **`show_error()`**, **`show_warning()`**, **`show_info()`**, **`show_tip()`**: 快捷函数
-- 被引用: `widgets.__init__`, `error_manager`, `ui_adapter`, `settings_manager`
+- **`ThemePalettes`**: 主题调色板定义
+  - 类属性: `DARK_COLORS`, `LIGHT_COLORS` (QColor字典)
+  - 类方法: `get_colors(theme)`, `create_palette(theme)`
+  - 约178行
+- 被引用: `theme_styles`
+
+### `src/theme_manager/theme_styles.py` (新增)
+
+- **`ThemeStyles`**: 主题QSS样式表生成
+  - 类方法: `get_stylesheet(theme)`, 生成完整QSS字符串
+  - 约317行
+- 被引用: `theme_manager`
+
+### `src/tip_manager/manager.py` (新增)
+
+- **`TipManager`**: 提示管理器核心类
+  - 方法: `show_tip()`, `close_tip_by_id()`, `close_all()`, `_cleanup_tip()`, `_cleanup_destroyed_tips()`
+  - 支持: ID去重管理、自动清理已销毁组件
+  - 约117行
+- **`tip_manager`**: 全局实例
+- 被引用: `tip_manager.__init__`, `tip_manager_proxy`
+
+### `src/tip_manager/tip_manager_proxy.py` (新增)
+
+- **`TipManagerProxy`** (QObject): 提示管理器代理，提供类型化接口
+  - 方法: `show_success()`, `show_error()`, `show_warning()`, `show_info()`, `show_tip()`, `close_all()`, `close_tip_by_id()`
+  - 约138行
+- 全局函数: `show_success()`, `show_error()`, `show_warning()`, `show_info()`, `show_tip()`, `close_all_tips()`, `close_tip_by_id()`
+- 被引用: `tip_manager.__init__`, `widgets.__init__`, `error_manager`, `ui_adapter`, `settings_manager`, `main_window2`
+
+### `src/main_window2.py`
+
+- **`FileManager`** (QMainWindow, EventMixin): 主窗口
+  - 新增事件订阅: `focus_search_box`, `search_start`, `search_clear`, `app_show_settings`, `app_show_help`
+  - 新增方法: `_on_focus_address_bar()`, `_on_focus_search_box()`, `_on_search_start()`, `_on_search_clear()`, `show_settings_tip()`
+  - 新增: `breadcrumb_bar`, `search_box` 组件支持
+  - 新增: `on_settings_changed()` 响应主题/线程数变更
+  - 约225行
 
 ***
 
-## UNUSED 代码清单
+## 未使用代码清单
 
-### 一、完全未使用的文件（9个）
+### 一、完全未使用的文件（6个）
 
-| 文件                                             | 说明                                                                     |
+| 文件 | 说明 |
 | ---------------------------------------------- | ---------------------------------------------------------------------- |
-| `src/widgets/paged_file_list.py`               | 分页文件列表，被 `simple_virtual_list` 和 `FileListWidget` 替代                   |
-| `src/widgets/simple_virtual_list.py`           | 虚拟列表，有 `create_simple_virtual_list()` 工厂函数但从未调用                        |
-| `src/widgets/settings/utils/settings_utils.py` | 设置工具函数(browse\_background\_image, browse\_db\_path, clean\_cache)，从未导入 |
-| `src/utils/allocation_size_utils.py`           | 磁盘分配大小获取，定义了全套API但从未被项目引用                                              |
-| `src/utils/cache_manager.py`                   | SQLite缓存(`SizeCacheDB`)，旧版代码从未使用                                       |
-| `src/dbload_manager/database_manager.py`       | 旧版DatabaseManager，被 `FileTreeManager` 替代                               |
-| `src/dbload_manager/get_pic_ignore.py`         | 独立脚本，下载图片用，无导入引用                                                       |
-| `src/dbload_manager/db_tool/db_tool.py`        | CLI数据库管理工具                                                             |
-| `src/dbload_manager/db_tool/db_tool2.py`       | CLI数据库管理工具(扩展版)                                                        |
+| `src/utils/allocation_size_utils.py` | 磁盘分配大小获取，定义了全套API但从未被项目引用 |
+| `src/dbload_manager/db_tool/db_tool.py` | CLI数据库管理工具 |
+| `src/dbload_manager/db_tool/db_tool2.py` | CLI数据库管理工具(扩展版) |
+| `src/__init__.py` | 空文件 |
+| `src/handlers/__init__.py` | 空文件 |
+| `src/threads/__init__.py` | 空文件 |
 
 ### 二、已使用文件中未使用的类/函数
 
@@ -622,6 +763,30 @@ pyfilemanager/
 
 - **`get_sorted_indices()`**: 从未被调用
 
+#### `src/core/event_bus.py`
+
+- 以下信号定义后从未被任何代码 emit:
+  - `file_open` (Signal(str))
+  - `file_properties` (Signal(str))
+  - `selection_changed` (Signal(list))
+  - `select_none` (Signal())
+  - `ui_update_filelist` (Signal())
+  - `ui_update_navtree` (Signal())
+  - `ui_show_confirm` (Signal(str, str, object))
+  - `view_show_drives` (Signal())
+  - `view_show_files` (Signal())
+  - `focus_search_box` (Signal())
+  - `config_reload` (Signal())
+  - `app_quit` (Signal())
+  - `refresh` (Signal()) — navigate_refresh 的别名，同样未被使用
+- **`EventBus.emit_navigate_to()`**, `emit_status_message()`, `emit_error()`, `emit_config_changed()`: 从未被调用
+
+#### `src/core/event_decorators.py`
+
+- **`on_event()`**: 从未被用作装饰器
+- **`emit_event()`**: 从未被用作装饰器
+- **`emit_after()`**: 从未被用作装饰器
+
 #### `src/widgets/async_icon_loader.py`
 
 - **`AsyncIconLoader`** 完整类: 从未被实例化
@@ -646,7 +811,7 @@ pyfilemanager/
 
 #### `src/file_operator/clipboard.py`
 
-- **`ClipboardContent.is_valid()`**: `has_children_changed_quick` 虽已使用但部分内部方法可能未直接调用
+- **`ClipboardContent.is_valid()`**: 可能未使用
 - 实际上 `FileClipboard.content` 属性从未被外部读取
 
 #### `src/dbload_manager/file_tree_database.py`
@@ -655,7 +820,6 @@ pyfilemanager/
 - **`FileTreeDatabase.get_ancestors()`**: 从未被调用
 - **`FileTreeDatabase.get_subtree()`**: 从未被调用
 - **`FileTreeDatabase.add_node()`**: 优先使用批量 `add_nodes_batch()`
-- **`FileTreeDatabase.is_folder_cache_valid()`**: 从未被调用（直接被 `FileTreeManager` 替代）
 
 #### `src/dbload_manager/file_tree_manager.py`
 
@@ -684,30 +848,7 @@ pyfilemanager/
 
 #### `src/widgets/drive_list_manager.py`
 
-- Unix分支代码 (`import shutil`): 项目为Windows专用，此分支从未执行
-
-#### `src/core/event_bus.py`
-
-- 以下事件信号定义后从未被任何代码 emit:
-  - `file_open` (Signal(str))
-  - `file_properties` (Signal(str))
-  - `selection_changed` (Signal(list))
-  - `select_none` (Signal())
-  - `ui_update_filelist` (Signal())
-  - `ui_update_navtree` (Signal())
-  - `ui_show_confirm` (Signal(str, str, object))
-  - `view_show_drives` (Signal())
-  - `view_show_files` (Signal())
-  - `focus_search_box` (Signal())
-  - `config_reload` (Signal())
-  - `app_quit` (Signal())
-- **`EventBus.emit_navigate_to()`**, `emit_status_message()`, `emit_error()`, `emit_config_changed()`: 从未被调用
-
-#### `src/core/event_decorators.py`
-
-- **`on_event()`**: 从未被用作装饰器
-- **`emit_event()`**: 从未被用作装饰器
-- **`emit_after()`**: 从未被用作装饰器
+- Unix分支代码 (`import shutil`): 项目在 Windows 上运行时此分支从未执行
 
 #### `src/utils/logging_config.py`
 
@@ -717,3 +858,15 @@ pyfilemanager/
 
 - 模块级代码 `load_user_shortcuts()` 和后续循环会在导入时立即执行（有副作用）
 
+***
+
+## 已清理的旧文件（之前标记为未使用，现已删除）
+
+| 已删除文件 | 删除原因 |
+| ---------------------------------------------- | ---------------------------------------------------------------------- |
+| `src/widgets/paged_file_list.py` | 被 `FileListWidget` 替代 |
+| `src/widgets/simple_virtual_list.py` | 被 `FileListWidget` 替代 |
+| `src/widgets/settings/utils/settings_utils.py` | 工具函数从未被导入 |
+| `src/utils/cache_manager.py` | `SizeCacheDB` 旧版代码 |
+| `src/dbload_manager/database_manager.py` | 被 `FileTreeManager` 替代 |
+| `src/dbload_manager/get_pic_ignore.py` | 独立下载脚本，无导入引用 |

@@ -25,25 +25,24 @@ def setup_event_bindings(main_window, config):
         lambda pos: show_context_menu(main_window, pos)
     )
     
-    # 新建文件夹按钮点击 - 使用事件总线
-    main_window.btn_new_folder.clicked.connect(
-        lambda: event_bus.file_new_folder.emit("")
-    )
+    # 新建文件夹按钮点击 - 使用事件总线（仅当按钮存在时绑定）
+    if hasattr(main_window, 'btn_new_folder') and main_window.btn_new_folder:
+        main_window.btn_new_folder.clicked.connect(
+            lambda: event_bus.file_new_folder.emit("")
+        )
     
-    # 显示隐藏文件复选框状态变化 - 使用事件总线
-    main_window.cb_hidden.stateChanged.connect(
-        lambda state: event_bus.view_toggle_hidden.emit(state == Qt.CheckState.Checked.value)
-    )
+    # 显示隐藏文件复选框状态变化 - 使用事件总线（仅当复选框存在时绑定）
+    if hasattr(main_window, 'cb_hidden') and main_window.cb_hidden:
+        main_window.cb_hidden.stateChanged.connect(
+            lambda state: event_bus.view_toggle_hidden.emit(state == Qt.CheckState.Checked.value)
+        )
     
-    # 显示所有大小复选框状态变化 - 使用事件总线
-    main_window.cb_show_sizes.stateChanged.connect(
-        lambda state: event_bus.view_toggle_sizes.emit(state == Qt.CheckState.Checked.value)
-    )
+    # 显示所有大小复选框状态变化 - 使用事件总线（仅当复选框存在时绑定）
+    if hasattr(main_window, 'cb_show_sizes') and main_window.cb_show_sizes:
+        main_window.cb_show_sizes.stateChanged.connect(
+            lambda state: event_bus.view_toggle_sizes.emit(state == Qt.CheckState.Checked.value)
+        )
     
-    # 地址栏回车事件
-    main_window.address_bar.returnPressed.connect(
-        lambda: on_address_change(main_window, config)
-    )
     
     # 驱动器列表双击事件
     main_window.drive_list.itemDoubleClicked.connect(
@@ -54,6 +53,22 @@ def setup_event_bindings(main_window, config):
     main_window.file_list.itemDoubleClicked.connect(
         lambda item, column: on_item_double_click(main_window, item, column)
     )
+    
+    # 面包屑地址栏事件（仅当存在时绑定）
+    if hasattr(main_window, 'breadcrumb_bar') and main_window.breadcrumb_bar:
+        main_window.breadcrumb_bar.path_clicked.connect(event_bus.navigate_to)
+        main_window.breadcrumb_bar.path_edited.connect(event_bus.navigate_to)
+    
+    # 搜索框事件（仅当存在时绑定）
+    if hasattr(main_window, 'search_box') and main_window.search_box:
+        main_window.search_box.search_confirmed.connect(event_bus.search_start)
+        main_window.search_box.search_closed.connect(event_bus.search_clear)
+    
+    # 更多选项按钮事件（仅当存在时绑定）
+    if hasattr(main_window, 'more_options_btn') and main_window.more_options_btn:
+        main_window.more_options_btn.toggle_hidden_files.connect(event_bus.view_toggle_hidden)
+        main_window.more_options_btn.toggle_show_sizes.connect(event_bus.view_toggle_sizes)
+        main_window.more_options_btn.refresh_requested.connect(event_bus.refresh)
 
 
 def on_tree_select(main_window, item, config):

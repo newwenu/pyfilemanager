@@ -125,6 +125,9 @@ class AppInitializer:
         # 加载配置到提供者
         config_provider.load(self.config_manager.config)
         
+        # 绑定 ConfigManager，实现自动落盘
+        config_provider.bind_config_manager(self.config_manager)
+        
         # 注册到服务定位器
         ServiceLocator.register("config_manager", self.config_manager)
         ServiceLocator.register("config_provider", config_provider)
@@ -173,7 +176,8 @@ class AppInitializer:
         # 初始化主题管理器
         from theme_manager.theme_manager import ThemeManager
         theme_manager = ThemeManager(self.main_window)
-        theme_manager.theme_changed.connect(self.main_window.on_theme_changed)
+        # 注意：组件通过 event_bus.theme_changed 自行订阅主题变化
+        # 无需连接到 main_window.on_theme_changed
         theme_manager.apply_theme(app_config.theme)
         ServiceLocator.register("theme_manager", theme_manager)
         self.main_window.theme_manager = theme_manager
@@ -231,6 +235,11 @@ class AppInitializer:
         file_list_updater = FileListUpdater(self.main_window)
         ServiceLocator.register("file_list_updater", file_list_updater)
         self.main_window.file_list_updater = file_list_updater
+        
+        # 初始化面包屑地址栏显示
+        if hasattr(self.main_window, 'breadcrumb_bar') and self.main_window.breadcrumb_bar:
+            self.main_window.breadcrumb_bar.set_path(self.main_window.current_path)
+        
         self.main_window.update_filelist()
         
         # 初始化背景管理器
@@ -256,8 +265,7 @@ class AppInitializer:
         self.main_window.folder_size_manager = folder_size_manager
         
         # 文件管理器（使用新的 file_operator 模块）
-        from file_operator import FileOperator
-        from file_operator.ui_adapter import FileOperatorUIAdapter
+        from file_operator import FileOperator, FileOperatorUIAdapter
         
         file_operator = FileOperator()
         file_operator_ui = FileOperatorUIAdapter(file_operator, self.main_window)

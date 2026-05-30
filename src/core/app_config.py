@@ -67,7 +67,7 @@ class AppConfig:
     
     @property
     def status_font_size(self) -> int:
-        return self.get("status_font_size", int(self.font_size * 0.8))
+        return self.get("status_font_size", int(self.font_size * 0.7))
     
     @property
     def nav_tree_font_size(self) -> int:

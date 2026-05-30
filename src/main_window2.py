@@ -79,13 +79,14 @@ class FileManager(QMainWindow, EventMixin):
         self.subscribe("view_toggle_mtime", self.ui_handler.on_toggle_mtime)
         
         # 焦点事件
-        self.subscribe("focus_address_bar", self.address_bar.setFocus)
+        self.subscribe("focus_address_bar", self._on_focus_address_bar)
         self.subscribe("focus_file_list", self.file_list.setFocus)
         self.subscribe("focus_nav_tree", self.nav_tree.setFocus)
+        self.subscribe("focus_search_box", self._on_focus_search_box)
         
-        # 搜索事件
-        self.subscribe("search_start", self.ui_handler.on_search_start)
-        self.subscribe("search_clear", self.ui_handler.on_search_clear)
+        # 搜索事件 - 直接处理，不通过 ui_handler 链式调用
+        self.subscribe("search_start", self._on_search_start)
+        self.subscribe("search_clear", self._on_search_clear)
         
         # 应用事件
         self.subscribe("app_show_settings", self.ui_handler.show_settings_dialog)
@@ -155,25 +156,59 @@ class FileManager(QMainWindow, EventMixin):
             self.file_list_updater.file_list_loader.stop_all()
         super().closeEvent(event)
 
-    def on_theme_changed(self, theme: str) -> None:
-        """处理主题改变事件"""
-        pass
-
     def on_settings_changed(self, config: dict) -> None:
         """处理设置改变事件
 
         Args:
             config: 新的配置字典
         """
+        from utils.logging_config import get_logger
+        _logger = get_logger(__name__)
+        
+        # 检查主题是否变更
+        if "theme" in config:
+            try:
+                theme = config["theme"]
+                if hasattr(self, 'theme_manager') and self.theme_manager:
+                    # 只在主题实际改变时才应用
+                    if theme != self.theme_manager.get_current_theme():
+                        self.theme_manager.apply_theme(theme)
+                        _logger.info(f"已从设置应用新主题: {theme}")
+            except Exception as e:
+                _logger.error(f"应用主题设置失败: {e}")
+        
         # 检查是否需要更新文件夹大小计算线程数
         if "folder_size" in config and "max_threads" in config["folder_size"]:
             try:
                 max_threads = config["folder_size"]["max_threads"]
                 if hasattr(self, 'folder_size_manager') and self.folder_size_manager:
                     self.folder_size_manager.set_max_threads(max_threads)
-                    logger.info(f"已从设置更新文件夹大小计算线程数: {max_threads}")
+                    _logger.info(f"已从设置更新文件夹大小计算线程数: {max_threads}")
             except Exception as e:
-                logger.error(f"更新线程数设置失败: {e}")
+                _logger.error(f"更新线程数设置失败: {e}")
+                
+    def _on_focus_address_bar(self) -> None:
+        """聚焦地址栏 - 支持面包屑地址栏"""
+        if hasattr(self, 'breadcrumb_bar'):
+            self.breadcrumb_bar.start_edit()
+        elif hasattr(self, 'address_bar'):
+            self.address_bar.setFocus()
+            
+    def _on_focus_search_box(self) -> None:
+        """聚焦搜索框"""
+        if hasattr(self, 'search_box'):
+            self.search_box.show_search()
+            
+    def _on_search_start(self, keyword: str) -> None:
+        """开始搜索 - 直接处理"""
+        if hasattr(self, 'file_list_updater') and self.file_list_updater:
+            self.file_list_updater.filter_files(keyword)
+            
+    def _on_search_clear(self) -> None:
+        """清除搜索 - 直接处理"""
+        if hasattr(self, 'file_list_updater') and self.file_list_updater:
+            self.file_list_updater.clear_filter()
+            self.update_filelist()
 
     def update_filelist(self) -> None:
         """更新文件列表"""

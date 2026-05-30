@@ -1,3 +1,11 @@
 {
-  "shortcuts": []
+  "shortcuts": [
+    {
+      "id":"9",
+      "modifiers":"ControlModifier+ShiftModifier",
+      "key": "Key_N",
+      "description": "新建文件夹"
+
+    }
+  ]
 }

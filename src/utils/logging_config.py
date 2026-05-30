@@ -39,19 +39,20 @@ def init_logging(config_manager: Optional[Any] = None):
     统一初始化日志配置（支持定时清理和多文件分离）
     :param config_manager: 配置管理器实例（可选）
     """
-    # 优先使用 app_config，否则使用传入的 config_manager，最后使用默认值
-    if HAS_APP_CONFIG:
-        log_dir = app_config.log_dir
-        log_level = app_config.log_level
-        rotate_when = app_config.log_rotate_when
-        rotate_interval = app_config.log_rotate_interval
-        backup_count = app_config.log_backup_count
-    elif config_manager:
+    # 优先使用传入的 config_manager（确保能读取到配置文件中的值）
+    # 否则使用 app_config，最后使用默认值
+    if config_manager:
         log_dir = getattr(config_manager, 'get', lambda k, d: d)("log_dir", "logs")
         log_level = getattr(config_manager, 'get', lambda k, d: d)("log_level", "DEBUG").upper()
         rotate_when = getattr(config_manager, 'get', lambda k, d: d)("log_rotate_when", "midnight")
         rotate_interval = getattr(config_manager, 'get', lambda k, d: d)("log_rotate_interval", 1)
         backup_count = getattr(config_manager, 'get', lambda k, d: d)("log_backup_count", 7)
+    elif HAS_APP_CONFIG:
+        log_dir = app_config.log_dir
+        log_level = app_config.log_level
+        rotate_when = app_config.log_rotate_when
+        rotate_interval = app_config.log_rotate_interval
+        backup_count = app_config.log_backup_count
     else:
         log_dir = "logs"
         log_level = "DEBUG"
